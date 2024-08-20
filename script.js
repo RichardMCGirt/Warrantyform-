@@ -74,6 +74,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error fetching all data:', error);
             }
 
+            // Filter out records with 'unknown' in the Address field
+            allRecords = allRecords.filter(record => record.fields['Address'] && record.fields['Address'].toLowerCase() !== 'unknown');
+
             allRecords.sort((a, b) => (a.fields['VanirOffice'] || '').localeCompare(b.fields['VanirOffice'] || ''));
 
             await displayData(allRecords);
@@ -103,9 +106,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 { field: 'Status', value: fields['Status'] || 'N/A' },
                 { field: 'Branch', value: fields['Branch'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A' },
-                { field: 'Calendar Link', value: fields['Calendar Link'] || 'N/A' },
+                { field: 'Calendar Link', value: fields['Calendar Link'] || 'N/A', link: true },
                 { field: 'Builder', value: fields['Builder'] || 'N/A' },
-                { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || 'N/A', editable: true },
+                { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || 'N/A', image: true },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || 'N/A', editable: true },
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
                 { field: 'StartDate', value: fields['StartDate'] || 'N/A', editable: true },
@@ -113,12 +116,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 { field: 'description', value: fields['description'] || 'N/A' },
             ];
 
-            fieldConfigs.forEach(({ field, value, editable = false }) => {
+            fieldConfigs.forEach(({ field, value, editable = false, link = false, image = false }) => {
                 const cell = document.createElement('td');
                 cell.dataset.id = record.id;
                 cell.dataset.field = field;
 
-                if (field === 'Picture(s) of Issue' && Array.isArray(fields[field])) {
+                if (link) {
+                    cell.innerHTML = value ? `<a href="${value}" target="_blank">${value}</a>` : 'N/A';
+                } else if (image && Array.isArray(fields[field])) {
                     const images = fields[field].map(url => `<img src="${url}" alt="Issue Picture" style="max-width: 100px; height: auto;"/>`).join('');
                     cell.innerHTML = images;
                 } else {

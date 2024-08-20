@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Fill Ins</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <img src="VANIR-transparent (1).png" alt="Vanir Installed Sales Logo" class="logo loading-logo">
+        <h1 class="hidden">Pending Fill Ins</h1>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast">
+        Changes submitted successfully!
+    </div>
+
+    <div id="materials-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <p class="wave-text">
+                <span>P</span><span>l</span><span>e</span><span>a</span><span>s</span><span>e</span>
+                <span>c</span><span>o</span><span>n</span><span>t</span><span>a</span><span>c</span><span>t</span>
+                <span>t</span><span>h</span><span>e</span>
+                <span>o</span><span>f</span><span>f</span><span>i</span><span>c</span><span>e</span>
+                <span>a</span><span>n</span><span>d</span>
+                <span>m</span><span>a</span><span>k</span><span>e</span>
+                <span>t</span><span>h</span><span>e</span>
+                <span>n</span><span>e</span><span>c</span><span>e</span><span>s</span><span>s</span><span>a</span><span>r</span><span>y</span>
+                <span>e</span><span>d</span><span>i</span><span>t</span><span>s</span>
+                <span>t</span><span>o</span>
+                <span>t</span><span>h</span><span>e</span>
+                <span>c</span><span>h</span><span>a</span><span>n</span><span>g</span><span>e</span><span>s</span>
+                <span>a</span><span>s</span>
+                <span>w</span><span>e</span><span>l</span><span>l</span><span>.</span>
+            </p>
+        </div>
+    </div>
+    
+    
+
+    <!-- Main content with watermark -->
+    <div id="main-content" style="display: none;">
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search..." />
+        </div>
+        <table id="airtable-data">
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Branch</th>
+                    <th>Address</th>
+                    <th>Calender Link</th>
+                    <th>Builder</th>
+                    <th>Pictures</th>
+                    <th>Billable/ Non Billable</th>
+                    <th>Lot Number and Community</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Description</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be injected here by JavaScript -->
+            </tbody>
+        </table>
+        <button id="submit-button">Submit Changes</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

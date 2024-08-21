@@ -172,7 +172,7 @@ setTimeout(() => {
                 },
                 { field: 'Address', value: fields['Address'] || 'N/A' },
                 { field: 'Builders', value: fields['Builders'] || 'N/A' },
-                { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || '', image: true, editable: true },
+                { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || '', image: true },
                 {
                     field: 'Billable/ Non Billable',
                     value: fields['Billable/ Non Billable'] || '',
@@ -182,7 +182,7 @@ setTimeout(() => {
                 },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A' },
-
+    
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
                 {
                     field: 'StartDate',
@@ -205,7 +205,22 @@ setTimeout(() => {
                 cell.dataset.id = record.id;
                 cell.dataset.field = field;
     
-                if (field === 'b') {
+                if (image && Array.isArray(fields[field])) {
+                    // Example URL construction that might cause issues
+                    const imageUrl = fields[field][0].url;
+    
+                    // Ensure the URL is valid and properly formatted before using it
+                    if (imageUrl) {
+                        const imgElement = document.createElement('img');
+                        imgElement.src = imageUrl;
+                        imgElement.alt = "Issue Picture";
+                        imgElement.style.maxWidth = '100px';
+                        imgElement.style.height = 'auto';
+                        cell.appendChild(imgElement);
+                    } else {
+                        console.error('Image URL is invalid or undefined:', imageUrl);
+                    }
+                } else if (field === 'b') {
                     const matchingCalendar = calendarLinks.find(calendar => calendar.name === value);
                     if (matchingCalendar) {
                         value = `<a href="${matchingCalendar.id}" target="_blank">${value}</a>`;
@@ -235,31 +250,6 @@ setTimeout(() => {
                     cell.appendChild(select);
                 } else if (link) {
                     cell.innerHTML = value ? `<a href="${value}" target="_blank">${value}</a>` : 'N/A';
-                } else if (image && Array.isArray(fields[field])) {
-                    const images = fields[field].map(url => `<img src="${url}" alt="Issue Picture" style="max-width: 100px; height: auto;"/>`).join('');
-                    cell.innerHTML = images;
-    
-                    if (editable) {
-                        const fileInput = document.createElement('input');
-                        fileInput.type = 'file';
-                        fileInput.accept = 'image/*';
-                        fileInput.style.display = 'block';
-                        fileInput.addEventListener('change', async () => {
-                            const file = fileInput.files[0];
-                            if (file) {
-                                const reader = new FileReader();
-                                reader.onload = async (e) => {
-                                    const newImageUrl = e.target.result;
-                                    fields[field].push(newImageUrl);
-                                    await updateRecord(record.id, { [field]: fields[field] });
-                                    showToast('Picture uploaded successfully');
-                                };
-                                reader.readAsDataURL(file);
-                            }
-                        });
-                        cell.appendChild(fileInput);
-                    }
-    
                 } else {
                     cell.textContent = value;
                 }
@@ -280,6 +270,7 @@ setTimeout(() => {
     
         console.log('Data displayed in table');
     }
+    
     
     
     async function updateRecord(id, fields) {

@@ -91,12 +91,16 @@ h1.visible {
 }
 
 /* Ensure the 'Lot Number and Community' column is more narrow and text wraps */
-#airtable-data th:nth-child(9), /* Adjust the number if it's not the 9th column */
-#airtable-data td:nth-child(9) {
+#airtable-data th:nth-child(3), /* Adjust the number if it's not the 9th column */
+#airtable-data td:nth-child(3) {
     max-width: 150px; /* Set the maximum width for the column */
     word-wrap: break-word;
     white-space: normal; /* Ensure text wraps to the next line */
     overflow-wrap: break-word;
+}
+
+#airtable-data td:nth-child(9) {
+background-color: #888581;
 }
 
 

@@ -12,10 +12,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const closeModal = document.querySelector(".close");
 
     const calendarLinks = [
-        { id: 'c_d113e252e0e5c8cfbf17a13149707a30d3c0fbeeff1baaac7a46940c2cc448ca@group.calendar.google.com', name: 'Charleston' },
-        { id: 'c_03867438b82e5dfd8d4d3b6096c8eb1c715425fa012054cc95f8dea7ef41c79b@group.calendar.google.com', name: 'Greensboro' },
-        { id: 'c_ad562073f4db2c47279af5aa40e53fc2641b12ad2497ccd925feb220a0f1abee@group.calendar.google.com', name: 'Myrtle Beach' },
-        { id: 'c_45db4e963c3363676038697855d7aacfd1075da441f9308e44714768d4a4f8de@group.calendar.google.com', name: 'Wilmington' },
+        { id: 'https://calendar.google.com/calendar/embed?src=c_d113e252e0e5c8cfbf17a13149707a30d3c0fbeeff1baaac7a46940c2cc448ca%40group.calendar.google.com&ctz=America%2FToronto', name: 'Charleston' },
+        { id: 'https://calendar.google.com/calendar/ical/c_03867438b82e5dfd8d4d3b6096c8eb1c715425fa012054cc95f8dea7ef41c79b%40group.calendar.google.com/public/basic.ics', name: 'Greensboro' },
+        { id: 'https://calendar.google.com/calendar/embed?src=c_ad562073f4db2c47279af5aa40e53fc2641b12ad2497ccd925feb220a0f1abee%40group.calendar.google.com&ctz=America%2FToronto', name: 'Myrtle Beach' },
+        { id: 'https://calendar.google.com/calendar/embed?src=c_45db4e963c3363676038697855d7aacfd1075da441f9308e44714768d4a4f8de%40group.calendar.google.com&ctz=America%2FToronto', name: 'Wilmington' },
         { id: 'https://calendar.google.com/calendar/embed?src=c_0476130ac741b9c58b404c737a8068a8b1b06ba1de2a84cff08c5d15ced54edf%40group.calendar.google.com&ctz=America%2FToronto', name: 'Greenville'},
         { id: 'https://calendar.google.com/calendar/embed?src=c_df033dd6c81bb3cbb5c6fdfd58dd2931e145e061b8a04ea0c13c79963cb6d515%40group.calendar.google.com&ctz=America%2FToronto', name: 'Columbia'},
         { id: 'https://calendar.google.com/calendar/embed?src=warranty%40vanirinstalledsales.com&ctz=America%2FToronto', name: 'Raleigh' }
@@ -238,7 +238,45 @@ allRecords = allRecords.filter(record => {
                         const optionElement = document.createElement('option');
                         optionElement.value = option;
                         optionElement.textContent = option;
-    
+                        
+                        // Apply colors based on option value
+                        if (field === 'Billable/ Non Billable') {
+                            if (option === 'Billable') {
+                                optionElement.style.backgroundColor = '#ffeb3b'; // yellow for Billable
+                                optionElement.style.color = '#000'; // black text for Billable
+                            } else if (option === 'Non Billable') {
+                                optionElement.style.backgroundColor = '#03a9f4'; // light blue for Non Billable
+                                optionElement.style.color = '#fff'; // white text for Non Billable
+                            }
+                        } else {
+                            switch (option) {
+                                case 'Pending Review':
+                                    optionElement.style.backgroundColor = '#d1d6f0'; // light blue
+                                    break;
+                                case 'Field Tech Review Needed':
+                                    optionElement.style.backgroundColor = '#c4e8c2'; // light green
+                                    break;
+                                case 'Material Purchase Needed':
+                                    optionElement.style.backgroundColor = '#cfeaf3'; // light cyan
+                                    break;
+                                case 'Scheduled- Awaiting Field':
+                                    optionElement.style.backgroundColor = '#fde4aa'; // light yellow
+                                    break;
+                                case 'Subcontractor To Pay':
+                                    optionElement.style.backgroundColor = '#c7e9e5'; // light teal
+                                    break;
+                                case 'Ready for Invoicing':
+                                    optionElement.style.backgroundColor = '#4caf50'; // green
+                                    break;
+                                case 'Completed':
+                                    optionElement.style.backgroundColor = '#1976d2'; // blue
+                                    break;
+                                case 'Closed':
+                                    optionElement.style.backgroundColor = '#f44336'; // red
+                                    break;
+                            }
+                        }
+
                         if (option === value) {
                             optionElement.selected = true;
                         }
@@ -378,4 +416,3 @@ allRecords = allRecords.filter(record => {
 
     fetchAllData();
 });
-

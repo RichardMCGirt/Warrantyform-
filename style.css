@@ -132,7 +132,7 @@ h1.visible {
 
 #airtable-data td.edited {
     background-color: #070707 !important; /* Light yellow color for edited cells */
-    color: #000;
+    color: white;
 }
 
 

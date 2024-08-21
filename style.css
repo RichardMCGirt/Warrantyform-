@@ -55,6 +55,41 @@ h1.visible {
     border: 2px solid #8B0000;
 }
 
+.zoomable-image {
+    transition: transform 0.2s; /* Animation */
+}
+.zoomable-image:hover {
+    transform: scale(2); /* Zoom in on hover */
+}
+
+.styled-select {
+    border-radius: 12px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+    transition: background-color 0.2s ease;
+}
+
+.styled-select:focus {
+    background-color: #e0e0e0;
+}
+
+.styled-select option {
+    padding: 10px;
+    border-radius: 8px;
+}
+
+/* Specific styles for Billable/Non-Billable select elements */
+.styled-select option[value='Billable'] {
+    background-color: #ffeb3b;
+    color: #000;
+}
+
+.styled-select option[value='Non Billable'] {
+    background-color: #03a9f4;
+    color: #fff;
+}
+
 .image-modal {
     display: none;
     position: fixed;

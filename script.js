@@ -201,17 +201,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 cell.dataset.field = field;
     
                 if (image && Array.isArray(fields[field])) {
-                    // Example URL construction that might cause issues
                     const imageUrl = fields[field][0].url;
-    
-                    // Ensure the URL is valid and properly formatted before using it
                     if (imageUrl) {
                         const imgElement = document.createElement('img');
                         imgElement.src = imageUrl;
                         imgElement.alt = "Issue Picture";
                         imgElement.style.maxWidth = '100px';
                         imgElement.style.height = 'auto';
-                        imgElement.classList.add('zoomable-image'); // Add class for zoom functionality
+                        imgElement.classList.add('zoomable-image');
                         cell.appendChild(imgElement);
                     } else {
                         console.error('Image URL is invalid or undefined:', imageUrl);
@@ -226,37 +223,48 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 } else if (dropdown) {
                     const select = document.createElement('select');
+                    select.classList.add('styled-select'); // Add class for styled select
                     options.forEach(option => {
                         const optionElement = document.createElement('option');
                         optionElement.value = option;
                         optionElement.textContent = option;
 
                         // Apply colors based on option value
-                        switch (option) {
-                            case 'Pending Review':
-                                optionElement.style.backgroundColor = '#d1d6f0'; // light blue
-                                break;
-                            case 'Field Tech Review Needed':
-                                optionElement.style.backgroundColor = '#c4e8c2'; // light green
-                                break;
-                            case 'Material Purchase Needed':
-                                optionElement.style.backgroundColor = '#cfeaf3'; // light cyan
-                                break;
-                            case 'Scheduled- Awaiting Field':
-                                optionElement.style.backgroundColor = '#fde4aa'; // light yellow
-                                break;
-                            case 'Subcontractor To Pay':
-                                optionElement.style.backgroundColor = '#c7e9e5'; // light teal
-                                break;
-                            case 'Ready for Invoicing':
-                                optionElement.style.backgroundColor = '#4caf50'; // green
-                                break;
-                            case 'Completed':
-                                optionElement.style.backgroundColor = '#1976d2'; // blue
-                                break;
-                            case 'Closed':
-                                optionElement.style.backgroundColor = '#f44336'; // red
-                                break;
+                        if (field === 'Billable/ Non Billable') {
+                            if (option === 'Billable') {
+                                optionElement.style.backgroundColor = '#ffeb3b'; // yellow for Billable
+                                optionElement.style.color = '#000'; // black text for Billable
+                            } else if (option === 'Non Billable') {
+                                optionElement.style.backgroundColor = '#03a9f4'; // light blue for Non Billable
+                                optionElement.style.color = '#fff'; // white text for Non Billable
+                            }
+                        } else {
+                            switch (option) {
+                                case 'Pending Review':
+                                    optionElement.style.backgroundColor = '#d1d6f0'; // light blue
+                                    break;
+                                case 'Field Tech Review Needed':
+                                    optionElement.style.backgroundColor = '#c4e8c2'; // light green
+                                    break;
+                                case 'Material Purchase Needed':
+                                    optionElement.style.backgroundColor = '#cfeaf3'; // light cyan
+                                    break;
+                                case 'Scheduled- Awaiting Field':
+                                    optionElement.style.backgroundColor = '#fde4aa'; // light yellow
+                                    break;
+                                case 'Subcontractor To Pay':
+                                    optionElement.style.backgroundColor = '#c7e9e5'; // light teal
+                                    break;
+                                case 'Ready for Invoicing':
+                                    optionElement.style.backgroundColor = '#4caf50'; // green
+                                    break;
+                                case 'Completed':
+                                    optionElement.style.backgroundColor = '#1976d2'; // blue
+                                    break;
+                                case 'Closed':
+                                    optionElement.style.backgroundColor = '#f44336'; // red
+                                    break;
+                            }
                         }
 
                         if (option === value) {
@@ -385,14 +393,3 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchAllData();
 });
 
-// Add this CSS for the image zoom functionality
-const style = document.createElement('style');
-style.innerHTML = `
-    .zoomable-image {
-        transition: transform 0.2s; /* Animation */
-    }
-    .zoomable-image:hover {
-        transform: scale(2.5); /* Zoom in on hover */
-    }
-`;
-document.head.appendChild(style);

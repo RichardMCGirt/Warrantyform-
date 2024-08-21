@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // Ensure the modal is hidden on page load
     modal.classList.remove('show');
 
+    let updatedFields = {}; // Object to store updated values before submission
+
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
         if (offset) url += `&offset=${offset}`;
@@ -183,8 +185,16 @@ allRecords = allRecords.filter(record => {
                     options: ['', 'Billable', 'Non Billable']
                 },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
-                { field: 'Contact Email', value: fields['Contact Email'] || 'N/A' },
-                { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
+                { 
+                    field: 'Contact Email', 
+                    value: fields['Contact Email'] || 'N/A', 
+                    email: true 
+                },
+                { 
+                    field: 'Lot Number and Community/Neighborhood', 
+                    value: fields['Lot Number and Community/Neighborhood'] || 'N/A', 
+                    directions: true 
+                },
                 {
                     field: 'StartDate',
                     value: fields['StartDate'] ? formatDateTime(fields['StartDate']) : 'N/A',
@@ -203,7 +213,7 @@ allRecords = allRecords.filter(record => {
                 },
             ];
     
-            fieldConfigs.forEach(({ field, value, editable = false, link = false, image = false, dropdown = false, options = [] }) => {
+            fieldConfigs.forEach(({ field, value, editable = false, link = false, image = false, dropdown = false, options = [], email = false, directions = false }) => {
                 const cell = document.createElement('td');
                 cell.dataset.id = record.id;
                 cell.dataset.field = field;
@@ -223,6 +233,11 @@ allRecords = allRecords.filter(record => {
                     } else {
                         console.error('Image URL is invalid or undefined:', imageUrl);
                     }
+                } else if (email) {
+                    cell.innerHTML = value ? `<a href="mailto:${value}">${value}</a>` : 'N/A';
+                } else if (directions) {
+                    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(value)}`;
+                    cell.innerHTML = value ? `<a href="${googleMapsUrl}" target="_blank">${value}</a>` : 'N/A';
                 } else if (field === 'b') {
                     const matchingCalendar = calendarLinks.find(calendar => calendar.name === value);
                     if (matchingCalendar) {
@@ -276,18 +291,18 @@ allRecords = allRecords.filter(record => {
                                     break;
                             }
                         }
-
+    
                         if (option === value) {
                             optionElement.selected = true;
                         }
                         select.appendChild(optionElement);
                     });
     
-                    select.addEventListener('change', async () => {
+                    // Store the selected value in the updatedFields object
+                    select.addEventListener('change', () => {
                         const newValue = select.value;
-                        console.log(`Updating ${field} for record ${record.id} to ${newValue}`);
-                        await updateRecord(record.id, { [field]: newValue });
-                        showToast('Record updated successfully');
+                        updatedFields[record.id] = updatedFields[record.id] || {};
+                        updatedFields[record.id][field] = newValue;
                     });
     
                     cell.appendChild(select);
@@ -304,20 +319,16 @@ allRecords = allRecords.filter(record => {
                     // Track original content to detect changes
                     const originalContent = cell.textContent;
                 
-                    cell.addEventListener('blur', async () => {
+                    cell.addEventListener('blur', () => {
                         const newValue = cell.textContent;
                         if (newValue !== originalContent) {
-                            console.log(`Updating ${field} for record ${record.id} to ${newValue}`);
-                            await updateRecord(record.id, { [field]: newValue });
-                
-                            // Add 'edited' class to indicate the change
+                            updatedFields[record.id] = updatedFields[record.id] || {};
+                            updatedFields[record.id][field] = newValue;
                             cell.classList.add('edited');
-                            showToast('Record updated successfully');
                         }
                     });
                 }
                 
-    
                 row.appendChild(cell);
             });
     
@@ -328,10 +339,12 @@ allRecords = allRecords.filter(record => {
     }
     
     
+    
     async function updateRecord(id, fields) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${id}`;
 
         console.log('Updating record with ID:', id); // Log record ID being updated
+        console.log('Data being sent to Airtable:', JSON.stringify({ fields }));
 
         try {
             const response = await fetch(url, {
@@ -343,14 +356,15 @@ allRecords = allRecords.filter(record => {
                 body: JSON.stringify({ fields })
             });
 
+            const responseBody = await response.json();
+
             if (!response.ok) {
-                console.error(`Error updating record: ${response.status} ${response.statusText}`);
+                console.error(`Error updating record: ${response.status} ${response.statusText}`, responseBody);
                 return;
             }
 
-            const updatedRecord = await response.json();
-            console.log('Record updated:', updatedRecord); // Log updated record
-            return updatedRecord;
+            console.log('Record updated:', responseBody); // Log updated record
+            return responseBody;
         } catch (error) {
             console.error('Error updating data in Airtable:', error);
         }
@@ -372,20 +386,11 @@ allRecords = allRecords.filter(record => {
     document.getElementById('submit-button').addEventListener('click', async () => {
         mainContent.style.display = 'none';
 
-        const tbody = document.querySelector('#airtable-data tbody');
-        const rows = tbody.querySelectorAll('tr');
-
-        for (const row of rows) {
-            const editableCell = row.querySelector('[contenteditable="true"]');
-            if (editableCell && editableCell.classList.contains('edited')) {
-                const recordId = editableCell.dataset.id;
-                const newValue = editableCell.textContent;
-                console.log(`Submitting change for record ${recordId}: ${newValue}`); // Log submission details
-                await updateRecord(recordId, { 'Materials Needed': newValue });
-                editableCell.classList.remove('edited');
-            }
+        for (const [recordId, fields] of Object.entries(updatedFields)) {
+            await updateRecord(recordId, fields);
         }
 
+        updatedFields = {}; // Clear the temporary storage
         mainContent.style.display = 'block';
 
         showToast('Changes submitted successfully!');

@@ -121,7 +121,7 @@ h1.visible {
 
 #airtable-data td[contenteditable="true"] {
     padding: 5px;
-    border: 1px solid #ddd;
+    border: 2px solid #ddd;
     background-color: #f9f9f9;
 }
 

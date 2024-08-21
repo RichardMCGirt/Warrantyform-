@@ -21,7 +21,6 @@ document.addEventListener('DOMContentLoaded', function () {
         { id: 'https://calendar.google.com/calendar/embed?src=warranty%40vanirinstalledsales.com&ctz=America%2FToronto', name: 'Raleigh' }
     ];
     
-
     // Ensure the modal is hidden on page load
     modal.classList.remove('show');
 
@@ -93,41 +92,37 @@ document.addEventListener('DOMContentLoaded', function () {
                 return address && address.toLowerCase() !== 'unknown, unknown, unknown, unknown';
             });
 
-            // Filter out records where EndDate is one day after today
-     // Filter out records where EndDate is before today
-   // Filter out records where EndDate is before today
-const today = new Date();
-today.setHours(0, 0, 0, 0); // Set the time to midnight to compare only dates
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set the time to midnight to compare only dates
 
-allRecords = allRecords.filter(record => {
-    const endDate = new Date(record.fields['EndDate']);
-    endDate.setHours(0, 0, 0, 0); // Set the time to midnight to compare only dates
-    return endDate.getTime() >= today.getTime();
-});
+            allRecords = allRecords.filter(record => {
+                const endDate = new Date(record.fields['EndDate']);
+                endDate.setHours(0, 0, 0, 0); // Set the time to midnight to compare only dates
+                return endDate.getTime() >= today.getTime();
+            });
 
-// Sort by StartDate first, then by field 'b'
-allRecords.sort((a, b) => {
-    const dateA = new Date(a.fields['StartDate']);
-    const dateB = new Date(b.fields['StartDate']);
+            // Sort by StartDate first, then by field 'b'
+            allRecords.sort((a, b) => {
+                const dateA = new Date(a.fields['StartDate']);
+                const dateB = new Date(b.fields['StartDate']);
 
-    // Compare StartDate
-    if (dateA < dateB) return -1;
-    if (dateA > dateB) return 1;
+                // Compare StartDate
+                if (dateA < dateB) return -1;
+                if (dateA > dateB) return 1;
 
-    // If StartDate is the same, compare by field 'b'
-    return (a.fields['b'] || '').localeCompare(b.fields['b'] || '');
-});
+                // If StartDate is the same, compare by field 'b'
+                return (a.fields['b'] || '').localeCompare(b.fields['b'] || '');
+            });
 
-await displayData(allRecords);
+            await displayData(allRecords);
 
-mainContent.style.display = 'block';
-headerTitle.classList.add('visible');
-setTimeout(() => {
-    mainContent.style.opacity = '1';
-}, 10);
-
- }, 1100);
- 
+            mainContent.style.display = 'block';
+            headerTitle.classList.add('visible');
+            setTimeout(() => {
+                mainContent.style.opacity = '1';
+            }, 10);
+    
+        }, 1100);
     }
 
     async function displayData(records) {
@@ -216,6 +211,7 @@ setTimeout(() => {
                         imgElement.alt = "Issue Picture";
                         imgElement.style.maxWidth = '100px';
                         imgElement.style.height = 'auto';
+                        imgElement.classList.add('zoomable-image'); // Add class for zoom functionality
                         cell.appendChild(imgElement);
                     } else {
                         console.error('Image URL is invalid or undefined:', imageUrl);
@@ -234,6 +230,35 @@ setTimeout(() => {
                         const optionElement = document.createElement('option');
                         optionElement.value = option;
                         optionElement.textContent = option;
+
+                        // Apply colors based on option value
+                        switch (option) {
+                            case 'Pending Review':
+                                optionElement.style.backgroundColor = '#d1d6f0'; // light blue
+                                break;
+                            case 'Field Tech Review Needed':
+                                optionElement.style.backgroundColor = '#c4e8c2'; // light green
+                                break;
+                            case 'Material Purchase Needed':
+                                optionElement.style.backgroundColor = '#cfeaf3'; // light cyan
+                                break;
+                            case 'Scheduled- Awaiting Field':
+                                optionElement.style.backgroundColor = '#fde4aa'; // light yellow
+                                break;
+                            case 'Subcontractor To Pay':
+                                optionElement.style.backgroundColor = '#c7e9e5'; // light teal
+                                break;
+                            case 'Ready for Invoicing':
+                                optionElement.style.backgroundColor = '#4caf50'; // green
+                                break;
+                            case 'Completed':
+                                optionElement.style.backgroundColor = '#1976d2'; // blue
+                                break;
+                            case 'Closed':
+                                optionElement.style.backgroundColor = '#f44336'; // red
+                                break;
+                        }
+
                         if (option === value) {
                             optionElement.selected = true;
                         }
@@ -270,8 +295,6 @@ setTimeout(() => {
     
         console.log('Data displayed in table');
     }
-    
-    
     
     async function updateRecord(id, fields) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${id}`;
@@ -361,3 +384,15 @@ setTimeout(() => {
 
     fetchAllData();
 });
+
+// Add this CSS for the image zoom functionality
+const style = document.createElement('style');
+style.innerHTML = `
+    .zoomable-image {
+        transition: transform 0.2s; /* Animation */
+    }
+    .zoomable-image:hover {
+        transform: scale(2.5); /* Zoom in on hover */
+    }
+`;
+document.head.appendChild(style);

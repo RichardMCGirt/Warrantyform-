@@ -92,17 +92,42 @@ document.addEventListener('DOMContentLoaded', function () {
                 const address = record.fields['Address'];
                 return address && address.toLowerCase() !== 'unknown, unknown, unknown, unknown';
             });
-    
-            allRecords.sort((a, b) => (a.fields['b'] || '').localeCompare(b.fields['b'] || ''));
-    
-            await displayData(allRecords);
-    
-            mainContent.style.display = 'block';
-            headerTitle.classList.add('visible');
-            setTimeout(() => {
-                mainContent.style.opacity = '1';
-            }, 10);
-        }, 1100);
+
+            // Filter out records where EndDate is one day after today
+     // Filter out records where EndDate is before today
+   // Filter out records where EndDate is before today
+const today = new Date();
+today.setHours(0, 0, 0, 0); // Set the time to midnight to compare only dates
+
+allRecords = allRecords.filter(record => {
+    const endDate = new Date(record.fields['EndDate']);
+    endDate.setHours(0, 0, 0, 0); // Set the time to midnight to compare only dates
+    return endDate.getTime() >= today.getTime();
+});
+
+// Sort by StartDate first, then by field 'b'
+allRecords.sort((a, b) => {
+    const dateA = new Date(a.fields['StartDate']);
+    const dateB = new Date(b.fields['StartDate']);
+
+    // Compare StartDate
+    if (dateA < dateB) return -1;
+    if (dateA > dateB) return 1;
+
+    // If StartDate is the same, compare by field 'b'
+    return (a.fields['b'] || '').localeCompare(b.fields['b'] || '');
+});
+
+await displayData(allRecords);
+
+mainContent.style.display = 'block';
+headerTitle.classList.add('visible');
+setTimeout(() => {
+    mainContent.style.opacity = '1';
+}, 10);
+
+ }, 1100);
+ 
     }
 
     async function displayData(records) {
@@ -155,6 +180,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     dropdown: true,
                     options: ['', 'Billable', 'Non Billable']
                 },
+                { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
+                { field: 'Contact Email', value: fields['Contact Email'] || 'N/A' },
+
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
                 {
                     field: 'StartDate',

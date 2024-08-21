@@ -11,6 +11,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById("materials-modal");
     const closeModal = document.querySelector(".close");
 
+    const calendarLinks = [
+        { id: 'c_d113e252e0e5c8cfbf17a13149707a30d3c0fbeeff1baaac7a46940c2cc448ca@group.calendar.google.com', name: 'Charleston' },
+        { id: 'c_03867438b82e5dfd8d4d3b6096c8eb1c715425fa012054cc95f8dea7ef41c79b@group.calendar.google.com', name: 'Greensboro' },
+        { id: 'c_ad562073f4db2c47279af5aa40e53fc2641b12ad2497ccd925feb220a0f1abee@group.calendar.google.com', name: 'Myrtle Beach' },
+        { id: 'c_45db4e963c3363676038697855d7aacfd1075da441f9308e44714768d4a4f8de@group.calendar.google.com', name: 'Wilmington' },
+        { id: 'https://calendar.google.com/calendar/embed?src=c_0476130ac741b9c58b404c737a8068a8b1b06ba1de2a84cff08c5d15ced54edf%40group.calendar.google.com&ctz=America%2FToronto', name: 'Greenville'},
+        { id: 'https://calendar.google.com/calendar/embed?src=c_df033dd6c81bb3cbb5c6fdfd58dd2931e145e061b8a04ea0c13c79963cb6d515%40group.calendar.google.com&ctz=America%2FToronto', name: 'Columbia'},
+        { id: 'https://calendar.google.com/calendar/embed?src=warranty%40vanirinstalledsales.com&ctz=America%2FToronto', name: 'Raleigh' }
+    ];
+    
+
     // Ensure the modal is hidden on page load
     modal.classList.remove('show');
 
@@ -41,25 +52,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function fetchAllData() {
         mainContent.style.display = 'none';
-
+    
         let loadProgress = 0;
         const loadInterval = setInterval(() => {
             loadProgress += (100 - loadProgress) * 0.1;
             const roundedProgress = Math.round(loadProgress);
-
+    
             loadingLogo.style.maskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
             loadingLogo.style.webkitMaskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
-
+    
             if (roundedProgress >= 99) {
                 clearInterval(loadInterval);
                 loadingLogo.classList.add('full-color');
             }
         }, 50);
-
+    
         setTimeout(async () => {
             let allRecords = [];
             let offset = null;
-
+    
             try {
                 do {
                     const data = await fetchData(offset);
@@ -73,16 +84,19 @@ document.addEventListener('DOMContentLoaded', function () {
             } catch (error) {
                 console.error('Error fetching all data:', error);
             }
-
+    
             console.log(`Total records fetched: ${allRecords.length}`); // Log the number of records fetched
-
-            // Filter out records with 'unknown' in the Address field
-            allRecords = allRecords.filter(record => record.fields['Address'] && record.fields['Address'].toLowerCase() !== 'unknown');
-
+    
+            // Filter out records with the exact Address "Unknown, Unknown, Unknown, Unknown"
+            allRecords = allRecords.filter(record => {
+                const address = record.fields['Address'];
+                return address && address.toLowerCase() !== 'unknown, unknown, unknown, unknown';
+            });
+    
             allRecords.sort((a, b) => (a.fields['b'] || '').localeCompare(b.fields['b'] || ''));
-
+    
             await displayData(allRecords);
-
+    
             mainContent.style.display = 'block';
             headerTitle.classList.add('visible');
             setTimeout(() => {
@@ -126,14 +140,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     'Scheduled- Awaiting Field', 'Subcontractor To Pay', 'Ready for Invoicing', 
                     'Completed', 'Closed'
                 ]},
-                { field: 'b', value: fields['b'] || 'N/A' },
+                {
+                    field: 'b',
+                    value: fields['b'] || 'N/A',
+                    link: true
+                },
                 { field: 'Address', value: fields['Address'] || 'N/A' },
-                { field: 'Calendar Link', value: fields['Calendar Link'] || 'N/A', link: true },
                 { field: 'Builders', value: fields['Builders'] || 'N/A' },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || '', image: true, editable: true },
                 {
                     field: 'Billable/ Non Billable',
-                    value: fields['Billable/ Non Billable'] || '', // Leave blank if no value
+                    value: fields['Billable/ Non Billable'] || '',
                     editable: true,
                     dropdown: true,
                     options: ['', 'Billable', 'Non Billable']
@@ -160,7 +177,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 cell.dataset.id = record.id;
                 cell.dataset.field = field;
     
-                if (dropdown) {
+                if (field === 'b') {
+                    const matchingCalendar = calendarLinks.find(calendar => calendar.name === value);
+                    if (matchingCalendar) {
+                        value = `<a href="${matchingCalendar.id}" target="_blank">${value}</a>`;
+                        cell.innerHTML = value;
+                    } else {
+                        cell.textContent = value;
+                    }
+                } else if (dropdown) {
                     const select = document.createElement('select');
                     options.forEach(option => {
                         const optionElement = document.createElement('option');
@@ -174,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
                     select.addEventListener('change', async () => {
                         const newValue = select.value;
-                        console.log(`Updating ${field} for record ${record.id} to ${newValue}`); // Log the change
+                        console.log(`Updating ${field} for record ${record.id} to ${newValue}`);
                         await updateRecord(record.id, { [field]: newValue });
                         showToast('Record updated successfully');
                     });
@@ -185,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else if (image && Array.isArray(fields[field])) {
                     const images = fields[field].map(url => `<img src="${url}" alt="Issue Picture" style="max-width: 100px; height: auto;"/>`).join('');
                     cell.innerHTML = images;
-
+    
                     if (editable) {
                         const fileInput = document.createElement('input');
                         fileInput.type = 'file';
@@ -197,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 const reader = new FileReader();
                                 reader.onload = async (e) => {
                                     const newImageUrl = e.target.result;
-                                    fields[field].push(newImageUrl); // Add new image to existing images
+                                    fields[field].push(newImageUrl);
                                     await updateRecord(record.id, { [field]: fields[field] });
                                     showToast('Picture uploaded successfully');
                                 };
@@ -206,7 +231,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         });
                         cell.appendChild(fileInput);
                     }
-
+    
                 } else {
                     cell.textContent = value;
                 }
@@ -214,8 +239,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (editable && !dropdown && !image) {
                     cell.setAttribute('contenteditable', 'true');
                     cell.addEventListener('click', () => {
-                        modal.style.display = "flex"; // Show the modal
-                        setTimeout(() => modal.classList.add('show'), 10); // Add animation class after a short delay
+                        modal.style.display = "flex";
+                        setTimeout(() => modal.classList.add('show'), 10);
                     });
                 }
     
@@ -225,8 +250,9 @@ document.addEventListener('DOMContentLoaded', function () {
             tbody.appendChild(row);
         });
     
-        console.log('Data displayed in table'); // Log when data is displayed
+        console.log('Data displayed in table');
     }
+    
     
     async function updateRecord(id, fields) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${id}`;

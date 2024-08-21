@@ -90,6 +90,16 @@ h1.visible {
     color: #fff;
 }
 
+/* Ensure the 'Lot Number and Community' column is more narrow and text wraps */
+#airtable-data th:nth-child(9), /* Adjust the number if it's not the 9th column */
+#airtable-data td:nth-child(9) {
+    max-width: 150px; /* Set the maximum width for the column */
+    word-wrap: break-word;
+    white-space: normal; /* Ensure text wraps to the next line */
+    overflow-wrap: break-word;
+}
+
+
 .image-modal {
     display: none;
     position: fixed;
@@ -102,6 +112,29 @@ h1.visible {
     background-color: rgb(0,0,0);
     background-color: rgba(0,0,0,0.9);
 }
+#airtable-data td {
+    white-space: normal;
+    word-wrap: break-word;
+    max-width: 200px; /* You can adjust this width as needed */
+    text-align: center;
+}
+
+#airtable-data td[contenteditable="true"] {
+    padding: 5px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+}
+
+#airtable-data td.editable-cell {
+    background-color: #888581; /* Light background to indicate editability */
+    cursor: text;
+}
+
+#airtable-data td.edited {
+    background-color: #070707 !important; /* Light yellow color for edited cells */
+    color: #000;
+}
+
 
 .modal-content {
     margin: auto;

@@ -86,11 +86,18 @@ document.addEventListener('DOMContentLoaded', function () {
     
             console.log(`Total records fetched: ${allRecords.length}`); // Log the number of records fetched
     
-            // Filter out records with the exact Address "Unknown, Unknown, Unknown, Unknown"
-            allRecords = allRecords.filter(record => {
-                const address = record.fields['Address'];
-                return address && address.toLowerCase() !== 'unknown, unknown, unknown, unknown';
-            });
+      // Filter out records with the exact Address "Unknown, Unknown, Unknown, Unknown" 
+// and only show records where the Status field is "Field Tech Review Needed"
+allRecords = allRecords.filter(record => {
+    const address = record.fields['Address'];
+    const status = record.fields['Status'];
+    
+    return (
+        address && address.toLowerCase() !== 'unknown, unknown, unknown, unknown' && 
+        status && status === 'Field Tech Review Needed'
+    );
+});
+
 
             const today = new Date();
             today.setHours(0, 0, 0, 0); // Set the time to midnight to compare only dates
@@ -177,7 +184,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A' },
-    
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
                 {
                     field: 'StartDate',
@@ -189,9 +195,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A',
                     editable: true
                 },
+                { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
                 {
                     field: 'description',
-                    value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A'
+                    value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A',
+                    editable: true
                 },
             ];
     
@@ -199,6 +207,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const cell = document.createElement('td');
                 cell.dataset.id = record.id;
                 cell.dataset.field = field;
+                cell.style.wordWrap = 'break-word';
+                cell.style.maxWidth = '200px';
     
                 if (image && Array.isArray(fields[field])) {
                     const imageUrl = fields[field][0].url;
@@ -223,50 +233,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 } else if (dropdown) {
                     const select = document.createElement('select');
-                    select.classList.add('styled-select'); // Add class for styled select
+                    select.classList.add('styled-select');
                     options.forEach(option => {
                         const optionElement = document.createElement('option');
                         optionElement.value = option;
                         optionElement.textContent = option;
-
-                        // Apply colors based on option value
-                        if (field === 'Billable/ Non Billable') {
-                            if (option === 'Billable') {
-                                optionElement.style.backgroundColor = '#ffeb3b'; // yellow for Billable
-                                optionElement.style.color = '#000'; // black text for Billable
-                            } else if (option === 'Non Billable') {
-                                optionElement.style.backgroundColor = '#03a9f4'; // light blue for Non Billable
-                                optionElement.style.color = '#fff'; // white text for Non Billable
-                            }
-                        } else {
-                            switch (option) {
-                                case 'Pending Review':
-                                    optionElement.style.backgroundColor = '#d1d6f0'; // light blue
-                                    break;
-                                case 'Field Tech Review Needed':
-                                    optionElement.style.backgroundColor = '#c4e8c2'; // light green
-                                    break;
-                                case 'Material Purchase Needed':
-                                    optionElement.style.backgroundColor = '#cfeaf3'; // light cyan
-                                    break;
-                                case 'Scheduled- Awaiting Field':
-                                    optionElement.style.backgroundColor = '#fde4aa'; // light yellow
-                                    break;
-                                case 'Subcontractor To Pay':
-                                    optionElement.style.backgroundColor = '#c7e9e5'; // light teal
-                                    break;
-                                case 'Ready for Invoicing':
-                                    optionElement.style.backgroundColor = '#4caf50'; // green
-                                    break;
-                                case 'Completed':
-                                    optionElement.style.backgroundColor = '#1976d2'; // blue
-                                    break;
-                                case 'Closed':
-                                    optionElement.style.backgroundColor = '#f44336'; // red
-                                    break;
-                            }
-                        }
-
+    
                         if (option === value) {
                             optionElement.selected = true;
                         }
@@ -289,11 +261,24 @@ document.addEventListener('DOMContentLoaded', function () {
     
                 if (editable && !dropdown && !image) {
                     cell.setAttribute('contenteditable', 'true');
-                    cell.addEventListener('click', () => {
-                        modal.style.display = "flex";
-                        setTimeout(() => modal.classList.add('show'), 10);
+                    cell.classList.add('editable-cell'); // Add a class for custom styling if needed
+                
+                    // Track original content to detect changes
+                    const originalContent = cell.textContent;
+                
+                    cell.addEventListener('blur', async () => {
+                        const newValue = cell.textContent;
+                        if (newValue !== originalContent) {
+                            console.log(`Updating ${field} for record ${record.id} to ${newValue}`);
+                            await updateRecord(record.id, { [field]: newValue });
+                
+                            // Add 'edited' class to indicate the change
+                            cell.classList.add('edited');
+                            showToast('Record updated successfully');
+                        }
                     });
                 }
+                
     
                 row.appendChild(cell);
             });
@@ -303,6 +288,7 @@ document.addEventListener('DOMContentLoaded', function () {
     
         console.log('Data displayed in table');
     }
+    
     
     async function updateRecord(id, fields) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${id}`;

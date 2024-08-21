@@ -164,36 +164,25 @@ allRecords = allRecords.filter(record => {
             const row = document.createElement('tr');
     
             const fieldConfigs = [
-                { field: 'Status', value: fields['Status'] || '', editable: true, dropdown: true, options: [
-                    'Pending Review', 'Field Tech Review Needed', 'Material Purchase Needed', 
-                    'Scheduled- Awaiting Field', 'Subcontractor To Pay', 'Ready for Invoicing', 
-                    'Completed', 'Closed'
-                ]},
+       
                 {
                     field: 'b',
                     value: fields['b'] || 'N/A',
                     link: true
                 },
-                { field: 'Address', value: fields['Address'] || 'N/A' },
                 { field: 'Builders', value: fields['Builders'] || 'N/A' },
-                { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || '', image: true },
-                {
-                    field: 'Billable/ Non Billable',
-                    value: fields['Billable/ Non Billable'] || '',
-                    editable: true,
-                    dropdown: true,
-                    options: ['', 'Billable', 'Non Billable']
-                },
-                { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
-                { 
-                    field: 'Contact Email', 
-                    value: fields['Contact Email'] || 'N/A', 
-                    email: true 
-                },
                 { 
                     field: 'Lot Number and Community/Neighborhood', 
                     value: fields['Lot Number and Community/Neighborhood'] || 'N/A', 
                     directions: true 
+                },
+                { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
+
+                { field: 'Address', value: fields['Address'] || 'N/A' },
+                {
+                    field: 'description',
+                    value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A',
+                    editable: true
                 },
                 {
                     field: 'StartDate',
@@ -205,12 +194,25 @@ allRecords = allRecords.filter(record => {
                     value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A',
                     editable: true
                 },
+                { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || '', image: true },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
+
                 {
-                    field: 'description',
-                    value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A',
-                    editable: true
+                    field: 'Billable/ Non Billable',
+                    value: fields['Billable/ Non Billable'] || '',
+                    editable: true,
+                    dropdown: true,
+                    options: ['', 'Billable', 'Non Billable']
                 },
+                { 
+                    field: 'Contact Email', 
+                    value: fields['Contact Email'] || 'N/A', 
+                    email: true 
+                },
+                
+             
+             
+             
             ];
     
             fieldConfigs.forEach(({ field, value, editable = false, link = false, image = false, dropdown = false, options = [], email = false, directions = false }) => {

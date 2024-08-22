@@ -135,7 +135,7 @@ background-color: #888581;
 }
 
 #airtable-data td.edited {
-    background-color: #070707 !important; /* Light yellow color for edited cells */
+    background-color: rgb(85, 82, 82) !important; /* Light yellow color for edited cells */
     color: white;
 }
 

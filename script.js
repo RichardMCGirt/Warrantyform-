@@ -88,18 +88,17 @@ document.addEventListener('DOMContentLoaded', function () {
     
             console.log(`Total records fetched: ${allRecords.length}`); // Log the number of records fetched
     
-      // Filter out records with the exact Address "Unknown, Unknown, Unknown, Unknown" 
-// and only show records where the Status field is "Field Tech Review Needed"
-allRecords = allRecords.filter(record => {
-    const address = record.fields['Address'];
-    const status = record.fields['Status'];
-    
-    return (
-        address && address.toLowerCase() !== 'unknown, unknown, unknown, unknown' && 
-        status && status === 'Field Tech Review Needed'
-    );
-});
-
+            // Filter out records with the exact Address "Unknown, Unknown, Unknown, Unknown" 
+            // and only show records where the Status field is "Field Tech Review Needed"
+            allRecords = allRecords.filter(record => {
+                const address = record.fields['Address'];
+                const status = record.fields['Status'];
+                
+                return (
+                    address && address.toLowerCase() !== 'unknown, unknown, unknown, unknown' && 
+                    status && status === 'Field Tech Review Needed'
+                );
+            });
 
             const today = new Date();
             today.setHours(0, 0, 0, 0); // Set the time to midnight to compare only dates
@@ -164,12 +163,7 @@ allRecords = allRecords.filter(record => {
             const row = document.createElement('tr');
     
             const fieldConfigs = [
-       
-                {
-                    field: 'b',
-                    value: fields['b'] || 'N/A',
-                    link: true
-                },
+                { field: 'b', value: fields['b'] || 'N/A', link: true },
                 { field: 'Builders', value: fields['Builders'] || 'N/A' },
                 { 
                     field: 'Lot Number and Community/Neighborhood', 
@@ -177,27 +171,22 @@ allRecords = allRecords.filter(record => {
                     directions: true 
                 },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
-
                 { field: 'Address', value: fields['Address'] || 'N/A' },
-                {
+                { 
                     field: 'description',
-                    value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A',
-                    editable: true
+                    value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' 
                 },
-                {
+                { 
                     field: 'StartDate',
-                    value: fields['StartDate'] ? formatDateTime(fields['StartDate']) : 'N/A',
-                    editable: true
+                    value: fields['StartDate'] ? formatDateTime(fields['StartDate']) : 'N/A' 
                 },
-                {
+                { 
                     field: 'EndDate',
-                    value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A',
-                    editable: true
+                    value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A' 
                 },
-                { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || '', image: true },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
-
-                {
+                { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || '', image: true },
+                { 
                     field: 'Billable/ Non Billable',
                     value: fields['Billable/ Non Billable'] || '',
                     editable: true,
@@ -209,13 +198,14 @@ allRecords = allRecords.filter(record => {
                     value: fields['Contact Email'] || 'N/A', 
                     email: true 
                 },
-                
-             
-             
-             
+                { 
+                    field: 'Field Review Needed', 
+                    value: fields['Field Review Needed'] || false, 
+                    checkbox: true 
+                }
             ];
     
-            fieldConfigs.forEach(({ field, value, editable = false, link = false, image = false, dropdown = false, options = [], email = false, directions = false }) => {
+            fieldConfigs.forEach(({ field, value, checkbox = false, editable = false, link = false, image = false, dropdown = false, options = [], email = false, directions = false }) => {
                 const cell = document.createElement('td');
                 cell.dataset.id = record.id;
                 cell.dataset.field = field;
@@ -265,34 +255,7 @@ allRecords = allRecords.filter(record => {
                                 optionElement.style.backgroundColor = '#03a9f4'; // light blue for Non Billable
                                 optionElement.style.color = '#fff'; // white text for Non Billable
                             }
-                        } else {
-                            switch (option) {
-                                case 'Pending Review':
-                                    optionElement.style.backgroundColor = '#d1d6f0'; // light blue
-                                    break;
-                                case 'Field Tech Review Needed':
-                                    optionElement.style.backgroundColor = '#c4e8c2'; // light green
-                                    break;
-                                case 'Material Purchase Needed':
-                                    optionElement.style.backgroundColor = '#cfeaf3'; // light cyan
-                                    break;
-                                case 'Scheduled- Awaiting Field':
-                                    optionElement.style.backgroundColor = '#fde4aa'; // light yellow
-                                    break;
-                                case 'Subcontractor To Pay':
-                                    optionElement.style.backgroundColor = '#c7e9e5'; // light teal
-                                    break;
-                                case 'Ready for Invoicing':
-                                    optionElement.style.backgroundColor = '#4caf50'; // green
-                                    break;
-                                case 'Completed':
-                                    optionElement.style.backgroundColor = '#1976d2'; // blue
-                                    break;
-                                case 'Closed':
-                                    optionElement.style.backgroundColor = '#f44336'; // red
-                                    break;
-                            }
-                        }
+                        } 
     
                         if (option === value) {
                             optionElement.selected = true;
@@ -308,6 +271,27 @@ allRecords = allRecords.filter(record => {
                     });
     
                     cell.appendChild(select);
+                } else if (checkbox) {
+                    const checkboxElement = document.createElement('input');
+                    checkboxElement.type = 'checkbox';
+                    checkboxElement.checked = value;
+
+                    // Apply green color to the checkbox
+                    checkboxElement.style.accentColor = checkboxElement.checked ? 'green' : '';
+
+                    checkboxElement.addEventListener('change', async function () {
+                        const newValue = checkboxElement.checked;
+                        updatedFields[record.id] = updatedFields[record.id] || {};
+                        updatedFields[record.id][field] = newValue;
+
+                        // Update Airtable record with new checkbox value
+                        await updateRecord(record.id, { [field]: newValue });
+                        
+                        // Update checkbox color
+                        checkboxElement.style.accentColor = newValue ? 'green' : '';
+                    });
+
+                    cell.appendChild(checkboxElement);
                 } else if (link) {
                     cell.innerHTML = value ? `<a href="${value}" target="_blank">${value}</a>` : 'N/A';
                 } else {
@@ -339,9 +323,7 @@ allRecords = allRecords.filter(record => {
     
         console.log('Data displayed in table');
     }
-    
-    
-    
+
     async function updateRecord(id, fields) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${id}`;
 

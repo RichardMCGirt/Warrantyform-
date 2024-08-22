@@ -275,9 +275,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const checkboxElement = document.createElement('input');
                     checkboxElement.type = 'checkbox';
                     checkboxElement.checked = value;
-
-                    // Apply green color to the checkbox
-                    checkboxElement.style.accentColor = checkboxElement.checked ? 'green' : '';
+                    checkboxElement.classList.add('custom-checkbox');
 
                     checkboxElement.addEventListener('change', async function () {
                         const newValue = checkboxElement.checked;

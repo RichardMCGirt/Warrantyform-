@@ -62,6 +62,39 @@ h1.visible {
     transform: scale(2); /* Zoom in on hover */
 }
 
+.custom-checkbox {
+    width: 25px;
+    height: 25px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    border: 2px solid #9e9e9e;
+    display: inline-block;
+    position: relative;
+    transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
+}
+
+.custom-checkbox:checked {
+    background-color: rgb(103, 223, 103);
+    border-color: green;
+    transform: scale(1.1);
+}
+
+.custom-checkbox:checked::after {
+    content: '';
+    position: absolute;
+    left: 7px;
+    width: 6px;
+    height: 14px;
+    border: solid green; /* Changed the checkmark color to black */
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg);
+}
+
+
 .styled-select {
     border-radius: 12px;
     padding: 5px;
@@ -91,15 +124,19 @@ h1.visible {
 }
 
 /* Ensure the 'Lot Number and Community' column is more narrow and text wraps */
-#airtable-data th:nth-child(3), /* Adjust the number if it's not the 9th column */
-#airtable-data td:nth-child(3) {
-    max-width: 150px; /* Set the maximum width for the column */
+#airtable-data th:nth-child(3), 
+#airtable-data td:nth-child(3),
+#airtable-data th:nth-child(5), 
+#airtable-data td:nth-child(5) {
+    max-width: 150px; 
     word-wrap: break-word;
-    white-space: normal; /* Ensure text wraps to the next line */
+    white-space: normal; 
     overflow-wrap: break-word;
 }
 
-#airtable-data td:nth-child(9) {
+#airtable-data td:nth-child(9),
+#airtable-data td:nth-child(11),
+#airtable-data td:nth-child(13) {
 background-color: #888581;
 }
 

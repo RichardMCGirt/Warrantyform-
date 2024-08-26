@@ -31,8 +31,6 @@ document.addEventListener('DOMContentLoaded', function () {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
         if (offset) url += `&offset=${offset}`;
 
-        console.log('Fetching data from:', url); // Log URL for debugging
-
         try {
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
@@ -44,7 +42,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const data = await response.json();
-            console.log('Data fetched:', data); // Log fetched data
             return data;
         } catch (error) {
             console.error('Error fetching data from Airtable:', error);
@@ -195,7 +192,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 { 
                     field: 'Billable/ Non Billable',
                     value: fields['Billable/ Non Billable'] || '',
-                    editable: true,
                     dropdown: true,
                     options: ['', 'Billable', 'Non Billable']
                 },
@@ -219,18 +215,56 @@ document.addEventListener('DOMContentLoaded', function () {
                 cell.style.maxWidth = '200px';
     
                 if (image && Array.isArray(fields[field])) {
-                    const imageUrl = fields[field][0].url;
-                    if (imageUrl) {
-                        const imgElement = document.createElement('img');
-                        imgElement.src = imageUrl;
-                        imgElement.alt = "Issue Picture";
-                        imgElement.style.maxWidth = '100px';
-                        imgElement.style.height = 'auto';
-                        imgElement.classList.add('zoomable-image');
-                        cell.appendChild(imgElement);
-                    } else {
-                        console.error('Image URL is invalid or undefined:', imageUrl);
+                    const images = fields[field].map(img => img.url);
+                    const carouselDiv = document.createElement('div');
+                    carouselDiv.classList.add('image-carousel');
+                    
+                    const imgElement = document.createElement('img');
+                    imgElement.src = images[0];
+                    imgElement.alt = "Issue Picture";
+                    imgElement.style.maxWidth = '100px';
+                    imgElement.style.height = 'auto';
+                    imgElement.classList.add('carousel-image');
+                    carouselDiv.appendChild(imgElement);
+
+                    const imageCount = document.createElement('div');
+                    imageCount.classList.add('image-count');
+                    imageCount.textContent = `1 of ${images.length}`;
+                    carouselDiv.appendChild(imageCount);
+
+                    if (images.length > 1) {
+                        let currentIndex = 0;
+
+                      // Create previous button
+const prevButton = document.createElement('button');
+prevButton.textContent = '<';
+prevButton.classList.add('carousel-nav-button', 'prev'); // Add 'prev' class for left position
+prevButton.onclick = () => {
+    currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
+    imgElement.src = images[currentIndex];
+    imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
+};
+
+// Create next button
+const nextButton = document.createElement('button');
+nextButton.textContent = '>';
+nextButton.classList.add('carousel-nav-button', 'next'); // Add 'next' class for right position
+nextButton.onclick = () => {
+    currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
+    imgElement.src = images[currentIndex];
+    imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
+};
+
+// Append buttons to the carousel container
+carouselDiv.appendChild(prevButton);
+carouselDiv.appendChild(nextButton);
+
                     }
+
+                   
+                  
+
+                    cell.appendChild(carouselDiv);
                 } else if (email) {
                     cell.innerHTML = value ? `<a href="mailto:${value}">${value}</a>` : 'N/A';
                 } else if (directions) {
@@ -333,35 +367,55 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('Data displayed in table');
     }
 
-    async function updateRecord(id, fields) {
-        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${id}`;
+  async function updateRecord(id, fields) {
+    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${id}`;
+    const formData = new FormData();
 
-        console.log('Updating record with ID:', id); // Log record ID being updated
-        console.log('Data being sent to Airtable:', JSON.stringify({ fields }));
-
-        try {
-            const response = await fetch(url, {
-                method: 'PATCH',
-                headers: {
-                    Authorization: `Bearer ${airtableApiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ fields })
+    // Check if there are new files to upload
+    for (const [field, value] of Object.entries(fields)) {
+        if (Array.isArray(value)) {
+            value.forEach((file, index) => {
+                if (file instanceof File) {
+                    formData.append(`attachments[${field}][${index}]`, file);
+                } else {
+                    // If the value is not a file, ensure it is a valid attachment URL
+                    if (typeof file === 'string' && file.startsWith('http')) {
+                        formData.append(`attachments[${field}]`, file);
+                    } else {
+                        console.error(`Invalid file format for field "${field}"`);
+                    }
+                }
             });
-
-            const responseBody = await response.json();
-
-            if (!response.ok) {
-                console.error(`Error updating record: ${response.status} ${response.statusText}`, responseBody);
-                return;
-            }
-
-            console.log('Record updated:', responseBody); // Log updated record
-            return responseBody;
-        } catch (error) {
-            console.error('Error updating data in Airtable:', error);
+        } else {
+            formData.append(field, value);
         }
     }
+
+    try {
+        console.log('Sending request to Airtable:', url, formData);
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                Authorization: `Bearer ${airtableApiKey}`
+            },
+            body: formData
+        });
+
+        const responseBody = await response.json();
+        console.log('Response from Airtable:', responseBody);
+
+        if (!response.ok) {
+            console.error(`Error updating record: ${response.status} ${response.statusText}`, responseBody);
+            return;
+        }
+
+        console.log('Record updated:', responseBody); // Log updated record
+        return responseBody;
+    } catch (error) {
+        console.error('Error updating data in Airtable:', error);
+    }
+}
+
 
     function showToast(message) {
         toast.textContent = message;

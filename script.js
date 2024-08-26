@@ -20,11 +20,12 @@ document.addEventListener('DOMContentLoaded', function () {
         { id: 'https://calendar.google.com/calendar/embed?src=c_df033dd6c81bb3cbb5c6fdfd58dd2931e145e061b8a04ea0c13c79963cb6d515%40group.calendar.google.com&ctz=America%2FToronto', name: 'Columbia'},
         { id: 'https://calendar.google.com/calendar/embed?src=warranty%40vanirinstalledsales.com&ctz=America%2FToronto', name: 'Raleigh' }
     ];
-    
+
     // Ensure the modal is hidden on page load
     modal.classList.remove('show');
 
     let updatedFields = {}; // Object to store updated values before submission
+    let hasChanges = false; // Flag to track if any changes were made
 
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
@@ -190,7 +191,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     email: true 
                 },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || '', image: true },
-
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
                 { 
                     field: 'Billable/ Non Billable',
@@ -199,10 +199,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     dropdown: true,
                     options: ['', 'Billable', 'Non Billable']
                 },
-             
                 { 
                     field: 'Field Review Needed', 
                     value: fields['Field Review Needed'] || false, 
+                    checkbox: true 
+                },
+                { 
+                    field: 'Field Review Not Needed', 
+                    value: fields['Field Review Not Needed'] || false, 
                     checkbox: true 
                 }
             ];
@@ -270,6 +274,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         const newValue = select.value;
                         updatedFields[record.id] = updatedFields[record.id] || {};
                         updatedFields[record.id][field] = newValue;
+                        hasChanges = true; // Mark as changed
                     });
     
                     cell.appendChild(select);
@@ -279,16 +284,28 @@ document.addEventListener('DOMContentLoaded', function () {
                     checkboxElement.checked = value;
                     checkboxElement.classList.add('custom-checkbox');
 
-                    checkboxElement.addEventListener('change', async function () {
+                    checkboxElement.addEventListener('change', function () {
                         const newValue = checkboxElement.checked;
                         updatedFields[record.id] = updatedFields[record.id] || {};
                         updatedFields[record.id][field] = newValue;
+                        hasChanges = true; // Mark as changed
 
-                        // Update Airtable record with new checkbox value
-                        await updateRecord(record.id, { [field]: newValue });
-                        
-                        // Update checkbox color
-                        checkboxElement.style.accentColor = newValue ? 'green' : '';
+                        // Validation: Ensure both checkboxes cannot be checked simultaneously
+                        if (field === 'Field Review Needed' && newValue) {
+                            const otherCheckbox = cell.parentElement.querySelector('input[data-field="Field Review Not Needed"]');
+                            if (otherCheckbox) {
+                                otherCheckbox.checked = false;
+                                updatedFields[record.id]['Field Review Not Needed'] = false;
+                            }
+                        } else if (field === 'Field Review Not Needed' && newValue) {
+                            const otherCheckbox = cell.parentElement.querySelector('input[data-field="Field Review Needed"]');
+                            if (otherCheckbox) {
+                                otherCheckbox.checked = false;
+                                updatedFields[record.id]['Field Review Needed'] = false;
+                            }
+                            // Store status change only locally if "Field Review Not Needed" is checked
+                            updatedFields[record.id]['Status'] = 'Material Purchase Needed';
+                        }
                     });
 
                     cell.appendChild(checkboxElement);
@@ -311,6 +328,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             updatedFields[record.id] = updatedFields[record.id] || {};
                             updatedFields[record.id][field] = newValue;
                             cell.classList.add('edited');
+                            hasChanges = true; // Mark as changed
                         }
                     });
                 }
@@ -368,6 +386,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.getElementById('submit-button').addEventListener('click', async () => {
+        if (!hasChanges) {
+            showToast('No changes to submit.');
+            return;
+        }
+
         mainContent.style.display = 'none';
 
         for (const [recordId, fields] of Object.entries(updatedFields)) {
@@ -375,9 +398,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         updatedFields = {}; // Clear the temporary storage
+        hasChanges = false; // Reset the changes flag
         mainContent.style.display = 'block';
 
         showToast('Changes submitted successfully!');
+        fetchAllData(); // Refresh data only if there were changes
     });
 
     document.getElementById('search-input').addEventListener('input', function () {

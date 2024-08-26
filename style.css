@@ -136,6 +136,7 @@ h1.visible {
 
 #airtable-data td:nth-child(12),
 #airtable-data td:nth-child(11),
+#airtable-data td:nth-child(14)
 #airtable-data td:nth-child(13) {
 background-color: #888581;
 }

@@ -140,6 +140,12 @@ h1.visible {
 background-color: #888581;
 }
 
+#airtable-data {
+    max-width: 85%;
+    width: 100%;
+    margin: 0 auto;
+    border-collapse: collapse;
+}
 
 .image-modal {
     display: none;

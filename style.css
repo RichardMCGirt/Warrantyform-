@@ -134,7 +134,7 @@ h1.visible {
     overflow-wrap: break-word;
 }
 
-#airtable-data td:nth-child(9),
+#airtable-data td:nth-child(12),
 #airtable-data td:nth-child(11),
 #airtable-data td:nth-child(13) {
 background-color: #888581;

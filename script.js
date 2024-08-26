@@ -184,8 +184,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     field: 'EndDate',
                     value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A' 
                 },
-                { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
+                { 
+                    field: 'Contact Email', 
+                    value: fields['Contact Email'] || 'N/A', 
+                    email: true 
+                },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || '', image: true },
+
+                { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
                 { 
                     field: 'Billable/ Non Billable',
                     value: fields['Billable/ Non Billable'] || '',
@@ -193,11 +199,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     dropdown: true,
                     options: ['', 'Billable', 'Non Billable']
                 },
-                { 
-                    field: 'Contact Email', 
-                    value: fields['Contact Email'] || 'N/A', 
-                    email: true 
-                },
+             
                 { 
                     field: 'Field Review Needed', 
                     value: fields['Field Review Needed'] || false, 

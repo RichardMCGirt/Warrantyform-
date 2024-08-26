@@ -16,8 +16,8 @@ document.addEventListener('DOMContentLoaded', function () {
         { id: 'https://calendar.google.com/calendar/ical/c_03867438b82e5dfd8d4d3b6096c8eb1c715425fa012054cc95f8dea7ef41c79b%40group.calendar.google.com/public/basic.ics', name: 'Greensboro' },
         { id: 'https://calendar.google.com/calendar/embed?src=c_ad562073f4db2c47279af5aa40e53fc2641b12ad2497ccd925feb220a0f1abee%40group.calendar.google.com&ctz=America%2FToronto', name: 'Myrtle Beach' },
         { id: 'https://calendar.google.com/calendar/embed?src=c_45db4e963c3363676038697855d7aacfd1075da441f9308e44714768d4a4f8de%40group.calendar.google.com&ctz=America%2FToronto', name: 'Wilmington' },
-        { id: 'https://calendar.google.com/calendar/embed?src=c_0476130ac741b9c58b404c737a8068a8b1b06ba1de2a84cff08c5d15ced54edf%40group.calendar.google.com&ctz=America%2FToronto', name: 'Greenville'},
-        { id: 'https://calendar.google.com/calendar/embed?src=c_df033dd6c81bb3cbb5c6fdfd58dd2931e145e061b8a04ea0c13c79963cb6d515%40group.calendar.google.com&ctz=America%2FToronto', name: 'Columbia'},
+        { id: 'https://calendar.google.com/calendar/embed?src=c_0476130ac741b9c58b404c737a8068a8b1b06ba1de2a84cff08c5d15ced54edf%40group.calendar.google.com&ctz=America%2FToronto', name: 'Greenville' },
+        { id: 'https://calendar.google.com/calendar/embed?src=c_df033dd6c81bb3cbb5c6fdfd58dd2931e145e061b8a04ea0c13c79963cb6d515%40group.calendar.google.com&ctz=America%2FToronto', name: 'Columbia' },
         { id: 'https://calendar.google.com/calendar/embed?src=warranty%40vanirinstalledsales.com&ctz=America%2FToronto', name: 'Raleigh' }
     ];
 
@@ -290,21 +290,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         updatedFields[record.id][field] = newValue;
                         hasChanges = true; // Mark as changed
 
-                        // Validation: Ensure both checkboxes cannot be checked simultaneously
+                        // Store desired state changes only if user clicks submit
                         if (field === 'Field Review Needed' && newValue) {
-                            const otherCheckbox = cell.parentElement.querySelector('input[data-field="Field Review Not Needed"]');
-                            if (otherCheckbox) {
-                                otherCheckbox.checked = false;
-                                updatedFields[record.id]['Field Review Not Needed'] = false;
-                            }
+                            updatedFields[record.id]['Field Review Not Needed'] = false; // Plan to uncheck if "Field Review Needed" is checked
                         } else if (field === 'Field Review Not Needed' && newValue) {
-                            const otherCheckbox = cell.parentElement.querySelector('input[data-field="Field Review Needed"]');
-                            if (otherCheckbox) {
-                                otherCheckbox.checked = false;
-                                updatedFields[record.id]['Field Review Needed'] = false;
-                            }
-                            // Store status change only locally if "Field Review Not Needed" is checked
-                            updatedFields[record.id]['Status'] = 'Material Purchase Needed';
+                            updatedFields[record.id]['Field Review Needed'] = false; // Plan to uncheck "Field Review Needed" if "Field Review Not Needed" is checked
+                            updatedFields[record.id]['Status'] = 'Material Purchase Needed'; // Plan to set status
                         }
                     });
 

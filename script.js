@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
     const airtableBaseId = 'appO21PVRA4Qa087I';
     const airtableTableName = 'tbl6EeKPsNuEvt5yJ';
+    const dropboxAccessToken = 'sl.B7u2Cdp4Qf0QGteUiYnVOYzpV6ezapknwstGQNBvNv7dVhNCzyLjOEvW2pqpqIqygq4GUtiZS6MXLMYEf0_BazY30EU_40YXWvvXJgJoKx669YThnOQMXraLmEiUTGk3JG-L1BpJE4Q3_8PWM39agQ4'; // Replace with your Dropbox Access Token
 
     const loadingLogo = document.querySelector('.loading-logo');
     const mainContent = document.getElementById('main-content');
@@ -26,6 +27,156 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let updatedFields = {}; // Object to store updated values before submission
     let hasChanges = false; // Flag to track if any changes were made
+
+       // Create file input dynamically or select an existing file input
+       const fileInput = document.createElement('input');
+       fileInput.type = 'file';
+       fileInput.id = 'file-input';
+       fileInput.accept = 'image/*';
+       fileInput.multiple = true; // Allow multiple file selection
+   
+       // Add the input to your DOM (for example, to a specific cell or container)
+       document.body.appendChild(fileInput); // Adjust to your actual container
+   
+       // Add the event listener for file input changes
+       fileInput.addEventListener('change', async function (event) {
+           const files = event.target.files;
+           if (files.length > 0) {
+               await sendImagesToAirtableForRecord(files);
+           }
+       });
+
+    // Function to upload image to Dropbox
+   // Function to upload image to Dropbox
+async function uploadImageToDropbox(file) {
+    const url = 'https://content.dropboxapi.com/2/files/upload';
+    const dropboxPath = `/images/${file.name}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${dropboxAccessToken}`,
+                'Content-Type': 'application/octet-stream',
+                'Dropbox-API-Arg': JSON.stringify({
+                    path: dropboxPath,
+                    mode: 'add',
+                    autorename: true,
+                    mute: false
+                })
+            },
+            body: file
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();  // Get the error response text
+            console.error('Error uploading to Dropbox:', errorText); // Improved error logging
+            return null;
+        }
+
+        const data = await response.json();
+        console.log('Upload successful:', data); // Debugging: confirm successful upload
+        return data.path_lower; // Return the path for further use
+    } catch (error) {
+        console.error('Error uploading to Dropbox:', error); // General error catch
+        return null;
+    }
+}
+
+
+   // Function to create a shareable link in Dropbox or retrieve existing one
+async function createDropboxShareableLink(filePath) {
+    // Step 1: Check for existing shared link
+    const checkLinkUrl = 'https://api.dropboxapi.com/2/sharing/list_shared_links';
+
+    try {
+        const checkResponse = await fetch(checkLinkUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${dropboxAccessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                path: filePath,
+                direct_only: true
+            })
+        });
+
+        const checkData = await checkResponse.json();
+        if (checkResponse.ok && checkData.links.length > 0) {
+            // A shared link already exists, use it
+            console.log('Using existing shared link:', checkData.links[0].url);
+            return checkData.links[0].url.replace('?dl=0', '?raw=1'); // Convert to direct download link
+        }
+
+        // Step 2: If no existing link, create a new one
+        const createLinkUrl = 'https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings';
+        const createResponse = await fetch(createLinkUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${dropboxAccessToken}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                path: filePath,
+                settings: {
+                    requested_visibility: 'public'
+                }
+            })
+        });
+
+        if (createResponse.ok) {
+            const createData = await createResponse.json();
+            return createData.url.replace('?dl=0', '?raw=1'); // Convert to direct download link
+        } else {
+            console.error('Error creating shareable link on Dropbox:', createResponse.statusText);
+            return null;
+        }
+    } catch (error) {
+        console.error('Error checking or creating Dropbox shareable link:', error);
+        return null;
+    }
+}
+
+    // Function to upload the image and send link to Airtable
+    async function sendImageToAirtable(file) {
+        // Step 1: Upload the image to Dropbox
+        const dropboxFilePath = await uploadImageToDropbox(file);
+
+        if (!dropboxFilePath) {
+            console.error('Failed to upload image to Dropbox');
+            return;
+        }
+
+        // Step 2: Create a shareable link to the uploaded image
+        const dropboxLink = await createDropboxShareableLink(dropboxFilePath);
+
+        if (!dropboxLink) {
+            console.error('Failed to create Dropbox shareable link');
+            return;
+        }
+
+        // Step 3: Send the direct download link to Airtable
+        const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+        const response = await fetch(airtableUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${airtableApiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                fields: {
+                    'Picture(s) of Issue': [{ url: dropboxLink }]
+                }
+            })
+        });
+
+        if (response.ok) {
+            console.log('Image link sent to Airtable successfully');
+        } else {
+            console.error('Error sending image link to Airtable:', response.statusText);
+        }
+    }
 
     async function fetchData(offset = null) {
         let url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
@@ -163,48 +314,18 @@ document.addEventListener('DOMContentLoaded', function () {
             const fieldConfigs = [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
                 { field: 'Builders', value: fields['Builders'] || 'N/A' },
-                { 
-                    field: 'Lot Number and Community/Neighborhood', 
-                    value: fields['Lot Number and Community/Neighborhood'] || 'N/A', 
-                    directions: true 
-                },
+                { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A', directions: true },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A' },
-                { 
-                    field: 'description',
-                    value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' 
-                },
-                { 
-                    field: 'StartDate',
-                    value: fields['StartDate'] ? formatDateTime(fields['StartDate']) : 'N/A' 
-                },
-                { 
-                    field: 'EndDate',
-                    value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A' 
-                },
-                { 
-                    field: 'Contact Email', 
-                    value: fields['Contact Email'] || 'N/A', 
-                    email: true 
-                },
+                { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },
+                { field: 'StartDate', value: fields['StartDate'] ? formatDateTime(fields['StartDate']) : 'N/A' },
+                { field: 'EndDate', value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A' },
+                { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || '', image: true },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
-                { 
-                    field: 'Billable/ Non Billable',
-                    value: fields['Billable/ Non Billable'] || '',
-                    dropdown: true,
-                    options: ['', 'Billable', 'Non Billable']
-                },
-                { 
-                    field: 'Field Review Needed', 
-                    value: fields['Field Review Needed'] || false, 
-                    checkbox: true 
-                },
-                { 
-                    field: 'Field Review Not Needed', 
-                    value: fields['Field Review Not Needed'] || false, 
-                    checkbox: true 
-                }
+                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['', 'Billable', 'Non Billable'] },
+                { field: 'Field Review Needed', value: fields['Field Review Needed'] || false, checkbox: true },
+                { field: 'Field Review Not Needed', value: fields['Field Review Not Needed'] || false, checkbox: true }
             ];
     
             fieldConfigs.forEach(({ field, value, checkbox = false, editable = false, link = false, image = false, dropdown = false, options = [], email = false, directions = false }) => {
@@ -213,12 +334,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 cell.dataset.field = field;
                 cell.style.wordWrap = 'break-word';
                 cell.style.maxWidth = '200px';
+                cell.style.position = 'relative'; // Ensure position relative for file input
     
                 if (image && Array.isArray(fields[field])) {
                     const images = fields[field].map(img => img.url);
                     const carouselDiv = document.createElement('div');
                     carouselDiv.classList.add('image-carousel');
-                    
+    
                     const imgElement = document.createElement('img');
                     imgElement.src = images[0];
                     imgElement.alt = "Issue Picture";
@@ -226,45 +348,58 @@ document.addEventListener('DOMContentLoaded', function () {
                     imgElement.style.height = 'auto';
                     imgElement.classList.add('carousel-image');
                     carouselDiv.appendChild(imgElement);
-
+    
                     const imageCount = document.createElement('div');
                     imageCount.classList.add('image-count');
                     imageCount.textContent = `1 of ${images.length}`;
                     carouselDiv.appendChild(imageCount);
-
+    
                     if (images.length > 1) {
                         let currentIndex = 0;
-
-                      // Create previous button
-const prevButton = document.createElement('button');
-prevButton.textContent = '<';
-prevButton.classList.add('carousel-nav-button', 'prev'); // Add 'prev' class for left position
-prevButton.onclick = () => {
-    currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
-    imgElement.src = images[currentIndex];
-    imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
-};
-
-// Create next button
-const nextButton = document.createElement('button');
-nextButton.textContent = '>';
-nextButton.classList.add('carousel-nav-button', 'next'); // Add 'next' class for right position
-nextButton.onclick = () => {
-    currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
-    imgElement.src = images[currentIndex];
-    imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
-};
-
-// Append buttons to the carousel container
-carouselDiv.appendChild(prevButton);
-carouselDiv.appendChild(nextButton);
-
+    
+                        const prevButton = document.createElement('button');
+                        prevButton.textContent = '<';
+                        prevButton.classList.add('carousel-nav-button', 'prev');
+                        prevButton.onclick = () => {
+                            currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
+                            imgElement.src = images[currentIndex];
+                            imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
+                        };
+    
+                        const nextButton = document.createElement('button');
+                        nextButton.textContent = '>';
+                        nextButton.classList.add('carousel-nav-button', 'next');
+                        nextButton.onclick = () => {
+                            currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
+                            imgElement.src = images[currentIndex];
+                            imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
+                        };
+    
+                        carouselDiv.appendChild(prevButton);
+                        carouselDiv.appendChild(nextButton);
                     }
-
-                   
-                  
-
+    
                     cell.appendChild(carouselDiv);
+    
+                   // Ensure file input is initialized properly for multi-file upload
+const fileInput = document.createElement('input');
+fileInput.type = 'file';
+fileInput.id = 'file-input';
+fileInput.accept = 'image/*';
+fileInput.multiple = true; // Allow multiple files to be selected
+fileInput.style.position = 'relative'; // Ensure file input is position relative
+fileInput.style.marginTop = '10px'; // Add some spacing for visual clarity
+fileInput.onchange = async (event) => {
+    const files = event.target.files;
+    if (files.length > 0) {
+        for (const file of files) {
+            await sendImageToAirtableForRecord(file, record.id); // Ensure the image is uploaded to the correct record
+        }
+    }
+};
+cell.appendChild(fileInput);
+
+    
                 } else if (email) {
                     cell.innerHTML = value ? `<a href="mailto:${value}">${value}</a>` : 'N/A';
                 } else if (directions) {
@@ -285,8 +420,7 @@ carouselDiv.appendChild(nextButton);
                         const optionElement = document.createElement('option');
                         optionElement.value = option;
                         optionElement.textContent = option;
-                        
-                        // Apply colors based on option value
+    
                         if (field === 'Billable/ Non Billable') {
                             if (option === 'Billable') {
                                 optionElement.style.backgroundColor = '#ffeb3b'; // yellow for Billable
@@ -295,7 +429,7 @@ carouselDiv.appendChild(nextButton);
                                 optionElement.style.backgroundColor = '#03a9f4'; // light blue for Non Billable
                                 optionElement.style.color = '#fff'; // white text for Non Billable
                             }
-                        } 
+                        }
     
                         if (option === value) {
                             optionElement.selected = true;
@@ -303,12 +437,11 @@ carouselDiv.appendChild(nextButton);
                         select.appendChild(optionElement);
                     });
     
-                    // Store the selected value in the updatedFields object
                     select.addEventListener('change', () => {
                         const newValue = select.value;
                         updatedFields[record.id] = updatedFields[record.id] || {};
                         updatedFields[record.id][field] = newValue;
-                        hasChanges = true; // Mark as changed
+                        hasChanges = true;
                     });
     
                     cell.appendChild(select);
@@ -317,22 +450,21 @@ carouselDiv.appendChild(nextButton);
                     checkboxElement.type = 'checkbox';
                     checkboxElement.checked = value;
                     checkboxElement.classList.add('custom-checkbox');
-
+    
                     checkboxElement.addEventListener('change', function () {
                         const newValue = checkboxElement.checked;
                         updatedFields[record.id] = updatedFields[record.id] || {};
                         updatedFields[record.id][field] = newValue;
-                        hasChanges = true; // Mark as changed
-
-                        // Store desired state changes only if user clicks submit
+                        hasChanges = true;
+    
                         if (field === 'Field Review Needed' && newValue) {
-                            updatedFields[record.id]['Field Review Not Needed'] = false; // Plan to uncheck if "Field Review Needed" is checked
+                            updatedFields[record.id]['Field Review Not Needed'] = false;
                         } else if (field === 'Field Review Not Needed' && newValue) {
-                            updatedFields[record.id]['Field Review Needed'] = false; // Plan to uncheck "Field Review Needed" if "Field Review Not Needed" is checked
-                            updatedFields[record.id]['Status'] = 'Material Purchase Needed'; // Plan to set status
+                            updatedFields[record.id]['Field Review Needed'] = false;
+                            updatedFields[record.id]['Status'] = 'Material Purchase Needed';
                         }
                     });
-
+    
                     cell.appendChild(checkboxElement);
                 } else if (link) {
                     cell.innerHTML = value ? `<a href="${value}" target="_blank">${value}</a>` : 'N/A';
@@ -342,22 +474,21 @@ carouselDiv.appendChild(nextButton);
     
                 if (editable && !dropdown && !image) {
                     cell.setAttribute('contenteditable', 'true');
-                    cell.classList.add('editable-cell'); // Add a class for custom styling if needed
-                
-                    // Track original content to detect changes
+                    cell.classList.add('editable-cell');
+    
                     const originalContent = cell.textContent;
-                
+    
                     cell.addEventListener('blur', () => {
                         const newValue = cell.textContent;
                         if (newValue !== originalContent) {
                             updatedFields[record.id] = updatedFields[record.id] || {};
                             updatedFields[record.id][field] = newValue;
                             cell.classList.add('edited');
-                            hasChanges = true; // Mark as changed
+                            hasChanges = true;
                         }
                     });
                 }
-                
+    
                 row.appendChild(cell);
             });
     
@@ -366,6 +497,59 @@ carouselDiv.appendChild(nextButton);
     
         console.log('Data displayed in table');
     }
+    
+   // Function to upload multiple images and send the links to Airtable for a specific record
+async function sendImagesToAirtableForRecord(files, recordId) {
+    const uploadedFilePaths = [];
+    for (const file of files) {
+        // Step 1: Upload the image to Dropbox
+        const dropboxFilePath = await uploadImageToDropbox(file);
+
+        if (!dropboxFilePath) {
+            console.error('Failed to upload image to Dropbox');
+            continue;
+        }
+
+        // Step 2: Create a shareable link to the uploaded image
+        const dropboxLink = await createDropboxShareableLink(dropboxFilePath);
+
+        if (!dropboxLink) {
+            console.error('Failed to create Dropbox shareable link');
+            continue;
+        }
+
+        uploadedFilePaths.push({ url: dropboxLink });
+    }
+
+    if (uploadedFilePaths.length === 0) {
+        console.error('No files were successfully uploaded.');
+        return;
+    }
+
+    // Step 3: Send the direct download links to Airtable
+    const airtableUrl = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
+    const response = await fetch(airtableUrl, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${airtableApiKey}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            fields: {
+                'Picture(s) of Issue': uploadedFilePaths
+            }
+        })
+    });
+
+    if (response.ok) {
+        console.log('Image links sent to Airtable successfully');
+        fetchAllData(); // Optionally refresh the table to show the updated images
+    } else {
+        console.error('Error sending image links to Airtable:', response.statusText);
+    }
+}
+
+    
 
   async function updateRecord(id, fields) {
     const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${id}`;
@@ -415,7 +599,6 @@ carouselDiv.appendChild(nextButton);
         console.error('Error updating data in Airtable:', error);
     }
 }
-
 
     function showToast(message) {
         toast.textContent = message;
@@ -474,4 +657,13 @@ carouselDiv.appendChild(nextButton);
     };
 
     fetchAllData();
+
+    // Event listener for file input change
+    document.getElementById('file-input').addEventListener('change', async function (event) {
+        const files = event.target.files;
+        if (files.length > 0) {
+            await sendImageToAirtable(files[0]);
+        }
+    });
+
 });

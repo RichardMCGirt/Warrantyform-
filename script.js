@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
     const airtableBaseId = 'appO21PVRA4Qa087I';
     const airtableTableName = 'tbl6EeKPsNuEvt5yJ';
-    const dropboxAccessToken = 'sl.B7xwReOIJbb__j9d6LUu8fTrOB_71uKpE0jPPrddmhVzF204FJ3eJUMyvJaDykX8SYzx4d8EBVfLFMGJzrrJl4J4KYFo0a7oOt50L6ZbKGlQX55sGgZjvG7SDAb9SkdpuET_FxO_h2pFtu8DH5lCekY';
 
     const loadingLogo = document.querySelector('.loading-logo');
     const mainContent = document.getElementById('main-content');

@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const airtableApiKey = 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238';
     const airtableBaseId = 'appO21PVRA4Qa087I';
     const airtableTableName = 'tbl6EeKPsNuEvt5yJ';
-    const dropboxAccessToken = 'sl.B7y8EG6OzdupDhRb0B-u-BoX4RiU0isozd05cNUX6SGwbP_o479D-JnPO7eRzu5KSDNInuooB6ohR5iPbk3hU2uv1JF-C_X9E3zcv2xEv4-shtzX8fwWTmRsNRkjmpOzRvv2d_e5ObfRXQ6WUBHjDqE';
+    const dropboxAccessToken = 'sl.B7xwReOIJbb__j9d6LUu8fTrOB_71uKpE0jPPrddmhVzF204FJ3eJUMyvJaDykX8SYzx4d8EBVfLFMGJzrrJl4J4KYFo0a7oOt50L6ZbKGlQX55sGgZjvG7SDAb9SkdpuET_FxO_h2pFtu8DH5lCekY';
 
     const loadingLogo = document.querySelector('.loading-logo');
     const mainContent = document.getElementById('main-content');
@@ -441,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     field: 'Invoice Status',
                     value: fields['Invoice Status'] || 'Not Invoiced',
                     dropdown: true,
-                    options: ['Not Invoiced', 'Invoiced'], // Define options here
+                    options: ['Not Invoiced', 'Invoiced'],
                 },
                 { field: 'Job Invoiced', value: fields['Job Invoiced'] || false, checkbox: true },
                 { field: 'Subcontractor Paid', value: fields['Subcontractor Paid'] || false, checkbox: true },
@@ -486,8 +486,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     const imgElement = document.createElement('img');
                     imgElement.src = images[0];
                     imgElement.alt = "Issue Picture";
-                    imgElement.style.maxWidth = '100px';
-                    imgElement.style.height = 'auto';
+                    imgElement.style.maxWidth = '100%';
+                    imgElement.style.height = '100%';
                     imgElement.classList.add('carousel-image');
                     carouselDiv.appendChild(imgElement);
     

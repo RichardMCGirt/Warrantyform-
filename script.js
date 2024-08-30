@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const airtableApiKey = window.env.AIRTABLE_API_KEY;
     const airtableBaseId = window.env.AIRTABLE_BASE_ID;
     const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
-    let dropboxAccessToken; // Declare the Dropbox token here
+    let dropboxAccessToken;
 
     console.log('Airtable Base ID:', airtableBaseId);
     console.log('Airtable Table Name:', airtableTableName);
@@ -25,56 +25,53 @@ document.addEventListener('DOMContentLoaded', function () {
         { id: 'https://calendar.google.com/calendar/embed?src=warranty%40vanirinstalledsales.com&ctz=America%2FToronto', name: 'Raleigh' }
     ];
 
-    let updatedFields = {}; // Object to store updated values before submission
-    let hasChanges = false; // Flag to track if any changes were made
+    let updatedFields = {};
+    let hasChanges = false;
 
-// Function to fetch Dropbox token from Airtable
-async function fetchDropboxToken() {
-    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+    // Function to fetch Dropbox token from Airtable
+    async function fetchDropboxToken() {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
 
-    console.log(`Fetching Dropbox token from Airtable...`);
-    console.log(`URL: ${url}`);
-    console.log(`Authorization: Bearer ${airtableApiKey.substring(0, 5)}...`); // Log only a part of the API key for security reasons
+        console.log(`Fetching Dropbox token from Airtable...`);
+        console.log(`URL: ${url}`);
+        console.log(`Authorization: Bearer ${airtableApiKey.substring(0, 5)}...`);
 
-    try {
-        const response = await fetch(url, {
-            headers: { Authorization: `Bearer ${airtableApiKey}` }
-        });
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
+            });
 
-        console.log(`Response Status: ${response.status}`);
-        console.log(`Response Status Text: ${response.statusText}`);
+            console.log(`Response Status: ${response.status}`);
+            console.log(`Response Status Text: ${response.statusText}`);
 
-        if (!response.ok) {
-            throw new Error(`Error fetching Dropbox token: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('Response Data:', data);
-
-        // Iterate through records to find the Dropbox Token field and log all fields
-        for (const record of data.records) {
-            console.log('Record ID:', record.id); // Log record ID
-            console.log('Fields:', record.fields); // Log all fields for each record
-
-            if (record.fields && record.fields['Token Token']) { // Ensure this matches the field name in Airtable
-                dropboxAccessToken = record.fields['Token Token']; // Retrieve the token value
-                console.log('Dropbox Access Token retrieved successfully:', dropboxAccessToken);
-                break;
+            if (!response.ok) {
+                throw new Error(`Error fetching Dropbox token: ${response.status} ${response.statusText}`);
             }
-        }
 
-        if (!dropboxAccessToken) {
-            console.error('Dropbox token not found in Airtable.');
+            const data = await response.json();
+            console.log('Response Data:', data);
+
+            for (const record of data.records) {
+                console.log('Record ID:', record.id);
+                console.log('Fields:', record.fields);
+
+                if (record.fields && record.fields['Token Token']) {
+                    dropboxAccessToken = record.fields['Token Token'];
+                    console.log('Dropbox Access Token retrieved successfully:', dropboxAccessToken);
+                    break;
+                }
+            }
+
+            if (!dropboxAccessToken) {
+                console.error('Dropbox token not found in Airtable.');
+            }
+        } catch (error) {
+            console.error('Error fetching Dropbox token from Airtable:', error);
         }
-    } catch (error) {
-        console.error('Error fetching Dropbox token from Airtable:', error);
     }
-}
 
-// Call the function to execute
-fetchDropboxToken();
-
-
+    // Call the function to execute
+    fetchDropboxToken();
 
     // Create file input dynamically
     const fileInput = document.createElement('input');
@@ -82,9 +79,7 @@ fetchDropboxToken();
     fileInput.id = 'file-input';
     fileInput.accept = 'image/*';
     fileInput.multiple = true;
-    fileInput.style.display = 'none'; // Hide initially
-
-    // Append file input to the DOM so it is usable
+    fileInput.style.display = 'none';
     document.body.appendChild(fileInput);
 
     fileInput.onchange = async (event) => {
@@ -92,7 +87,7 @@ fetchDropboxToken();
         const recordId = event.target.getAttribute('data-record-id');
 
         if (files && files.length > 0 && recordId) {
-            const filesArray = Array.from(files); // Convert FileList to Array
+            const filesArray = Array.from(files);
             await sendImagesToAirtableForRecord(filesArray, recordId);
             fetchAllData();  // Refresh data after images are uploaded
         } else {
@@ -101,7 +96,7 @@ fetchDropboxToken();
     };
 
     async function sendImagesToAirtableForRecord(files, recordId) {
-        if (!Array.isArray(files)) files = [files]; // Ensure files is an array
+        if (!Array.isArray(files)) files = [files];
 
         const uploadedUrls = [];
         const currentImages = await fetchCurrentImagesFromAirtable(recordId);
@@ -110,19 +105,19 @@ fetchDropboxToken();
             const dropboxUrl = await uploadFileToDropbox(file);
             if (dropboxUrl) {
                 const formattedLink = dropboxUrl.replace('?dl=0', '?raw=1');
-                uploadedUrls.push({ url: formattedLink }); // Use an array of objects with 'url' key
+                uploadedUrls.push({ url: formattedLink });
             } else {
                 console.error('Error uploading file to Dropbox:', file.name);
             }
         }
 
-        const allImages = currentImages.concat(uploadedUrls); // Combine existing images with new ones
+        const allImages = currentImages.concat(uploadedUrls);
 
         if (allImages.length > 0) {
             const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
             const body = JSON.stringify({ fields: { 'Picture(s) of Issue': allImages } });
 
-            console.log('Payload being sent to Airtable:', body); // Log the payload for debugging
+            console.log('Payload being sent to Airtable:', body);
 
             try {
                 const response = await fetch(url, {
@@ -135,11 +130,11 @@ fetchDropboxToken();
                 });
 
                 if (!response.ok) {
-                    const errorResponse = await response.json(); // Read the error response body
+                    const errorResponse = await response.json();
                     console.error(`Error updating record: ${response.status} ${response.statusText}`, errorResponse);
                 } else {
                     console.log('Successfully updated record in Airtable:', await response.json());
-                    fetchAllData();  // Refresh data after successful update
+                    fetchAllData();
                 }
             } catch (error) {
                 console.error('Error updating Airtable:', error);
@@ -223,7 +218,7 @@ fetchDropboxToken();
                 body: JSON.stringify({
                     path: filePath,
                     settings: {
-                        requested_visibility: 'public'  // Ensure this is set to public
+                        requested_visibility: 'public'
                     }
                 })
             });
@@ -241,7 +236,6 @@ fetchDropboxToken();
             const data = await response.json();
             console.log('Shared link created:', data);
             
-            // Convert shared link to a direct link format
             return convertToDirectLink(data.url);
         } catch (error) {
             console.error('Error creating Dropbox shared link:', error);
@@ -280,7 +274,6 @@ fetchDropboxToken();
             if (data.links && data.links.length > 0) {
                 console.log('Existing shared link fetched:', data.links[0]);
                 
-                // Convert shared link to a direct link format
                 return convertToDirectLink(data.links[0].url);
             } else {
                 console.error('No existing shared link found.');
@@ -292,7 +285,6 @@ fetchDropboxToken();
         }
     }
     
-    // Utility function to convert a Dropbox shared link to a direct link
     function convertToDirectLink(url) {
         return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '?raw=1');
     }
@@ -403,7 +395,6 @@ fetchDropboxToken();
             const fieldConfigs = isSecondary ? [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
                 { field: 'Builders', value: fields['Builders'] || 'N/A' },
-                { field: 'Token', value: fields['Token'] || 'N/A' },
 
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
@@ -450,6 +441,7 @@ fetchDropboxToken();
                         imgElement.style.maxWidth = '100%';
                         imgElement.style.height = 'auto';
                         imgElement.classList.add('carousel-image');
+                        imgElement.onclick = () => openImageViewer(images, 0); // Add click event to open modal
                         carouselDiv.appendChild(imgElement);
 
                         const imageCount = document.createElement('div');
@@ -591,6 +583,62 @@ fetchDropboxToken();
 
             tbody.appendChild(row);
         });
+    }
+
+    // Function to open image viewer modal
+    function openImageViewer(images, startIndex) {
+        // Create the modal if it doesn't exist
+        let imageViewerModal = document.getElementById('image-viewer-modal');
+        if (!imageViewerModal) {
+            imageViewerModal = document.createElement('div');
+            imageViewerModal.id = 'image-viewer-modal';
+            imageViewerModal.classList.add('image-viewer-modal');
+            document.body.appendChild(imageViewerModal);
+
+            const modalImage = document.createElement('img');
+            modalImage.classList.add('modal-image');
+
+            const closeModalButton = document.createElement('button');
+            closeModalButton.textContent = 'X';
+            closeModalButton.classList.add('close-modal-button');
+            closeModalButton.onclick = () => {
+                imageViewerModal.style.display = 'none';
+            };
+
+            const prevButton = document.createElement('button');
+            prevButton.textContent = '<';
+            prevButton.classList.add('modal-nav-button', 'prev');
+
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '>';
+            nextButton.classList.add('modal-nav-button', 'next');
+
+            imageViewerModal.appendChild(closeModalButton);
+            imageViewerModal.appendChild(prevButton);
+            imageViewerModal.appendChild(modalImage);
+            imageViewerModal.appendChild(nextButton);
+
+            prevButton.onclick = () => {
+                currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
+                updateModalImage();
+            };
+
+            nextButton.onclick = () => {
+                currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
+                updateModalImage();
+            };
+        }
+
+        let currentIndex = startIndex;
+        let currentImagesArray = images;
+
+        function updateModalImage() {
+            const modalImage = document.querySelector('.modal-image');
+            modalImage.src = currentImagesArray[currentIndex].url;
+        }
+
+        updateModalImage();
+        imageViewerModal.style.display = 'block';
     }
 
     function showToast(message) {

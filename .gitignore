@@ -11,5 +11,5 @@ node_modules/
 .DS_Store
 Thumbs.db
 
-# Ignore the dist folder
-dist/
+# Ignore the specific bundle.js file in the dist directory
+dist/bundle.js

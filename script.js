@@ -1,15 +1,13 @@
-
-
-
 document.addEventListener('DOMContentLoaded', function () {
     const airtableApiKey = process.env.AIRTABLE_API_KEY;
     const airtableBaseId = process.env.AIRTABLE_BASE_ID;
     const airtableTableName = process.env.AIRTABLE_TABLE_NAME;
-    const dropboxAccessToken = process.env.DROPBOX_ACCESS_TOKEN;
+    let dropboxAccessToken; // Declare the Dropbox token here
+
+    
 
     console.log('Airtable Base ID:', airtableBaseId);
     console.log('Airtable Table Name:', airtableTableName);
-
 
     const loadingLogo = document.querySelector('.loading-logo');
     const mainContent = document.getElementById('main-content');
@@ -31,6 +29,36 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let updatedFields = {}; // Object to store updated values before submission
     let hasChanges = false; // Flag to track if any changes were made
+
+    // Function to fetch Dropbox token from Airtable
+    async function fetchDropboxToken() {
+        const recordId = 'Dropbox Token'; // Replace with the actual ID of the record where you stored the token
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
+    
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Error fetching Dropbox token: ${response.status} ${response.statusText}`);
+            }
+    
+            const data = await response.json();
+            if (data.fields['Dropbox Token']) {  // Ensure this matches the field name in Airtable
+                dropboxAccessToken = data.fields['Dropbox Token']; // Retrieve the token value
+                console.log('Dropbox Access Token retrieved successfully:', dropboxAccessToken);
+            } else {
+                console.error('Dropbox token not found in Airtable.');
+            }
+        } catch (error) {
+            console.error('Error fetching Dropbox token from Airtable:', error);
+        }
+    }
+    
+
+    // Fetch Dropbox token before proceeding
+    fetchDropboxToken();
 
     // Create file input dynamically
     const fileInput = document.createElement('input');
@@ -126,6 +154,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function uploadFileToDropbox(file) {
+        if (!dropboxAccessToken) {
+            console.error('Dropbox Access Token is not available.');
+            return null;
+        }
+
         const dropboxUploadUrl = 'https://content.dropboxapi.com/2/files/upload';
         const path = `/${file.name}`;
 
@@ -156,6 +189,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function getDropboxSharedLink(filePath) {
+        if (!dropboxAccessToken) {
+            console.error('Dropbox Access Token is not available.');
+            return null;
+        }
+
         const dropboxCreateSharedLinkUrl = 'https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings';
         console.log(`Creating shared link for file: ${filePath}`);
     
@@ -196,6 +234,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     
     async function getExistingDropboxLink(filePath) {
+        if (!dropboxAccessToken) {
+            console.error('Dropbox Access Token is not available.');
+            return null;
+        }
+
         const dropboxGetSharedLinkUrl = 'https://api.dropboxapi.com/2/sharing/list_shared_links';
         console.log(`Fetching existing shared link for file: ${filePath}`);
     
@@ -237,7 +280,6 @@ document.addEventListener('DOMContentLoaded', function () {
     function convertToDirectLink(url) {
         return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '?raw=1');
     }
-    
 
     async function fetchData(offset = null) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?${offset ? `offset=${offset}` : ''}`;

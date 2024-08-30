@@ -27,6 +27,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let updatedFields = {};
     let hasChanges = false;
+    let activeRecordId = null;
+
+    // Create the submit button dynamically and hide it initially
+    const submitButton = document.createElement('button');
+    submitButton.id = 'dynamic-submit-button';
+    submitButton.textContent = 'Submit';
+    submitButton.style.display = 'none';
+    submitButton.style.position = 'absolute';
+    submitButton.style.zIndex = '1000';
+    document.body.appendChild(submitButton);
 
     // Function to fetch Dropbox token from Airtable
     async function fetchDropboxToken() {
@@ -89,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (files && files.length > 0 && recordId) {
             const filesArray = Array.from(files);
             await sendImagesToAirtableForRecord(filesArray, recordId);
+            showSubmitButton(recordId);
             fetchAllData();  // Refresh data after images are uploaded
         } else {
             console.error('No files selected or record ID is missing.');
@@ -566,6 +577,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         updatedFields[record.id] = updatedFields[record.id] || {};
                         updatedFields[record.id][field] = newValue;
                         hasChanges = true;
+                        showSubmitButton(record.id);
                     });
 
                     cell.appendChild(select);
@@ -585,6 +597,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         updatedFields[record.id] = updatedFields[record.id] || {};
                         updatedFields[record.id][field] = newValue;
                         hasChanges = true;
+                        showSubmitButton(record.id);
 
                         if (field === 'Field Review Needed' && newValue) {
                             updatedFields[record.id]['Field Review Not Needed'] = false;
@@ -612,6 +625,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             updatedFields[record.id][field] = newValue;
                             cell.classList.add('edited');
                             hasChanges = true;
+                            showSubmitButton(record.id);
                         }
                     });
                 }
@@ -719,8 +733,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 3000);
     }
 
-    document.getElementById('submit-button').addEventListener('click', async () => {
-        if (!hasChanges) {
+    submitButton.addEventListener('click', async () => {
+        if (!hasChanges || !activeRecordId) {
             showToast('No changes to submit.');
             return;
         }
@@ -728,12 +742,12 @@ document.addEventListener('DOMContentLoaded', function () {
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
 
-        for (const [recordId, fields] of Object.entries(updatedFields)) {
-            await updateRecord(recordId, fields);
-        }
+        await updateRecord(activeRecordId, updatedFields[activeRecordId]);
 
         updatedFields = {};
         hasChanges = false;
+        activeRecordId = null;
+        submitButton.style.display = 'none';
         mainContent.style.display = 'block';
         secondaryContent.style.display = 'block';
 
@@ -762,6 +776,17 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         } catch (error) {
             console.error('Error updating record in Airtable:', error);
+        }
+    }
+
+    function showSubmitButton(recordId) {
+        const recordRow = document.querySelector(`td[data-id="${recordId}"]`);
+        if (recordRow) {
+            const rowRect = recordRow.getBoundingClientRect();
+            submitButton.style.top = `${window.scrollY + rowRect.top + 0}px`;
+            submitButton.style.left = `${window.scrollX + rowRect.right + 2030}px`;
+            submitButton.style.display = 'block';
+            activeRecordId = recordId;
         }
     }
 

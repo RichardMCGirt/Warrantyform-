@@ -1,6 +1,5 @@
-// Load environment variables from .env file
-const dotenv = ('dotenv');
-console.log(process.env.AIRTABLE_API_KEY);
+
+
 
 document.addEventListener('DOMContentLoaded', function () {
     const airtableApiKey = process.env.AIRTABLE_API_KEY;

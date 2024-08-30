@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const airtableApiKey = process.env.AIRTABLE_API_KEY;
-    const airtableBaseId = process.env.AIRTABLE_BASE_ID;
-    const airtableTableName = process.env.AIRTABLE_TABLE_NAME;
+    const airtableApiKey = window.env.AIRTABLE_API_KEY;
+    const airtableBaseId = window.env.AIRTABLE_BASE_ID;
+    const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
     let dropboxAccessToken; // Declare the Dropbox token here
 
     console.log('Airtable Base ID:', airtableBaseId);

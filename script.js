@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
-                { field: 'Field Review Needed', value: fields['Field Review Needed'] || false, checkbox: true } // Checkbox for 'Job Completed'
+                { field: 'Field Review Needed', value: fields['Field Review Needed'] || false, checkbox: true } // Checkbox for 'Field Review Needed'
 
             ];
 
@@ -438,6 +438,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     carouselDiv.classList.add('image-carousel');
 
                     if (images.length > 0) {
+                        let currentIndex = 0; // Define currentIndex here
                         const imgElement = document.createElement('img');
                         imgElement.src = images[0].url;
                         imgElement.alt = "Issue Picture";
@@ -452,10 +453,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         imageCount.textContent = `1 of ${images.length}`;
                         carouselDiv.appendChild(imageCount);
 
-                        if (images.length > 1) {
-                            let currentIndex = 0;
+                        let prevButton, nextButton; // Define prevButton and nextButton here
 
-                            const prevButton = document.createElement('button');
+                        if (images.length > 1) {
+                            prevButton = document.createElement('button');
                             prevButton.textContent = '<';
                             prevButton.classList.add('carousel-nav-button', 'prev');
                             prevButton.onclick = () => {
@@ -464,7 +465,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
                             };
 
-                            const nextButton = document.createElement('button');
+                            nextButton = document.createElement('button');
                             nextButton.textContent = '>';
                             nextButton.classList.add('carousel-nav-button', 'next');
                             nextButton.onclick = () => {
@@ -479,22 +480,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         // Add Delete Button for images
                         const deleteButton = document.createElement('button');
-                        deleteButton.textContent = 'Delete Image';
+                        deleteButton.innerHTML = '🗑️'; // Use trash can icon
                         deleteButton.classList.add('delete-button');
                         deleteButton.onclick = async () => {
-                            await deleteImageFromAirtable(record.id, images[currentIndex].id);
-                            images.splice(currentIndex, 1);
-                            if (images.length > 0) {
-                                currentIndex = currentIndex % images.length; // Adjust index if needed
-                                imgElement.src = images[currentIndex].url;
-                                imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
-                            } else {
-                                carouselDiv.innerHTML = '<p>No images available</p>';
+                            const confirmed = confirm('Are you sure you want to delete this image?');
+                            if (confirmed) {
+                                await deleteImageFromAirtable(record.id, images[currentIndex].id);
+                                images.splice(currentIndex, 1);
+                                if (images.length > 0) {
+                                    currentIndex = currentIndex % images.length; // Adjust index if needed
+                                    imgElement.src = images[currentIndex].url;
+                                    imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
+                                } else {
+                                    // When all images are deleted, only show the "Add Photos" button
+                                    carouselDiv.innerHTML = '';
+                                    const addPhotoButton = document.createElement('button');
+                                    addPhotoButton.textContent = 'Add Photos';
+                                    addPhotoButton.onclick = () => {
+                                        fileInput.setAttribute('data-record-id', record.id);
+                                        fileInput.click();
+                                    };
+                                    carouselDiv.appendChild(addPhotoButton);
+                                }
                             }
                         };
                         carouselDiv.appendChild(deleteButton);
                     }
 
+                    // Ensure the "Add Photos" button is always displayed
                     const addPhotoButton = document.createElement('button');
                     addPhotoButton.textContent = 'Add Photos';
                     addPhotoButton.onclick = () => {
@@ -507,9 +520,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Add event listeners for keyboard navigation
                     carouselDiv.tabIndex = 0;  // Make div focusable
                     carouselDiv.addEventListener('keydown', (event) => {
-                        if (event.key === 'ArrowLeft') {
+                        if (event.key === 'ArrowLeft' && prevButton) {
                             prevButton.click();
-                        } else if (event.key === 'ArrowRight') {
+                        } else if (event.key === 'ArrowRight' && nextButton) {
                             nextButton.click();
                         }
                     });

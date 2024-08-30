@@ -4,8 +4,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const airtableTableName = process.env.AIRTABLE_TABLE_NAME;
     let dropboxAccessToken; // Declare the Dropbox token here
 
-    
-
     console.log('Airtable Base ID:', airtableBaseId);
     console.log('Airtable Table Name:', airtableTableName);
 
@@ -30,35 +28,53 @@ document.addEventListener('DOMContentLoaded', function () {
     let updatedFields = {}; // Object to store updated values before submission
     let hasChanges = false; // Flag to track if any changes were made
 
-    // Function to fetch Dropbox token from Airtable
-    async function fetchDropboxToken() {
-        const recordId = 'Dropbox Token'; // Replace with the actual ID of the record where you stored the token
-        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
-    
-        try {
-            const response = await fetch(url, {
-                headers: { Authorization: `Bearer ${airtableApiKey}` }
-            });
-    
-            if (!response.ok) {
-                throw new Error(`Error fetching Dropbox token: ${response.status} ${response.statusText}`);
-            }
-    
-            const data = await response.json();
-            if (data.fields['Dropbox Token']) {  // Ensure this matches the field name in Airtable
-                dropboxAccessToken = data.fields['Dropbox Token']; // Retrieve the token value
-                console.log('Dropbox Access Token retrieved successfully:', dropboxAccessToken);
-            } else {
-                console.error('Dropbox token not found in Airtable.');
-            }
-        } catch (error) {
-            console.error('Error fetching Dropbox token from Airtable:', error);
-        }
-    }
-    
+// Function to fetch Dropbox token from Airtable
+async function fetchDropboxToken() {
+    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
 
-    // Fetch Dropbox token before proceeding
-    fetchDropboxToken();
+    console.log(`Fetching Dropbox token from Airtable...`);
+    console.log(`URL: ${url}`);
+    console.log(`Authorization: Bearer ${airtableApiKey.substring(0, 5)}...`); // Log only a part of the API key for security reasons
+
+    try {
+        const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${airtableApiKey}` }
+        });
+
+        console.log(`Response Status: ${response.status}`);
+        console.log(`Response Status Text: ${response.statusText}`);
+
+        if (!response.ok) {
+            throw new Error(`Error fetching Dropbox token: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Response Data:', data);
+
+        // Iterate through records to find the Dropbox Token field and log all fields
+        for (const record of data.records) {
+            console.log('Record ID:', record.id); // Log record ID
+            console.log('Fields:', record.fields); // Log all fields for each record
+
+            if (record.fields && record.fields['Token Token']) { // Ensure this matches the field name in Airtable
+                dropboxAccessToken = record.fields['Token Token']; // Retrieve the token value
+                console.log('Dropbox Access Token retrieved successfully:', dropboxAccessToken);
+                break;
+            }
+        }
+
+        if (!dropboxAccessToken) {
+            console.error('Dropbox token not found in Airtable.');
+        }
+    } catch (error) {
+        console.error('Error fetching Dropbox token from Airtable:', error);
+    }
+}
+
+// Call the function to execute
+fetchDropboxToken();
+
+
 
     // Create file input dynamically
     const fileInput = document.createElement('input');
@@ -387,6 +403,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const fieldConfigs = isSecondary ? [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
                 { field: 'Builders', value: fields['Builders'] || 'N/A' },
+                { field: 'Token', value: fields['Token'] || 'N/A' },
+
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },

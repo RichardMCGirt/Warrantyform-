@@ -575,6 +575,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     checkboxElement.checked = value;
                     checkboxElement.classList.add('custom-checkbox');
 
+                    // Center the checkbox in the second table
+                    if (isSecondary) {
+                        cell.style.textAlign = 'center';
+                    }
+
                     checkboxElement.addEventListener('change', function () {
                         const newValue = checkboxElement.checked;
                         updatedFields[record.id] = updatedFields[record.id] || {};
@@ -762,12 +767,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('search-input').addEventListener('input', function () {
         const searchValue = this.value.toLowerCase();
-        const rows = document.querySelectorAll('#airtable-data tbody tr');
-
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            const match = Array.from(cells).some(cell => cell.textContent.toLowerCase().includes(searchValue));
-            row.style.display = match ? '' : 'none';
+        
+        // Search in both tables
+        ['#airtable-data', '#feild-data'].forEach(tableSelector => {
+            const rows = document.querySelectorAll(`${tableSelector} tbody tr`);
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const match = Array.from(cells).some(cell => cell.textContent.toLowerCase().includes(searchValue));
+                row.style.display = match ? '' : 'none';
+            });
         });
     });
 

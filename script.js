@@ -134,7 +134,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.error(`Error updating record: ${response.status} ${response.statusText}`, errorResponse);
                 } else {
                     console.log('Successfully updated record in Airtable:', await response.json());
-                    fetchAllData();
                 }
             } catch (error) {
                 console.error('Error updating Airtable:', error);
@@ -403,8 +402,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 { field: 'StartDate', value: fields['StartDate'] ? formatDateTime(fields['StartDate']) : 'N/A' },
                 { field: 'EndDate', value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A' },
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
-                { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true },
+                { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
+                { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true } // Checkbox for 'Job Completed'
+
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
                 { field: 'Builders', value: fields['Builders'] || 'N/A' },
@@ -417,7 +418,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
-                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] }
+                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
+                { field: 'Field Review Needed', value: fields['Field Review Needed'] || false, checkbox: true } // Checkbox for 'Job Completed'
+
             ];
 
             fieldConfigs.forEach(config => {
@@ -473,6 +476,23 @@ document.addEventListener('DOMContentLoaded', function () {
                             carouselDiv.appendChild(prevButton);
                             carouselDiv.appendChild(nextButton);
                         }
+
+                        // Add Delete Button for images
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Delete Image';
+                        deleteButton.classList.add('delete-button');
+                        deleteButton.onclick = async () => {
+                            await deleteImageFromAirtable(record.id, images[currentIndex].id);
+                            images.splice(currentIndex, 1);
+                            if (images.length > 0) {
+                                currentIndex = currentIndex % images.length; // Adjust index if needed
+                                imgElement.src = images[currentIndex].url;
+                                imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
+                            } else {
+                                carouselDiv.innerHTML = '<p>No images available</p>';
+                            }
+                        };
+                        carouselDiv.appendChild(deleteButton);
                     }
 
                     const addPhotoButton = document.createElement('button');
@@ -585,7 +605,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Function to open image viewer modal
+    async function deleteImageFromAirtable(recordId, imageId) {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
+        const currentImages = await fetchCurrentImagesFromAirtable(recordId);
+
+        const updatedImages = currentImages.filter(image => image.id !== imageId);
+
+        const body = JSON.stringify({ fields: { 'Picture(s) of Issue': updatedImages } });
+
+        try {
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    Authorization: `Bearer ${airtableApiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: body
+            });
+
+            if (!response.ok) {
+                console.error(`Error deleting image from Airtable: ${response.status} ${response.statusText}`);
+            } else {
+                console.log('Image successfully deleted from Airtable:', await response.json());
+            }
+        } catch (error) {
+            console.error('Error deleting image from Airtable:', error);
+        }
+    }
+
     function openImageViewer(images, startIndex) {
         // Create the modal if it doesn't exist
         let imageViewerModal = document.getElementById('image-viewer-modal');
@@ -675,6 +722,30 @@ document.addEventListener('DOMContentLoaded', function () {
         showToast('Changes submitted successfully!');
         fetchAllData();  // Refresh data after form submission
     });
+
+    async function updateRecord(recordId, fields) {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
+        const body = JSON.stringify({ fields });
+
+        try {
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    Authorization: `Bearer ${airtableApiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: body
+            });
+
+            if (!response.ok) {
+                console.error(`Error updating record: ${response.status} ${response.statusText}`);
+            } else {
+                console.log('Record updated successfully:', await response.json());
+            }
+        } catch (error) {
+            console.error('Error updating record in Airtable:', error);
+        }
+    }
 
     document.getElementById('search-input').addEventListener('input', function () {
         const searchValue = this.value.toLowerCase();

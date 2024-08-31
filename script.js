@@ -578,6 +578,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         updatedFields[record.id][field] = newValue;
                         hasChanges = true;
                         showSubmitButton(record.id);
+
+                        // Enable or disable the checkbox based on the select value
+                        const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
+                        if (fieldReviewCheckbox) {
+                            fieldReviewCheckbox.disabled = !newValue;  // Disable if no value is selected
+                        }
                     });
 
                     cell.appendChild(select);
@@ -587,10 +593,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     checkboxElement.checked = value;
                     checkboxElement.classList.add('custom-checkbox');
 
-                    // Center the checkbox in the second table
-                    if (isSecondary) {
-                        cell.style.textAlign = 'center';
-                    }
+                    // Disable checkbox if "Billable/ Non Billable" has no value
+                    const billableCell = row.querySelector('td[data-field="Billable/ Non Billable"] select');
+                    checkboxElement.disabled = !billableCell || !billableCell.value;
 
                     checkboxElement.addEventListener('change', function () {
                         const newValue = checkboxElement.checked;

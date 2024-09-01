@@ -4,9 +4,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
     let dropboxAccessToken;
 
-    console.log('Airtable Base ID:', airtableBaseId);
-    console.log('Airtable Table Name:', airtableTableName);
-
     const loadingLogo = document.querySelector('.loading-logo');
     const mainContent = document.getElementById('main-content');
     const secondaryContent = document.getElementById('secoundary-content');
@@ -97,8 +94,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const recordId = event.target.getAttribute('data-record-id');
 
         if (files && files.length > 0 && recordId) {
+            showToast('Uploading images...');
+            disableAddPhotosButton(recordId, true);  // Disable button
             const filesArray = Array.from(files);
             await sendImagesToAirtableForRecord(filesArray, recordId);
+            showToast('Images uploaded successfully!');
+            disableAddPhotosButton(recordId, false); // Enable button
             showSubmitButton(recordId);
             fetchAllData();  // Refresh data after images are uploaded
         } else {
@@ -736,6 +737,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 toast.style.visibility = 'hidden';
             }, 500);
         }, 3000);
+    }
+
+    function disableAddPhotosButton(recordId, disable) {
+        const addPhotoButton = document.querySelector(`td[data-id="${recordId}"] .image-carousel button`);
+        if (addPhotoButton) {
+            addPhotoButton.disabled = disable;
+        }
     }
 
     submitButton.addEventListener('click', async () => {

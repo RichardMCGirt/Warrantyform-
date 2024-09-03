@@ -39,21 +39,75 @@ document.addEventListener('DOMContentLoaded', function () {
     submitButton.style.cursor = 'move';
     document.body.appendChild(submitButton);
 
+    // Variables to track dragging
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    // Mouse down event to start dragging
+// Event listeners for dragging the submit button
+submitButton.addEventListener('mousedown', function (event) {
+    let shiftX = event.clientX - submitButton.getBoundingClientRect().left;
+    let shiftY = event.clientY - submitButton.getBoundingClientRect().top;
+
+    function moveAt(pageX, pageY) {
+        submitButton.style.left = pageX - shiftX + 'px';
+        submitButton.style.top = pageY - shiftY + 'px';
+    }
+
+    function onMouseMove(event) {
+        moveAt(event.pageX, event.pageY);
+    }
+
+    document.addEventListener('mousemove', onMouseMove);
+
+    document.addEventListener('mouseup', function () {
+        document.removeEventListener('mousemove', onMouseMove);
+
+        // Store the current position of the button in local storage
+        localStorage.setItem('submitButtonTop', submitButton.style.top);
+        localStorage.setItem('submitButtonLeft', submitButton.style.left);
+    }, { once: true });
+});
+
+  // Function to show the submit button and keep it in the last position when a change is made
+function showSubmitButton(recordId) {
+    if (submitButton.style.display === 'none') {
+        // Only set the button to the last known position if it hasn't been displayed yet
+        const lastTop = localStorage.getItem('submitButtonTop') || '50%';
+        const lastLeft = localStorage.getItem('submitButtonLeft') || '50%';
+        submitButton.style.top = lastTop;
+        submitButton.style.left = lastLeft;
+    }
+
+    submitButton.style.display = 'block';
+    activeRecordId = recordId;
+}
+
+// Call the showSubmitButton function when a change is made
+document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+    element.addEventListener('input', () => showSubmitButton(activeRecordId));
+    element.addEventListener('change', () => showSubmitButton(activeRecordId));
+});
+
     // Fetch Dropbox credentials from Airtable
     async function fetchDropboxCredentials() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-
+        console.log('Fetching Dropbox credentials from Airtable...');
+    
         try {
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
-
+    
+            console.log(`Response status: ${response.status}`);
+    
             if (!response.ok) {
                 throw new Error(`Error fetching Dropbox credentials: ${response.status} ${response.statusText}`);
             }
-
+    
             const data = await response.json();
-
+            console.log('Fetched Dropbox credentials:', data);
+    
             for (const record of data.records) {
                 if (record.fields) {
                     if (record.fields['Token Token']) {
@@ -65,51 +119,64 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (record.fields['Dropbox App Secret']) {
                         dropboxAppSecret = record.fields['Dropbox App Secret'];
                     }
-                    if (record.fields['Dropbox Refresh Token']) {
-                        dropboxRefreshToken = record.fields['Dropbox Refresh Token'];
+                    if (record.fields['Dropbox Token']) {
+                        dropboxRefreshToken = record.fields['Dropbox Token'];
                     }
                 }
             }
-
-            if (!dropboxAccessToken || !dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
+    
+            if (!dropboxAccessToken || !dropboxAppKey || !dropboxAppSecret || !dropboxAccessToken) {
                 console.error('Dropbox credentials not found in Airtable.');
+            } else {
+                console.log('Dropbox credentials successfully fetched and set.');
             }
         } catch (error) {
             console.error('Error fetching Dropbox credentials from Airtable:', error);
         }
     }
-
+    
     // Refresh Dropbox token
     async function refreshDropboxToken() {
-        if (!dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
+        console.log('Attempting to refresh Dropbox token...');
+        console.log(`Using App Key: ${dropboxAppKey}, App Secret: ${dropboxAppSecret}, Refresh Token: ${dropboxAccessToken}`);
+    
+        if (!dropboxAppKey || !dropboxAppSecret || !dropboxAccessToken) {
             console.error('Dropbox credentials are not available.');
             return;
         }
-
+    
         const tokenUrl = 'https://api.dropboxapi.com/oauth2/token';
-
+    
         const headers = new Headers();
         headers.append('Authorization', 'Basic ' + btoa(`${dropboxAppKey}:${dropboxAppSecret}`));
         headers.append('Content-Type', 'application/x-www-form-urlencoded');
-
+    
         const body = new URLSearchParams();
         body.append('grant_type', 'refresh_token');
         body.append('refresh_token', dropboxRefreshToken);
-
+    
+        console.log('Sending request to Dropbox for token refresh...');
+        console.log(`Request Body: ${body.toString()}`);
+    
         try {
             const response = await fetch(tokenUrl, {
                 method: 'POST',
                 headers: headers,
                 body: body
             });
-
+    
+            console.log(`Dropbox token refresh response status: ${response.status}`);
+    
             if (!response.ok) {
-                throw new Error(`Error refreshing Dropbox token: ${response.status} ${response.statusText}`);
+                const errorResponse = await response.json();
+                console.error(`Error refreshing Dropbox token: ${response.status} ${response.statusText}`, errorResponse);
+                return;
             }
-
+    
             const data = await response.json();
-            dropboxAccessToken = data.access_token; // Update the access token with the new one
-
+            dropboxRefreshToken = data.access_token; // Update the access token with the new one
+            console.log('Dropbox token refreshed successfully:', dropboxRefreshToken);
+    
             // Update the new token in Airtable
             await updateDropboxTokenInAirtable(dropboxAccessToken);
             console.log('Dropbox token refreshed and updated in Airtable.');
@@ -118,9 +185,39 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    async function fetchRecordsFromAirtable() {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+    
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Error fetching records: ${response.status} ${response.statusText}`);
+            }
+    
+            const data = await response.json();
+            console.log('Fetched records:', data);
+    
+            // Log each record's ID and fields for reference
+            data.records.forEach(record => {
+                console.log(`Record ID: ${record.id}, Fields: ${JSON.stringify(record.fields)}`);
+            });
+    
+        } catch (error) {
+            console.error('Error fetching records from Airtable:', error);
+        }
+    }
+    
+    fetchRecordsFromAirtable();
+    
+    
     // Update Dropbox token in Airtable
     async function updateDropboxTokenInAirtable(token) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+        console.log('Updating Dropbox token in Airtable...');
+    
         try {
             const response = await fetch(url, {
                 method: 'PATCH',
@@ -131,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify({
                     records: [
                         {
-                            id: 'Dropbox Token', // Replace with actual record ID where the token is stored
+                            id: 'actual_record_id_here', // Replace with actual record ID where the token is stored
                             fields: {
                                 'Token Token': token
                             }
@@ -139,7 +236,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     ]
                 })
             });
-
+    
+            console.log(`Airtable update response status: ${response.status}`);
+    
             if (!response.ok) {
                 console.error(`Error updating Dropbox token in Airtable: ${response.status} ${response.statusText}`);
             } else {
@@ -257,10 +356,11 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Dropbox Access Token is not available.');
             return null;
         }
-
+    
         const dropboxUploadUrl = 'https://content.dropboxapi.com/2/files/upload';
         const path = `/${file.name}`;
-
+        console.log(`Uploading file to Dropbox: ${file.name}`);
+    
         try {
             const response = await fetch(dropboxUploadUrl, {
                 method: 'POST',
@@ -276,10 +376,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 },
                 body: file
             });
-
-            if (!response.ok) return null;
-
+    
+            console.log(`Dropbox file upload response status: ${response.status}`);
+    
+            if (!response.ok) {
+                const errorResponse = await response.json();
+                console.error('Error uploading file to Dropbox:', errorResponse);
+                return null;
+            }
+    
             const data = await response.json();
+            console.log('File uploaded to Dropbox successfully:', data);
+    
             return await getDropboxSharedLink(data.path_lower);
         } catch (error) {
             console.error('Error uploading file to Dropbox:', error);
@@ -916,17 +1024,6 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('Error updating record in Airtable:', error);
         }
-    }
-
-    function showSubmitButton(recordId) {
-        if (submitButton.style.display === 'none') {
-            // Only center the button if it's not already displayed
-            submitButton.style.top = '50%';
-            submitButton.style.left = '50%';
-            submitButton.style.transform = 'translate(-50%, -50%)';
-        }
-        submitButton.style.display = 'block';
-        activeRecordId = recordId;
     }
 
     document.getElementById('search-input').addEventListener('input', function () {

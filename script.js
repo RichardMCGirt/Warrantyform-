@@ -39,32 +39,20 @@ document.addEventListener('DOMContentLoaded', function () {
     async function fetchDropboxToken() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
 
-        console.log(`Fetching Dropbox token from Airtable...`);
-        console.log(`URL: ${url}`);
-        console.log(`Authorization: Bearer ${airtableApiKey.substring(0, 5)}...`);
-
         try {
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
-
-            console.log(`Response Status: ${response.status}`);
-            console.log(`Response Status Text: ${response.statusText}`);
 
             if (!response.ok) {
                 throw new Error(`Error fetching Dropbox token: ${response.status} ${response.statusText}`);
             }
 
             const data = await response.json();
-            console.log('Response Data:', data);
 
             for (const record of data.records) {
-                console.log('Record ID:', record.id);
-                console.log('Fields:', record.fields);
-
                 if (record.fields && record.fields['Token Token']) {
                     dropboxAccessToken = record.fields['Token Token'];
-                    console.log('Dropbox Access Token retrieved successfully:', dropboxAccessToken);
                     break;
                 }
             }
@@ -74,6 +62,76 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         } catch (error) {
             console.error('Error fetching Dropbox token from Airtable:', error);
+        }
+    }
+
+    // Function to refresh Dropbox token
+    async function refreshDropboxToken() {
+        const appKey = 'wal8feypzdqliah'; // Replace with your Dropbox App Key
+        const appSecret = 'kndy54sizvqovxv'; // Replace with your Dropbox App Secret
+        const refreshToken = 'sl.B8Pw4HtECMGmzvIUdIi9TIu3D9cxOBjyz_2cNDtyV1dNQCNLaA2sfJvyA2EtOByhTlgp0l7AxArSUWJnlWEjtRG2R8dpYTC1SEOpK-swqJyUg8MHXvzdjIMR4eIBhXGMd8O2QGoOvThJExuc5sAxi8Y'; // Replace with your Dropbox Refresh Token
+
+        const tokenUrl = 'https://api.dropboxapi.com/oauth2/token';
+
+        const headers = new Headers();
+        headers.append('Authorization', 'Basic ' + btoa(`${appKey}:${appSecret}`));
+        headers.append('Content-Type', 'application/x-www-form-urlencoded');
+
+        const body = new URLSearchParams();
+        body.append('grant_type', 'refresh_token');
+        body.append('refresh_token', refreshToken);
+
+        try {
+            const response = await fetch(tokenUrl, {
+                method: 'POST',
+                headers: headers,
+                body: body
+            });
+
+            if (!response.ok) {
+                throw new Error(`Error refreshing Dropbox token: ${response.status} ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            dropboxAccessToken = data.access_token; // Update the access token with the new one
+
+            // Update the new token in Airtable
+            await updateDropboxTokenInAirtable(dropboxAccessToken);
+            console.log('Dropbox token refreshed and updated in Airtable.');
+        } catch (error) {
+            console.error('Error refreshing Dropbox token:', error);
+        }
+    }
+
+    // Function to update Dropbox token in Airtable
+    async function updateDropboxTokenInAirtable(token) {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+        try {
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    Authorization: `Bearer ${airtableApiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    records: [
+                        {
+                            id: 'YOUR_RECORD_ID', // Replace with actual record ID where the token is stored
+                            fields: {
+                                'Token Token': token
+                            }
+                        }
+                    ]
+                })
+            });
+
+            if (!response.ok) {
+                console.error(`Error updating Dropbox token in Airtable: ${response.status} ${response.statusText}`);
+            } else {
+                console.log('Dropbox token updated successfully in Airtable.');
+            }
+        } catch (error) {
+            console.error('Error updating Dropbox token in Airtable:', error);
         }
     }
 
@@ -114,7 +172,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const currentImages = await fetchCurrentImagesFromAirtable(recordId);
 
         for (const file of files) {
-            const dropboxUrl = await uploadFileToDropbox(file);
+            let dropboxUrl = await uploadFileToDropbox(file);
+            if (!dropboxUrl) {
+                // Refresh token if upload fails due to token expiration
+                await refreshDropboxToken();
+                dropboxUrl = await uploadFileToDropbox(file);
+            }
+
             if (dropboxUrl) {
                 const formattedLink = dropboxUrl.replace('?dl=0', '?raw=1');
                 uploadedUrls.push({ url: formattedLink });
@@ -128,8 +192,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (allImages.length > 0) {
             const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
             const body = JSON.stringify({ fields: { 'Picture(s) of Issue': allImages } });
-
-            console.log('Payload being sent to Airtable:', body);
 
             try {
                 const response = await fetch(url, {
@@ -217,8 +279,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const dropboxCreateSharedLinkUrl = 'https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings';
-        console.log(`Creating shared link for file: ${filePath}`);
-    
+
         try {
             const response = await fetch(dropboxCreateSharedLinkUrl, {
                 method: 'POST',
@@ -233,27 +294,24 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
             });
-    
+
             if (!response.ok) {
                 if (response.status === 409) {
-                    console.log('Shared link already exists, fetching existing link...');
                     return await getExistingDropboxLink(filePath);
                 } else {
                     console.error(`Error creating shared link: ${response.status} ${response.statusText}`);
                     return null;
                 }
             }
-    
+
             const data = await response.json();
-            console.log('Shared link created:', data);
-            
             return convertToDirectLink(data.url);
         } catch (error) {
             console.error('Error creating Dropbox shared link:', error);
             return null;
         }
     }
-    
+
     async function getExistingDropboxLink(filePath) {
         if (!dropboxAccessToken) {
             console.error('Dropbox Access Token is not available.');
@@ -261,8 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const dropboxGetSharedLinkUrl = 'https://api.dropboxapi.com/2/sharing/list_shared_links';
-        console.log(`Fetching existing shared link for file: ${filePath}`);
-    
+
         try {
             const response = await fetch(dropboxGetSharedLinkUrl, {
                 method: 'POST',
@@ -275,16 +332,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     direct_only: true
                 })
             });
-    
+
             if (!response.ok) {
                 console.error(`Error fetching existing shared link: ${response.status} ${response.statusText}`);
                 return null;
             }
-    
+
             const data = await response.json();
             if (data.links && data.links.length > 0) {
-                console.log('Existing shared link fetched:', data.links[0]);
-                
                 return convertToDirectLink(data.links[0].url);
             } else {
                 console.error('No existing shared link found.');
@@ -295,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return null;
         }
     }
-    
+
     function convertToDirectLink(url) {
         return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '?raw=1');
     }

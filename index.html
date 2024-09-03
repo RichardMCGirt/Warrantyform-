@@ -80,7 +80,102 @@
                 <!-- Data will be injected here by JavaScript -->
             </tbody>
         </table>
+        <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warranty</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <img src="VANIR-transparent (1).png" alt="Vanir Installed Sales Logo" class="logo loading-logo">
+        <h1 class="hidden">Warranty</h1>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast">
+        Changes submitted successfully!
+    </div>
+
+     
+
+    <!-- Main content with watermark -->
+    <div id="main-content" style="display: none;">
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search..." />
+        </div>
+        <table id="airtable-data">
+            <h2>Field Tech Review Needed</h2>
+            <thead>
+                <tr>
+                    <th>Branch</th>
+                    <th>Builder</th>
+                    <th>Lot Number and Community</th>
+
+                    <th>Homeowner Name</th>
+                    <th>Address</th>
+                    <th>Description</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Contact Email</th>
+                    <th>Pictures</th>
+                    <th>Materials Needed</th>
+                    <th>Billable/ Non Billable</th>
+                    <th>Field Review Needed</th>
+               
+                
+
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be injected here by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+  
+       <!-- Main content with watermark -->
+       <div id="secoundary-content" style="display: none;">
+        <h2>Scheduled Awaiting Field Technician</h2>
+        <table id="feild-data">
+            <thead>
+                <tr>
+                    <th>Branch</th>
+                    <th>Builder</th>
+                    <th>Lot Number and Community</th>
+                    <th>Homeowner Name</th>
+                    <th>Address</th>
+                    <th>Description</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Contact Email</th>
+                    <th>Completed Pictures</th>
+                
+                    <th>DOW to be Completed</th>
+                    <th>Job Completed</th>
+                
+
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be injected here by JavaScript -->
+            </tbody>
+        </table>
         <button id="submit-button">Submit Changes</button>
+        <div class="trash-can"></div>
+
+        <script>
+            window.env = {
+              AIRTABLE_API_KEY: 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238',
+              AIRTABLE_BASE_ID: 'appO21PVRA4Qa087I',
+              AIRTABLE_TABLE_NAME: 'tbl6EeKPsNuEvt5yJ'
+            };
+          </script>
+    <script src="script.js"></script>
+
+      </body>>
+</html>
         <script>
             window.env = {
               AIRTABLE_API_KEY: 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238',

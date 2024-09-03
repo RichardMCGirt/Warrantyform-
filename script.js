@@ -416,7 +416,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
-                { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true } // Checkbox for 'Job Completed'
+                { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true } 
 
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
@@ -431,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
-                { field: 'Field Review Needed', value: fields['Field Review Needed'] || false, checkbox: true } // Checkbox for 'Field Review Needed'
+                { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true } 
 
             ];
 
@@ -605,12 +605,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         hasChanges = true;
                         showSubmitButton(record.id);
 
-                        if (field === 'Field Review Needed' && newValue) {
-                            updatedFields[record.id]['Field Review Not Needed'] = false;
-                        } else if (field === 'Field Review Not Needed' && newValue) {
-                            updatedFields[record.id]['Field Review Needed'] = false;
-                            updatedFields[record.id]['Status'] = 'Material Purchase Needed';
-                        }
+                      
                     });
 
                     cell.appendChild(checkboxElement);
@@ -646,31 +641,54 @@ document.addEventListener('DOMContentLoaded', function () {
     async function deleteImageFromAirtable(recordId, imageId) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
         const currentImages = await fetchCurrentImagesFromAirtable(recordId);
-
+    
         const updatedImages = currentImages.filter(image => image.id !== imageId);
-
         const body = JSON.stringify({ fields: { 'Picture(s) of Issue': updatedImages } });
-
-        try {
-            const response = await fetch(url, {
-                method: 'PATCH',
-                headers: {
-                    Authorization: `Bearer ${airtableApiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: body
-            });
-
-            if (!response.ok) {
-                console.error(`Error deleting image from Airtable: ${response.status} ${response.statusText}`);
-            } else {
-                console.log('Image successfully deleted from Airtable:', await response.json());
-            }
-        } catch (error) {
-            console.error('Error deleting image from Airtable:', error);
+    
+        // Find the image element that matches the imageId
+        const imageElement = document.querySelector(`img[src="${currentImages.find(img => img.id === imageId)?.url}"]`);
+        const trashCan = document.querySelector('.trash-can');
+    
+        if (!imageElement || !trashCan) {
+            console.error('Image element or trash can element not found.');
+            return;
         }
+        
+        // Get the bounding rectangles for the image and trash can
+        const imageRect = imageElement.getBoundingClientRect();
+        const trashCanRect = trashCan.getBoundingClientRect();
+        
+        // Add animation to the image
+        imageElement.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
+        imageElement.style.transform = `translate(${trashCanRect.left - imageRect.left}px, ${trashCanRect.top - imageRect.top}px) scale(0)`;
+        imageElement.classList.add('image-moving');
+    
+        setTimeout(async () => {
+            try {
+                const response = await fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        Authorization: `Bearer ${airtableApiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: body
+                });
+    
+                if (!response.ok) {
+                    console.error(`Error deleting image from Airtable: ${response.status} ${response.statusText}`);
+                } else {
+                    console.log('Image successfully deleted from Airtable:', await response.json());
+                    imageElement.classList.add('image-deleted');
+                    showToast('Image successfully deleted!');
+                    imageElement.remove(); // Remove image element from DOM
+                }
+            } catch (error) {
+                console.error('Error deleting image from Airtable:', error);
+            }
+        }, 800); // Delay to match the animation duration
     }
-
+    
+    
     function openImageViewer(images, startIndex) {
         // Create the modal if it doesn't exist
         let imageViewerModal = document.getElementById('image-viewer-modal');

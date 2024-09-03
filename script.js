@@ -34,11 +34,33 @@ document.addEventListener('DOMContentLoaded', function () {
     submitButton.id = 'dynamic-submit-button';
     submitButton.textContent = 'Submit';
     submitButton.style.display = 'none';
-    submitButton.style.position = 'absolute';
+    submitButton.style.position = 'fixed';
     submitButton.style.zIndex = '1000';
+    submitButton.style.cursor = 'move';
     document.body.appendChild(submitButton);
 
-    // Function to fetch Dropbox credentials from Airtable
+    // Enable dragging of the submit button
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    submitButton.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        offsetX = e.clientX - submitButton.offsetLeft;
+        offsetY = e.clientY - submitButton.offsetTop;
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+            submitButton.style.left = `${e.clientX - offsetX}px`;
+            submitButton.style.top = `${e.clientY - offsetY}px`;
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+
+    // Fetch Dropbox credentials from Airtable
     async function fetchDropboxCredentials() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
 
@@ -78,7 +100,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Function to refresh Dropbox token
+    // Refresh Dropbox token
     async function refreshDropboxToken() {
         if (!dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
             console.error('Dropbox credentials are not available.');
@@ -117,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Function to update Dropbox token in Airtable
+    // Update Dropbox token in Airtable
     async function updateDropboxTokenInAirtable(token) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
         try {
@@ -149,8 +171,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Call the function to execute
-    fetchDropboxCredentials();
+    fetchDropboxCredentials(); // Execute
 
     // Create file input dynamically
     const fileInput = document.createElement('input');
@@ -327,7 +348,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
-
     async function getExistingDropboxLink(filePath) {
         if (!dropboxAccessToken) {
             console.error('Dropbox Access Token is not available.');
@@ -367,11 +387,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
     
-    function convertToDirectLink(url) {
-        return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '?raw=1');
-    }
-    
-
     function convertToDirectLink(url) {
         return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '?raw=1');
     }
@@ -508,7 +523,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable', ''] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true } 
-
             ];
 
             fieldConfigs.forEach(config => {
@@ -575,23 +589,26 @@ document.addEventListener('DOMContentLoaded', function () {
                         deleteButton.onclick = async () => {
                             const confirmed = confirm('Are you sure you want to delete this image?');
                             if (confirmed) {
-                                await deleteImageFromAirtable(record.id, images[currentIndex].id);
-                                images.splice(currentIndex, 1);
-                                if (images.length > 0) {
-                                    currentIndex = currentIndex % images.length; // Adjust index if needed
-                                    imgElement.src = images[currentIndex].url;
-                                    imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
-                                } else {
-                                    // Show "Add Photos" button when all images are deleted
-                                    carouselDiv.innerHTML = '';
-                                    const addPhotoButton = document.createElement('button');
-                                    addPhotoButton.textContent = 'Add Photos';
-                                    addPhotoButton.onclick = () => {
-                                        fileInput.setAttribute('data-record-id', record.id);
-                                        fileInput.click();
-                                    };
-                                    carouselDiv.appendChild(addPhotoButton);
-                                }
+                                // Animate image to trash can
+                                animateImageToTrash(imgElement, deleteButton, async () => {
+                                    await deleteImageFromAirtable(record.id, images[currentIndex].id);
+                                    images.splice(currentIndex, 1);
+                                    if (images.length > 0) {
+                                        currentIndex = currentIndex % images.length; // Adjust index if needed
+                                        imgElement.src = images[currentIndex].url;
+                                        imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
+                                    } else {
+                                        // Show "Add Photos" button when all images are deleted
+                                        carouselDiv.innerHTML = '';
+                                        const addPhotoButton = document.createElement('button');
+                                        addPhotoButton.textContent = 'Add Photos';
+                                        addPhotoButton.onclick = () => {
+                                            fileInput.setAttribute('data-record-id', record.id);
+                                            fileInput.click();
+                                        };
+                                        carouselDiv.appendChild(addPhotoButton);
+                                    }
+                                });
                             }
                         };
                         carouselDiv.appendChild(deleteButton);
@@ -769,6 +786,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 800); // Delay to match the animation duration
     }
     
+    function animateImageToTrash(imgElement, trashCan, callback) {
+        const imageRect = imgElement.getBoundingClientRect();
+        const trashRect = trashCan.getBoundingClientRect();
+
+        imgElement.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
+        imgElement.style.transform = `translate(${trashRect.left - imageRect.left}px, ${trashRect.top - imageRect.top}px) scale(0)`;
+        
+        imgElement.addEventListener('transitionend', () => {
+            callback(); // Execute the callback function after animation
+        });
+    }
+
     function openImageViewer(images, startIndex) {
         // Create the modal if it doesn't exist
         let imageViewerModal = document.getElementById('image-viewer-modal');
@@ -820,6 +849,24 @@ document.addEventListener('DOMContentLoaded', function () {
             modalImage.src = currentImagesArray[currentIndex].url;
         }
 
+        // Close modal on click outside or ESC key
+        function closeModalOnOutsideClick(event) {
+            if (event.target === imageViewerModal) {
+                imageViewerModal.style.display = 'none';
+                document.removeEventListener('click', closeModalOnOutsideClick);
+            }
+        }
+
+        function closeModalOnEsc(event) {
+            if (event.key === 'Escape') {
+                imageViewerModal.style.display = 'none';
+                document.removeEventListener('keydown', closeModalOnEsc);
+            }
+        }
+
+        document.addEventListener('click', closeModalOnOutsideClick);
+        document.addEventListener('keydown', closeModalOnEsc);
+
         updateModalImage();
         imageViewerModal.style.display = 'block';
     }
@@ -844,7 +891,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    submitButton.addEventListener('click', async () => {
+    async function submitChanges() {
         if (!hasChanges || !activeRecordId) {
             showToast('No changes to submit.');
             return;
@@ -864,7 +911,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         showToast('Changes submitted successfully!');
         fetchAllData();  // Refresh data after form submission
-    });
+    }
 
     async function updateRecord(recordId, fields) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
@@ -891,14 +938,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function showSubmitButton(recordId) {
-        const recordRow = document.querySelector(`td[data-id="${recordId}"]`);
-        if (recordRow) {
-            const rowRect = recordRow.getBoundingClientRect();
-            submitButton.style.top = `${window.scrollY + rowRect.top + 0}px`;
-            submitButton.style.left = `${window.scrollX + rowRect.right + 1803}px`;
-            submitButton.style.display = 'block';
-            activeRecordId = recordId;
+        if (submitButton.style.display === 'none') {
+            // Only center the button if it's not already displayed
+            submitButton.style.top = '50%';
+            submitButton.style.left = '50%';
+            submitButton.style.transform = 'translate(-50%, -50%)';
         }
+        submitButton.style.display = 'block';
+        activeRecordId = recordId;
     }
 
     document.getElementById('search-input').addEventListener('input', function () {

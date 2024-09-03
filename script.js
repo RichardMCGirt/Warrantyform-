@@ -506,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
-                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
+                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable', ''] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true } 
 
             ];
@@ -519,14 +519,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 cell.style.wordWrap = 'break-word';
                 cell.style.maxWidth = '200px';
                 cell.style.position = 'relative';
-
+            
                 if (image) {
                     const images = Array.isArray(fields[field]) ? fields[field] : [];
                     const carouselDiv = document.createElement('div');
                     carouselDiv.classList.add('image-carousel');
-
+            
                     if (images.length > 0) {
-                        let currentIndex = 0; // Define currentIndex here
+                        let currentIndex = 0; // Initialize currentIndex
                         const imgElement = document.createElement('img');
                         imgElement.src = images[0].url;
                         imgElement.alt = "Issue Picture";
@@ -535,15 +535,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         imgElement.classList.add('carousel-image');
                         imgElement.onclick = () => openImageViewer(images, 0); // Add click event to open modal
                         carouselDiv.appendChild(imgElement);
-
+            
                         const imageCount = document.createElement('div');
                         imageCount.classList.add('image-count');
                         imageCount.textContent = `1 of ${images.length}`;
                         carouselDiv.appendChild(imageCount);
-
-                        let prevButton, nextButton; // Define prevButton and nextButton here
-
+            
+                        let prevButton, nextButton; // Initialize navigation buttons
+            
                         if (images.length > 1) {
+                            // Create Previous Button
                             prevButton = document.createElement('button');
                             prevButton.textContent = '<';
                             prevButton.classList.add('carousel-nav-button', 'prev');
@@ -552,7 +553,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 imgElement.src = images[currentIndex].url;
                                 imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
                             };
-
+            
+                            // Create Next Button
                             nextButton = document.createElement('button');
                             nextButton.textContent = '>';
                             nextButton.classList.add('carousel-nav-button', 'next');
@@ -561,14 +563,14 @@ document.addEventListener('DOMContentLoaded', function () {
                                 imgElement.src = images[currentIndex].url;
                                 imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
                             };
-
+            
                             carouselDiv.appendChild(prevButton);
                             carouselDiv.appendChild(nextButton);
                         }
-
+            
                         // Add Delete Button for images
                         const deleteButton = document.createElement('button');
-                        deleteButton.innerHTML = '🗑️'; // Use trash can icon
+                        deleteButton.innerHTML = '🗑️'; // Trash can icon
                         deleteButton.classList.add('delete-button');
                         deleteButton.onclick = async () => {
                             const confirmed = confirm('Are you sure you want to delete this image?');
@@ -580,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     imgElement.src = images[currentIndex].url;
                                     imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
                                 } else {
-                                    // When all images are deleted, only show the "Add Photos" button
+                                    // Show "Add Photos" button when all images are deleted
                                     carouselDiv.innerHTML = '';
                                     const addPhotoButton = document.createElement('button');
                                     addPhotoButton.textContent = 'Add Photos';
@@ -594,7 +596,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         };
                         carouselDiv.appendChild(deleteButton);
                     }
-
+            
                     // Ensure the "Add Photos" button is always displayed
                     const addPhotoButton = document.createElement('button');
                     addPhotoButton.textContent = 'Add Photos';
@@ -604,8 +606,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     };
                     carouselDiv.appendChild(addPhotoButton);
                     cell.appendChild(carouselDiv);
-
-                    // Add event listeners for keyboard navigation
+            
+                    // Add keyboard navigation support
                     carouselDiv.tabIndex = 0;  // Make div focusable
                     carouselDiv.addEventListener('keydown', (event) => {
                         if (event.key === 'ArrowLeft' && prevButton) {
@@ -614,7 +616,68 @@ document.addEventListener('DOMContentLoaded', function () {
                             nextButton.click();
                         }
                     });
-
+            
+                } else if (checkbox) {
+                    const checkboxElement = document.createElement('input');
+                    checkboxElement.type = 'checkbox';
+                    checkboxElement.checked = value;
+                    checkboxElement.classList.add('custom-checkbox');
+            
+                    // Ensure "Job Completed" checkbox is never disabled
+                    if (field === 'Job Completed') {
+                        checkboxElement.disabled = false;
+                    } else {
+                        // Disable other checkboxes if "Billable/ Non Billable" has no value
+                        const billableCell = row.querySelector('td[data-field="Billable/ Non Billable"] select');
+                        checkboxElement.disabled = !billableCell || !billableCell.value;
+                    }
+            
+                    checkboxElement.addEventListener('change', function () {
+                        const newValue = checkboxElement.checked;
+                        updatedFields[record.id] = updatedFields[record.id] || {};
+                        updatedFields[record.id][field] = newValue;
+                        hasChanges = true;
+                        showSubmitButton(record.id);
+                    });
+            
+                    cell.appendChild(checkboxElement);
+                } else if (dropdown) {
+                    const select = document.createElement('select');
+                    select.classList.add('styled-select');
+                    options.forEach(option => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option;
+                        optionElement.textContent = option;
+            
+                        if (field === 'Billable/ Non Billable') {
+                            if (option === 'Billable') {
+                                optionElement.style.backgroundColor = '#ffeb3b';
+                                optionElement.style.color = '#000';
+                            } else if (option === 'Non Billable') {
+                                optionElement.style.backgroundColor = '#03a9f4';
+                                optionElement.style.color = '#fff';
+                            }
+                        }
+            
+                        if (option === value) optionElement.selected = true;
+                        select.appendChild(optionElement);
+                    });
+            
+                    select.addEventListener('change', () => {
+                        const newValue = select.value;
+                        updatedFields[record.id] = updatedFields[record.id] || {};
+                        updatedFields[record.id][field] = newValue;
+                        hasChanges = true;
+                        showSubmitButton(record.id);
+            
+                        // Enable or disable the checkbox based on the select value
+                        const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
+                        if (fieldReviewCheckbox) {
+                            fieldReviewCheckbox.disabled = !newValue;  // Disable if no value is selected
+                        }
+                    });
+            
+                    cell.appendChild(select);
                 } else if (email) {
                     cell.innerHTML = value ? `<a href="mailto:${value}">${value}</a>` : 'N/A';
                 } else if (directions) {
@@ -627,74 +690,16 @@ document.addEventListener('DOMContentLoaded', function () {
                     } else {
                         cell.textContent = value;
                     }
-                } else if (dropdown) {
-                    const select = document.createElement('select');
-                    select.classList.add('styled-select');
-                    options.forEach(option => {
-                        const optionElement = document.createElement('option');
-                        optionElement.value = option;
-                        optionElement.textContent = option;
-
-                        if (field === 'Billable/ Non Billable') {
-                            if (option === 'Billable') {
-                                optionElement.style.backgroundColor = '#ffeb3b';
-                                optionElement.style.color = '#000';
-                            } else if (option === 'Non Billable') {
-                                optionElement.style.backgroundColor = '#03a9f4';
-                                optionElement.style.color = '#fff';
-                            }
-                        }
-
-                        if (option === value) optionElement.selected = true;
-                        select.appendChild(optionElement);
-                    });
-
-                    select.addEventListener('change', () => {
-                        const newValue = select.value;
-                        updatedFields[record.id] = updatedFields[record.id] || {};
-                        updatedFields[record.id][field] = newValue;
-                        hasChanges = true;
-                        showSubmitButton(record.id);
-
-                        // Enable or disable the checkbox based on the select value
-                        const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
-                        if (fieldReviewCheckbox) {
-                            fieldReviewCheckbox.disabled = !newValue;  // Disable if no value is selected
-                        }
-                    });
-
-                    cell.appendChild(select);
-                } else if (checkbox) {
-                    const checkboxElement = document.createElement('input');
-                    checkboxElement.type = 'checkbox';
-                    checkboxElement.checked = value;
-                    checkboxElement.classList.add('custom-checkbox');
-
-                    // Disable checkbox if "Billable/ Non Billable" has no value
-                    const billableCell = row.querySelector('td[data-field="Billable/ Non Billable"] select');
-                    checkboxElement.disabled = !billableCell || !billableCell.value;
-
-                    checkboxElement.addEventListener('change', function () {
-                        const newValue = checkboxElement.checked;
-                        updatedFields[record.id] = updatedFields[record.id] || {};
-                        updatedFields[record.id][field] = newValue;
-                        hasChanges = true;
-                        showSubmitButton(record.id);
-
-                      
-                    });
-
-                    cell.appendChild(checkboxElement);
                 } else {
                     cell.textContent = value;
                 }
-
+            
                 if (editable && !dropdown && !image) {
                     cell.setAttribute('contenteditable', 'true');
                     cell.classList.add('editable-cell');
-
+            
                     const originalContent = cell.textContent;
-
+            
                     cell.addEventListener('blur', () => {
                         const newValue = cell.textContent;
                         if (newValue !== originalContent) {

@@ -3,6 +3,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const airtableBaseId = window.env.AIRTABLE_BASE_ID;
     const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
     let dropboxAccessToken;
+    let dropboxAppKey;
+    let dropboxAppSecret;
+    let dropboxRefreshToken;
 
     const loadingLogo = document.querySelector('.loading-logo');
     const mainContent = document.getElementById('main-content');
@@ -35,8 +38,8 @@ document.addEventListener('DOMContentLoaded', function () {
     submitButton.style.zIndex = '1000';
     document.body.appendChild(submitButton);
 
-    // Function to fetch Dropbox token from Airtable
-    async function fetchDropboxToken() {
+    // Function to fetch Dropbox credentials from Airtable
+    async function fetchDropboxCredentials() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
 
         try {
@@ -45,41 +48,52 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (!response.ok) {
-                throw new Error(`Error fetching Dropbox token: ${response.status} ${response.statusText}`);
+                throw new Error(`Error fetching Dropbox credentials: ${response.status} ${response.statusText}`);
             }
 
             const data = await response.json();
 
             for (const record of data.records) {
-                if (record.fields && record.fields['Token Token']) {
-                    dropboxAccessToken = record.fields['Token Token'];
-                    break;
+                if (record.fields) {
+                    if (record.fields['Token Token']) {
+                        dropboxAccessToken = record.fields['Token Token'];
+                    }
+                    if (record.fields['Dropbox App Key']) {
+                        dropboxAppKey = record.fields['Dropbox App Key'];
+                    }
+                    if (record.fields['Dropbox App Secret']) {
+                        dropboxAppSecret = record.fields['Dropbox App Secret'];
+                    }
+                    if (record.fields['Dropbox Refresh Token']) {
+                        dropboxRefreshToken = record.fields['Dropbox Refresh Token'];
+                    }
                 }
             }
 
-            if (!dropboxAccessToken) {
-                console.error('Dropbox token not found in Airtable.');
+            if (!dropboxAccessToken || !dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
+                console.error('Dropbox credentials not found in Airtable.');
             }
         } catch (error) {
-            console.error('Error fetching Dropbox token from Airtable:', error);
+            console.error('Error fetching Dropbox credentials from Airtable:', error);
         }
     }
 
     // Function to refresh Dropbox token
     async function refreshDropboxToken() {
-        const appKey = 'wal8feypzdqliah'; // Replace with your Dropbox App Key
-        const appSecret = 'kndy54sizvqovxv'; // Replace with your Dropbox App Secret
-        const refreshToken = 'sl.B8Pw4HtECMGmzvIUdIi9TIu3D9cxOBjyz_2cNDtyV1dNQCNLaA2sfJvyA2EtOByhTlgp0l7AxArSUWJnlWEjtRG2R8dpYTC1SEOpK-swqJyUg8MHXvzdjIMR4eIBhXGMd8O2QGoOvThJExuc5sAxi8Y'; // Replace with your Dropbox Refresh Token
+        if (!dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
+            console.error('Dropbox credentials are not available.');
+            return;
+        }
 
         const tokenUrl = 'https://api.dropboxapi.com/oauth2/token';
 
         const headers = new Headers();
-        headers.append('Authorization', 'Basic ' + btoa(`${appKey}:${appSecret}`));
+        headers.append('Authorization', 'Basic ' + btoa(`${dropboxAppKey}:${dropboxAppSecret}`));
         headers.append('Content-Type', 'application/x-www-form-urlencoded');
 
         const body = new URLSearchParams();
         body.append('grant_type', 'refresh_token');
-        body.append('refresh_token', refreshToken);
+        body.append('refresh_token', dropboxRefreshToken);
 
         try {
             const response = await fetch(tokenUrl, {
@@ -116,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify({
                     records: [
                         {
-                            id: 'YOUR_RECORD_ID', // Replace with actual record ID where the token is stored
+                            id: 'Dropbox Token', // Replace with actual record ID where the token is stored
                             fields: {
                                 'Token Token': token
                             }
@@ -136,7 +150,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Call the function to execute
-    fetchDropboxToken();
+    fetchDropboxCredentials();
 
     // Create file input dynamically
     const fileInput = document.createElement('input');
@@ -277,9 +291,9 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Dropbox Access Token is not available.');
             return null;
         }
-
+    
         const dropboxCreateSharedLinkUrl = 'https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings';
-
+    
         try {
             const response = await fetch(dropboxCreateSharedLinkUrl, {
                 method: 'POST',
@@ -294,16 +308,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
             });
-
+    
             if (!response.ok) {
                 if (response.status === 409) {
+                    // A shared link already exists, fetch the existing link
                     return await getExistingDropboxLink(filePath);
                 } else {
                     console.error(`Error creating shared link: ${response.status} ${response.statusText}`);
                     return null;
                 }
             }
-
+    
             const data = await response.json();
             return convertToDirectLink(data.url);
         } catch (error) {
@@ -311,15 +326,16 @@ document.addEventListener('DOMContentLoaded', function () {
             return null;
         }
     }
+    
 
     async function getExistingDropboxLink(filePath) {
         if (!dropboxAccessToken) {
             console.error('Dropbox Access Token is not available.');
             return null;
         }
-
+    
         const dropboxGetSharedLinkUrl = 'https://api.dropboxapi.com/2/sharing/list_shared_links';
-
+    
         try {
             const response = await fetch(dropboxGetSharedLinkUrl, {
                 method: 'POST',
@@ -332,12 +348,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     direct_only: true
                 })
             });
-
+    
             if (!response.ok) {
                 console.error(`Error fetching existing shared link: ${response.status} ${response.statusText}`);
                 return null;
             }
-
+    
             const data = await response.json();
             if (data.links && data.links.length > 0) {
                 return convertToDirectLink(data.links[0].url);
@@ -350,6 +366,11 @@ document.addEventListener('DOMContentLoaded', function () {
             return null;
         }
     }
+    
+    function convertToDirectLink(url) {
+        return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '?raw=1');
+    }
+    
 
     function convertToDirectLink(url) {
         return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '?raw=1');
@@ -743,7 +764,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 800); // Delay to match the animation duration
     }
     
-    
     function openImageViewer(images, startIndex) {
         // Create the modal if it doesn't exist
         let imageViewerModal = document.getElementById('image-viewer-modal');
@@ -870,7 +890,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (recordRow) {
             const rowRect = recordRow.getBoundingClientRect();
             submitButton.style.top = `${window.scrollY + rowRect.top + 0}px`;
-            submitButton.style.left = `${window.scrollX + rowRect.right + 2030}px`;
+            submitButton.style.left = `${window.scrollX + rowRect.right + 1803}px`;
             submitButton.style.display = 'block';
             activeRecordId = recordId;
         }

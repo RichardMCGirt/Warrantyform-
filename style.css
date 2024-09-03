@@ -446,7 +446,7 @@ h1.visible {
 
 /* Table Styles */
 table {
-    width: 90%;
+    width: 80%;
     margin: 10px auto; /* Reduced margin */
     border-collapse: collapse;
     background-color: #fff;

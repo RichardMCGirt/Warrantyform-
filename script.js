@@ -585,9 +585,11 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             const fieldConfigs = isSecondary ? [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
                 { field: 'Builders', value: fields['Builders'] || 'N/A' },
-                { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
-                { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
+
+                { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
+                                { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
+
                 { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },
                 { field: 'StartDate', value: fields['StartDate'] ? formatDateTime(fields['StartDate']) : 'N/A' },
                 { field: 'EndDate', value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A' },

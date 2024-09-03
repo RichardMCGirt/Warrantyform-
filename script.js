@@ -39,27 +39,6 @@ document.addEventListener('DOMContentLoaded', function () {
     submitButton.style.cursor = 'move';
     document.body.appendChild(submitButton);
 
-    // Enable dragging of the submit button
-    let isDragging = false;
-    let offsetX, offsetY;
-
-    submitButton.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        offsetX = e.clientX - submitButton.offsetLeft;
-        offsetY = e.clientY - submitButton.offsetTop;
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            submitButton.style.left = `${e.clientX - offsetX}px`;
-            submitButton.style.top = `${e.clientY - offsetY}px`;
-        }
-    });
-
-    document.addEventListener('mouseup', () => {
-        isDragging = false;
-    });
-
     // Fetch Dropbox credentials from Airtable
     async function fetchDropboxCredentials() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
@@ -185,12 +164,13 @@ document.addEventListener('DOMContentLoaded', function () {
     fileInput.onchange = async (event) => {
         const files = event.target.files;
         const recordId = event.target.getAttribute('data-record-id');
+        const targetField = event.target.getAttribute('data-target-field');
 
         if (files && files.length > 0 && recordId) {
             showToast('Uploading images...');
             disableAddPhotosButton(recordId, true);  // Disable button
             const filesArray = Array.from(files);
-            await sendImagesToAirtableForRecord(filesArray, recordId);
+            await sendImagesToAirtableForRecord(filesArray, recordId, targetField);
             showToast('Images uploaded successfully!');
             disableAddPhotosButton(recordId, false); // Enable button
             showSubmitButton(recordId);
@@ -200,11 +180,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    async function sendImagesToAirtableForRecord(files, recordId) {
+    async function sendImagesToAirtableForRecord(files, recordId, targetField) {
         if (!Array.isArray(files)) files = [files];
 
         const uploadedUrls = [];
-        const currentImages = await fetchCurrentImagesFromAirtable(recordId);
+        const currentImages = await fetchCurrentImagesFromAirtable(recordId, targetField);
 
         for (const file of files) {
             let dropboxUrl = await uploadFileToDropbox(file);
@@ -226,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (allImages.length > 0) {
             const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
-            const body = JSON.stringify({ fields: { 'Picture(s) of Issue': allImages } });
+            const body = JSON.stringify({ fields: { [targetField]: allImages } });
 
             try {
                 const response = await fetch(url, {
@@ -252,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    async function fetchCurrentImagesFromAirtable(recordId) {
+    async function fetchCurrentImagesFromAirtable(recordId, targetField) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
         try {
             const response = await fetch(url, {
@@ -265,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const data = await response.json();
-            return data.fields['Picture(s) of Issue'] ? data.fields['Picture(s) of Issue'] : [];
+            return data.fields[targetField] ? data.fields[targetField] : [];
         } catch (error) {
             console.error('Error fetching current images from Airtable:', error);
             return [];
@@ -312,9 +292,9 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Dropbox Access Token is not available.');
             return null;
         }
-    
+
         const dropboxCreateSharedLinkUrl = 'https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings';
-    
+
         try {
             const response = await fetch(dropboxCreateSharedLinkUrl, {
                 method: 'POST',
@@ -329,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 })
             });
-    
+
             if (!response.ok) {
                 if (response.status === 409) {
                     // A shared link already exists, fetch the existing link
@@ -339,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     return null;
                 }
             }
-    
+
             const data = await response.json();
             return convertToDirectLink(data.url);
         } catch (error) {
@@ -347,15 +327,15 @@ document.addEventListener('DOMContentLoaded', function () {
             return null;
         }
     }
-    
+
     async function getExistingDropboxLink(filePath) {
         if (!dropboxAccessToken) {
             console.error('Dropbox Access Token is not available.');
             return null;
         }
-    
+
         const dropboxGetSharedLinkUrl = 'https://api.dropboxapi.com/2/sharing/list_shared_links';
-    
+
         try {
             const response = await fetch(dropboxGetSharedLinkUrl, {
                 method: 'POST',
@@ -368,12 +348,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     direct_only: true
                 })
             });
-    
+
             if (!response.ok) {
                 console.error(`Error fetching existing shared link: ${response.status} ${response.statusText}`);
                 return null;
             }
-    
+
             const data = await response.json();
             if (data.links && data.links.length > 0) {
                 return convertToDirectLink(data.links[0].url);
@@ -386,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return null;
         }
     }
-    
+
     function convertToDirectLink(url) {
         return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '?raw=1');
     }
@@ -497,7 +477,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const fieldConfigs = isSecondary ? [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
                 { field: 'Builders', value: fields['Builders'] || 'N/A' },
-
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
@@ -505,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 { field: 'StartDate', value: fields['StartDate'] ? formatDateTime(fields['StartDate']) : 'N/A' },
                 { field: 'EndDate', value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A' },
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
-                { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true },
+                { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true, imageField: 'Completed  Pictures' },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
                 { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true } 
 
@@ -519,14 +498,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 { field: 'StartDate', value: fields['StartDate'] ? formatDateTime(fields['StartDate']) : 'N/A' },
                 { field: 'EndDate', value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A' },
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
-                { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true },
+                { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable', ''] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true } 
             ];
 
             fieldConfigs.forEach(config => {
-                const { field, value, checkbox, editable, link, image, dropdown, options, email, directions } = config;
+                const { field, value, checkbox, editable, link, image, dropdown, options, email, directions, imageField } = config;
                 const cell = document.createElement('td');
                 cell.dataset.id = record.id;
                 cell.dataset.field = field;
@@ -591,7 +570,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (confirmed) {
                                 // Animate image to trash can
                                 animateImageToTrash(imgElement, deleteButton, async () => {
-                                    await deleteImageFromAirtable(record.id, images[currentIndex].id);
+                                    await deleteImageFromAirtable(record.id, images[currentIndex].id, imageField);
                                     images.splice(currentIndex, 1);
                                     if (images.length > 0) {
                                         currentIndex = currentIndex % images.length; // Adjust index if needed
@@ -604,6 +583,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         addPhotoButton.textContent = 'Add Photos';
                                         addPhotoButton.onclick = () => {
                                             fileInput.setAttribute('data-record-id', record.id);
+                                            fileInput.setAttribute('data-target-field', imageField);
                                             fileInput.click();
                                         };
                                         carouselDiv.appendChild(addPhotoButton);
@@ -619,6 +599,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     addPhotoButton.textContent = 'Add Photos';
                     addPhotoButton.onclick = () => {
                         fileInput.setAttribute('data-record-id', record.id);
+                        fileInput.setAttribute('data-target-field', imageField);
                         fileInput.click();
                     };
                     carouselDiv.appendChild(addPhotoButton);
@@ -736,31 +717,31 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    async function deleteImageFromAirtable(recordId, imageId) {
+    async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
-        const currentImages = await fetchCurrentImagesFromAirtable(recordId);
-    
+        const currentImages = await fetchCurrentImagesFromAirtable(recordId, imageField);
+
         const updatedImages = currentImages.filter(image => image.id !== imageId);
-        const body = JSON.stringify({ fields: { 'Picture(s) of Issue': updatedImages } });
-    
+        const body = JSON.stringify({ fields: { [imageField]: updatedImages } });
+
         // Find the image element that matches the imageId
         const imageElement = document.querySelector(`img[src="${currentImages.find(img => img.id === imageId)?.url}"]`);
         const trashCan = document.querySelector('.trash-can');
-    
+
         if (!imageElement || !trashCan) {
             console.error('Image element or trash can element not found.');
             return;
         }
-        
+
         // Get the bounding rectangles for the image and trash can
         const imageRect = imageElement.getBoundingClientRect();
         const trashCanRect = trashCan.getBoundingClientRect();
-        
+
         // Add animation to the image
         imageElement.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
         imageElement.style.transform = `translate(${trashCanRect.left - imageRect.left}px, ${trashCanRect.top - imageRect.top}px) scale(0)`;
         imageElement.classList.add('image-moving');
-    
+
         setTimeout(async () => {
             try {
                 const response = await fetch(url, {
@@ -771,7 +752,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     },
                     body: body
                 });
-    
+
                 if (!response.ok) {
                     console.error(`Error deleting image from Airtable: ${response.status} ${response.statusText}`);
                 } else {
@@ -785,14 +766,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }, 800); // Delay to match the animation duration
     }
-    
+
     function animateImageToTrash(imgElement, trashCan, callback) {
         const imageRect = imgElement.getBoundingClientRect();
         const trashRect = trashCan.getBoundingClientRect();
 
         imgElement.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
         imgElement.style.transform = `translate(${trashRect.left - imageRect.left}px, ${trashRect.top - imageRect.top}px) scale(0)`;
-        
+
         imgElement.addEventListener('transitionend', () => {
             callback(); // Execute the callback function after animation
         });

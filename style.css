@@ -44,17 +44,14 @@ table {
     border: 2px solid #8B0000;
 }
 
-
-
-
 th, td {
     border: 3px solid #131010;
     padding: 8px;
-    text-align: center; /* Center text in both tables */
-    white-space: normal; /* Allows text to wrap */
-    overflow-wrap: break-word; /* Ensures text wraps at word boundaries */
-    word-break: keep-all; /* Prevents breaking words mid-word */
-    max-width: 200px; /* Set a max-width to control the width of table cells */
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: keep-all;
+    max-width: 200px;
 }
 
 th {
@@ -65,8 +62,23 @@ th {
     position: sticky;
     top: 0;
     z-index: 1;
-    height: 1.5em; /* Adjusts the height relative to the default line height */
+    height: 1.5em;
+}
 
+/* Highlight first column */
+tbody td:first-child {
+    background-color: grey; /* Different color for the first column */
+    color: white;
+}
+
+
+/* Alternate row colors */
+tbody tr:nth-child(odd) {
+    background-color: #f2f2f2; /* Light grey for odd rows */
+}
+
+tbody tr:nth-child(even) {
+    background-color: #e6e6e6; /* Slightly darker grey for even rows */
 }
 
 /* Editable Cell Styles */

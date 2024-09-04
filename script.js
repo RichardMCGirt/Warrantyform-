@@ -43,18 +43,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Variables to track dragging
     let isDragging = false;
-    let isButtonMoving = false;
+    let offsetX, offsetY;
 
     // Mouse down event to start dragging
     submitButton.addEventListener('mousedown', function (event) {
-        isButtonMoving = false; // Reset moving flag
         let shiftX = event.clientX - submitButton.getBoundingClientRect().left;
         let shiftY = event.clientY - submitButton.getBoundingClientRect().top;
+        isDragging = true;
 
         function moveAt(pageX, pageY) {
             submitButton.style.left = pageX - shiftX + 'px';
             submitButton.style.top = pageY - shiftY + 'px';
-            isButtonMoving = true; // Button is being moved
         }
 
         function onMouseMove(event) {
@@ -65,13 +64,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.addEventListener('mouseup', function () {
             document.removeEventListener('mousemove', onMouseMove);
-            if (isButtonMoving) {
-                isDragging = true; // Set dragging to true if the button was moved
-                // Store the current position of the button in local storage
-                localStorage.setItem('submitButtonTop', submitButton.style.top);
-                localStorage.setItem('submitButtonLeft', submitButton.style.left);
-            }
-            setTimeout(() => isDragging = false, 100); // Delay reset to prevent immediate click detection
+            isDragging = false; // Reset dragging state after mouse up
+
+            // Store the current position of the button in local storage
+            localStorage.setItem('submitButtonTop', submitButton.style.top);
+            localStorage.setItem('submitButtonLeft', submitButton.style.left);
         }, { once: true });
     });
 
@@ -89,10 +86,11 @@ document.addEventListener('DOMContentLoaded', function () {
         activeRecordId = recordId;
     }
 
-    // Call the showSubmitButton function when a change is made
+    // Event listeners to show the submit button when input is typed or value is changed
     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
         element.addEventListener('input', () => showSubmitButton(activeRecordId));
         element.addEventListener('change', () => showSubmitButton(activeRecordId));
+        element.addEventListener('keypress', () => showSubmitButton(activeRecordId)); // For detecting keystrokes
     });
 
     // Fetch Dropbox credentials from Airtable
@@ -138,6 +136,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         dropboxAppSecret = record.fields['Dropbox App Secret'];
                         console.log('Dropbox App Secret found:', dropboxAppSecret);
                     }
+                    // Corrected lines below
                     if (record.fields['Dropbox Refresh Token']) {  // Correct this to match your field name
                         dropboxRefreshToken = record.fields['Dropbox Refresh Token'];  // Use the correct field name
                         console.log('Dropbox Refresh Token found:', dropboxRefreshToken);
@@ -147,6 +146,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
             
+            
+
             // Log the final state of credentials
             console.log('Final Dropbox Access Token:', dropboxAccessToken);
             console.log('Final Dropbox App Key:', dropboxAppKey);
@@ -1000,11 +1001,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        if (isDragging) {
-            console.log('Submit button is moving, submission is temporarily disabled.');
-            return; // Prevent submission while dragging
-        }
-
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
 
@@ -1035,7 +1031,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Event listener for dynamic submit button
     submitButton.addEventListener('click', function () {
-        if (!isDragging) submitChanges();
+        submitChanges();
     });
 
     async function updateRecord(recordId, fields) {

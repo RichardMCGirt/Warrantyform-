@@ -500,6 +500,30 @@ table td[contenteditable="true"]:hover {
     background-color: #003366 !important;
 }
 
+/* Make the table header sticky */
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    position: sticky;
+    top: 0; /* This keeps the header at the top when scrolling */
+    background-color: #ffffff; /* Background color for the header */
+    z-index: 1; /* Ensures the header is on top of the table body */
+    padding: 8px;
+    border-bottom: 2px solid #ddd;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #f2f2f2; /* Optional: zebra striping for rows */
+}
+
+tbody tr:hover {
+    background-color: #e0e0e0; /* Optional: highlight row on hover */
+}
+
+
 /* Style for the carousel navigation buttons */
 .carousel-nav-button {
     background-color: transparent; /* Transparent background */

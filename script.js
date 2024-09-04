@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', function () {
     let dropboxAppSecret;
     let dropboxRefreshToken;
 
+    fetchDropboxCredentials();
+
+
     const loadingLogo = document.querySelector('.loading-logo');
     const mainContent = document.getElementById('main-content');
     const secondaryContent = document.getElementById('secoundary-content');
@@ -44,139 +47,165 @@ document.addEventListener('DOMContentLoaded', function () {
     let offsetX, offsetY;
 
     // Mouse down event to start dragging
-// Event listeners for dragging the submit button
-submitButton.addEventListener('mousedown', function (event) {
-    let shiftX = event.clientX - submitButton.getBoundingClientRect().left;
-    let shiftY = event.clientY - submitButton.getBoundingClientRect().top;
+    submitButton.addEventListener('mousedown', function (event) {
+        let shiftX = event.clientX - submitButton.getBoundingClientRect().left;
+        let shiftY = event.clientY - submitButton.getBoundingClientRect().top;
 
-    function moveAt(pageX, pageY) {
-        submitButton.style.left = pageX - shiftX + 'px';
-        submitButton.style.top = pageY - shiftY + 'px';
+        function moveAt(pageX, pageY) {
+            submitButton.style.left = pageX - shiftX + 'px';
+            submitButton.style.top = pageY - shiftY + 'px';
+        }
+
+        function onMouseMove(event) {
+            moveAt(event.pageX, event.pageY);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+
+        document.addEventListener('mouseup', function () {
+            document.removeEventListener('mousemove', onMouseMove);
+
+            // Store the current position of the button in local storage
+            localStorage.setItem('submitButtonTop', submitButton.style.top);
+            localStorage.setItem('submitButtonLeft', submitButton.style.left);
+        }, { once: true });
+    });
+
+    // Function to show the submit button and keep it in the last position when a change is made
+    function showSubmitButton(recordId) {
+        if (submitButton.style.display === 'none') {
+            // Only set the button to the last known position if it hasn't been displayed yet
+            const lastTop = localStorage.getItem('submitButtonTop') || '50%';
+            const lastLeft = localStorage.getItem('submitButtonLeft') || '50%';
+            submitButton.style.top = lastTop;
+            submitButton.style.left = lastLeft;
+        }
+
+        submitButton.style.display = 'block';
+        activeRecordId = recordId;
     }
 
-    function onMouseMove(event) {
-        moveAt(event.pageX, event.pageY);
+    // Call the showSubmitButton function when a change is made
+    document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+        element.addEventListener('input', () => showSubmitButton(activeRecordId));
+        element.addEventListener('change', () => showSubmitButton(activeRecordId));
+    });
+
+// Fetch Dropbox credentials from Airtable
+async function fetchDropboxCredentials() {
+    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+    console.log('Starting fetchDropboxCredentials function');
+    console.log('Airtable URL:', url);
+    console.log('Fetching Dropbox credentials from Airtable...');
+
+    try {
+        const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${airtableApiKey}` }
+        });
+
+        console.log(`Response received from Airtable with status: ${response.status}`);
+
+        if (!response.ok) {
+            throw new Error(`Error fetching Dropbox credentials: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Fetched Dropbox credentials data:', JSON.stringify(data, null, 2)); // Detailed log of the fetched data
+
+        // Reset Dropbox credentials before setting them
+        dropboxAccessToken = undefined;
+        dropboxAppKey = undefined;
+        dropboxAppSecret = undefined;
+        dropboxRefreshToken = undefined;
+
+        for (const record of data.records) {
+            console.log('Processing record:', JSON.stringify(record, null, 2));
+        
+            if (record.fields) {
+                if (record.fields['Token Token']) {
+                    dropboxAccessToken = record.fields['Token Token'];
+                    console.log('Token Token found:', dropboxAccessToken);
+                }
+                if (record.fields['Dropbox App Key']) {
+                    dropboxAppKey = record.fields['Dropbox App Key'];
+                    console.log('Dropbox App Key found:', dropboxAppKey);
+                }
+                if (record.fields['Dropbox App Secret']) {
+                    dropboxAppSecret = record.fields['Dropbox App Secret'];
+                    console.log('Dropbox App Secret found:', dropboxAppSecret);
+                }
+                // Corrected lines below
+                if (record.fields['Dropbox Refresh Token']) {  // Correct this to match your field name
+                    dropboxRefreshToken = record.fields['Dropbox Refresh Token'];  // Use the correct field name
+                    console.log('Dropbox Refresh Token found:', dropboxRefreshToken);
+                }
+            } else {
+                console.log('No fields found in this record:', record);
+            }
+        }
+        
+        
+
+        // Log the final state of credentials
+        console.log('Final Dropbox Access Token:', dropboxAccessToken);
+        console.log('Final Dropbox App Key:', dropboxAppKey);
+        console.log('Final Dropbox App Secret:', dropboxAppSecret);
+        console.log('Final Dropbox Refresh Token:', dropboxRefreshToken);
+
+        if (!dropboxAccessToken || !dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
+            console.error('One or more Dropbox credentials are missing after fetching.');
+        } else {
+            console.log('All Dropbox credentials successfully fetched and set.');
+        }
+    } catch (error) {
+        console.error('Error occurred during fetchDropboxCredentials:', error);
     }
-
-    document.addEventListener('mousemove', onMouseMove);
-
-    document.addEventListener('mouseup', function () {
-        document.removeEventListener('mousemove', onMouseMove);
-
-        // Store the current position of the button in local storage
-        localStorage.setItem('submitButtonTop', submitButton.style.top);
-        localStorage.setItem('submitButtonLeft', submitButton.style.left);
-    }, { once: true });
-});
-
-  // Function to show the submit button and keep it in the last position when a change is made
-function showSubmitButton(recordId) {
-    if (submitButton.style.display === 'none') {
-        // Only set the button to the last known position if it hasn't been displayed yet
-        const lastTop = localStorage.getItem('submitButtonTop') || '50%';
-        const lastLeft = localStorage.getItem('submitButtonLeft') || '50%';
-        submitButton.style.top = lastTop;
-        submitButton.style.left = lastLeft;
-    }
-
-    submitButton.style.display = 'block';
-    activeRecordId = recordId;
 }
 
-// Call the showSubmitButton function when a change is made
-document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
-    element.addEventListener('input', () => showSubmitButton(activeRecordId));
-    element.addEventListener('change', () => showSubmitButton(activeRecordId));
-});
 
-    // Fetch Dropbox credentials from Airtable
-    async function fetchDropboxCredentials() {
-        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-        console.log('Fetching Dropbox credentials from Airtable...');
-    
-        try {
-            const response = await fetch(url, {
-                headers: { Authorization: `Bearer ${airtableApiKey}` }
-            });
-    
-            console.log(`Response status: ${response.status}`);
-    
-            if (!response.ok) {
-                throw new Error(`Error fetching Dropbox credentials: ${response.status} ${response.statusText}`);
-            }
-    
-            const data = await response.json();
-            console.log('Fetched Dropbox credentials:', data);
-    
-            for (const record of data.records) {
-                if (record.fields) {
-                    if (record.fields['Token Token']) {
-                        dropboxAccessToken = record.fields['Token Token'];
-                    }
-                    if (record.fields['Dropbox App Key']) {
-                        dropboxAppKey = record.fields['Dropbox App Key'];
-                    }
-                    if (record.fields['Dropbox App Secret']) {
-                        dropboxAppSecret = record.fields['Dropbox App Secret'];
-                    }
-                    if (record.fields['Dropbox Token']) {
-                        dropboxRefreshToken = record.fields['Dropbox Token'];
-                    }
-                }
-            }
-    
-            if (!dropboxAccessToken || !dropboxAppKey || !dropboxAppSecret || !dropboxAccessToken) {
-                console.error('Dropbox credentials not found in Airtable.');
-            } else {
-                console.log('Dropbox credentials successfully fetched and set.');
-            }
-        } catch (error) {
-            console.error('Error fetching Dropbox credentials from Airtable:', error);
-        }
-    }
-    
-    // Refresh Dropbox token
+ 
+
     async function refreshDropboxToken() {
         console.log('Attempting to refresh Dropbox token...');
-        console.log(`Using App Key: ${dropboxAppKey}, App Secret: ${dropboxAppSecret}, Refresh Token: ${dropboxAccessToken}`);
-    
-        if (!dropboxAppKey || !dropboxAppSecret || !dropboxAccessToken) {
+        console.log(`Using App Key: ${dropboxAppKey}, App Secret: ${dropboxAppSecret}, Refresh Token: ${dropboxRefreshToken}`);
+
+        if (!dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
             console.error('Dropbox credentials are not available.');
             return;
         }
-    
+
         const tokenUrl = 'https://api.dropboxapi.com/oauth2/token';
-    
+
         const headers = new Headers();
         headers.append('Authorization', 'Basic ' + btoa(`${dropboxAppKey}:${dropboxAppSecret}`));
         headers.append('Content-Type', 'application/x-www-form-urlencoded');
-    
+
         const body = new URLSearchParams();
         body.append('grant_type', 'refresh_token');
         body.append('refresh_token', dropboxRefreshToken);
-    
+
         console.log('Sending request to Dropbox for token refresh...');
         console.log(`Request Body: ${body.toString()}`);
-    
+
         try {
             const response = await fetch(tokenUrl, {
                 method: 'POST',
                 headers: headers,
                 body: body
             });
-    
+
             console.log(`Dropbox token refresh response status: ${response.status}`);
-    
+
             if (!response.ok) {
                 const errorResponse = await response.json();
                 console.error(`Error refreshing Dropbox token: ${response.status} ${response.statusText}`, errorResponse);
                 return;
             }
-    
+
             const data = await response.json();
-            dropboxRefreshToken = data.access_token; // Update the access token with the new one
-            console.log('Dropbox token refreshed successfully:', dropboxRefreshToken);
-    
+            dropboxAccessToken = data.access_token; // Update the access token with the new one
+            console.log('Dropbox token refreshed successfully:', dropboxAccessToken);
+
             // Update the new token in Airtable
             await updateDropboxTokenInAirtable(dropboxAccessToken);
             console.log('Dropbox token refreshed and updated in Airtable.');
@@ -185,71 +214,46 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
 
-    async function fetchRecordsFromAirtable() {
-        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-    
-        try {
-            const response = await fetch(url, {
-                headers: { Authorization: `Bearer ${airtableApiKey}` }
-            });
-    
-            if (!response.ok) {
-                throw new Error(`Error fetching records: ${response.status} ${response.statusText}`);
-            }
-    
-            const data = await response.json();
-            console.log('Fetched records:', data);
-    
-            // Log each record's ID and fields for reference
-            data.records.forEach(record => {
-                console.log(`Record ID: ${record.id}, Fields: ${JSON.stringify(record.fields)}`);
-            });
-    
-        } catch (error) {
-            console.error('Error fetching records from Airtable:', error);
-        }
-    }
-    
-    fetchRecordsFromAirtable();
-    
-    
-    // Update Dropbox token in Airtable
     async function updateDropboxTokenInAirtable(token) {
-        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
         console.log('Updating Dropbox token in Airtable...');
-    
+
         try {
-            const response = await fetch(url, {
-                method: 'PATCH',
-                headers: {
-                    Authorization: `Bearer ${airtableApiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    records: [
-                        {
-                            id: 'actual_record_id_here', // Replace with actual record ID where the token is stored
-                            fields: {
-                                'Token Token': token
+            const allRecords = await fetchRecordsFromAirtable(); // Make sure this fetches all necessary records
+            const updatePromises = allRecords.map(record => {
+                const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+                
+                return fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        Authorization: `Bearer ${airtableApiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        records: [
+                            {
+                                id: record.id, // Use the actual record ID
+                                fields: {
+                                    'Dropbox Token': token  // Update this field with the new token
+                                }
                             }
-                        }
-                    ]
-                })
+                        ]
+                    })
+                });
             });
-    
-            console.log(`Airtable update response status: ${response.status}`);
-    
-            if (!response.ok) {
-                console.error(`Error updating Dropbox token in Airtable: ${response.status} ${response.statusText}`);
-            } else {
-                console.log('Dropbox token updated successfully in Airtable.');
-            }
+
+            const responses = await Promise.all(updatePromises);
+            responses.forEach((response, index) => {
+                if (!response.ok) {
+                    console.error(`Error updating record ${allRecords[index].id}: ${response.status} ${response.statusText}`);
+                } else {
+                    console.log(`Record ${allRecords[index].id} updated successfully.`);
+                }
+            });
+
         } catch (error) {
             console.error('Error updating Dropbox token in Airtable:', error);
         }
     }
-
-    fetchDropboxCredentials(); // Execute
 
     // Create file input dynamically
     const fileInput = document.createElement('input');
@@ -356,11 +360,11 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             console.error('Dropbox Access Token is not available.');
             return null;
         }
-    
+
         const dropboxUploadUrl = 'https://content.dropboxapi.com/2/files/upload';
         const path = `/${file.name}`;
         console.log(`Uploading file to Dropbox: ${file.name}`);
-    
+
         try {
             const response = await fetch(dropboxUploadUrl, {
                 method: 'POST',
@@ -376,18 +380,28 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 },
                 body: file
             });
-    
+
             console.log(`Dropbox file upload response status: ${response.status}`);
-    
+
             if (!response.ok) {
                 const errorResponse = await response.json();
                 console.error('Error uploading file to Dropbox:', errorResponse);
+
+                // Check for expired access token error
+                if (errorResponse.error && errorResponse.error['.tag'] === 'expired_access_token') {
+                    console.log('Access token expired. Refreshing token...');
+                    await refreshDropboxToken();
+
+                    // Retry the upload after refreshing the token
+                    return await uploadFileToDropbox(file);
+                }
+
                 return null;
             }
-    
+
             const data = await response.json();
             console.log('File uploaded to Dropbox successfully:', data);
-    
+
             return await getDropboxSharedLink(data.path_lower);
         } catch (error) {
             console.error('Error uploading file to Dropbox:', error);
@@ -588,7 +602,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
 
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
-                                { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
+                { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
 
                 { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },
                 { field: 'StartDate', value: fields['StartDate'] ? formatDateTime(fields['StartDate']) : 'N/A' },
@@ -596,7 +610,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true, imageField: 'Completed  Pictures' },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
-                { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true } 
+                { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true }
 
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
@@ -611,7 +625,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable', ''] },
-                { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true } 
+                { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true }
             ];
 
             fieldConfigs.forEach(config => {
@@ -622,12 +636,12 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 cell.style.wordWrap = 'break-word';
                 cell.style.maxWidth = '200px';
                 cell.style.position = 'relative';
-            
+
                 if (image) {
                     const images = Array.isArray(fields[field]) ? fields[field] : [];
                     const carouselDiv = document.createElement('div');
                     carouselDiv.classList.add('image-carousel');
-            
+
                     if (images.length > 0) {
                         let currentIndex = 0; // Initialize currentIndex
                         const imgElement = document.createElement('img');
@@ -638,14 +652,14 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                         imgElement.classList.add('carousel-image');
                         imgElement.onclick = () => openImageViewer(images, 0); // Add click event to open modal
                         carouselDiv.appendChild(imgElement);
-            
+
                         const imageCount = document.createElement('div');
                         imageCount.classList.add('image-count');
                         imageCount.textContent = `1 of ${images.length}`;
                         carouselDiv.appendChild(imageCount);
-            
+
                         let prevButton, nextButton; // Initialize navigation buttons
-            
+
                         if (images.length > 1) {
                             // Create Previous Button
                             prevButton = document.createElement('button');
@@ -656,7 +670,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                                 imgElement.src = images[currentIndex].url;
                                 imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
                             };
-            
+
                             // Create Next Button
                             nextButton = document.createElement('button');
                             nextButton.textContent = '>';
@@ -666,11 +680,11 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                                 imgElement.src = images[currentIndex].url;
                                 imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
                             };
-            
+
                             carouselDiv.appendChild(prevButton);
                             carouselDiv.appendChild(nextButton);
                         }
-            
+
                         // Add Delete Button for images
                         const deleteButton = document.createElement('button');
                         deleteButton.innerHTML = '🗑️'; // Trash can icon
@@ -703,7 +717,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                         };
                         carouselDiv.appendChild(deleteButton);
                     }
-            
+
                     // Ensure the "Add Photos" button is always displayed
                     const addPhotoButton = document.createElement('button');
                     addPhotoButton.textContent = 'Add Photos';
@@ -714,7 +728,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     };
                     carouselDiv.appendChild(addPhotoButton);
                     cell.appendChild(carouselDiv);
-            
+
                     // Add keyboard navigation support
                     carouselDiv.tabIndex = 0;  // Make div focusable
                     carouselDiv.addEventListener('keydown', (event) => {
@@ -724,13 +738,13 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                             nextButton.click();
                         }
                     });
-            
+
                 } else if (checkbox) {
                     const checkboxElement = document.createElement('input');
                     checkboxElement.type = 'checkbox';
                     checkboxElement.checked = value;
                     checkboxElement.classList.add('custom-checkbox');
-            
+
                     // Ensure "Job Completed" checkbox is never disabled
                     if (field === 'Job Completed') {
                         checkboxElement.disabled = false;
@@ -739,7 +753,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                         const billableCell = row.querySelector('td[data-field="Billable/ Non Billable"] select');
                         checkboxElement.disabled = !billableCell || !billableCell.value;
                     }
-            
+
                     checkboxElement.addEventListener('change', function () {
                         const newValue = checkboxElement.checked;
                         updatedFields[record.id] = updatedFields[record.id] || {};
@@ -747,7 +761,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                         hasChanges = true;
                         showSubmitButton(record.id);
                     });
-            
+
                     cell.appendChild(checkboxElement);
                 } else if (dropdown) {
                     const select = document.createElement('select');
@@ -756,7 +770,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                         const optionElement = document.createElement('option');
                         optionElement.value = option;
                         optionElement.textContent = option;
-            
+
                         if (field === 'Billable/ Non Billable') {
                             if (option === 'Billable') {
                                 optionElement.style.backgroundColor = '#ffeb3b';
@@ -766,25 +780,25 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                                 optionElement.style.color = '#fff';
                             }
                         }
-            
+
                         if (option === value) optionElement.selected = true;
                         select.appendChild(optionElement);
                     });
-            
+
                     select.addEventListener('change', () => {
                         const newValue = select.value;
                         updatedFields[record.id] = updatedFields[record.id] || {};
                         updatedFields[record.id][field] = newValue;
                         hasChanges = true;
                         showSubmitButton(record.id);
-            
+
                         // Enable or disable the checkbox based on the select value
                         const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
                         if (fieldReviewCheckbox) {
                             fieldReviewCheckbox.disabled = !newValue;  // Disable if no value is selected
                         }
                     });
-            
+
                     cell.appendChild(select);
                 } else if (email) {
                     cell.innerHTML = value ? `<a href="mailto:${value}">${value}</a>` : 'N/A';
@@ -801,13 +815,13 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 } else {
                     cell.textContent = value;
                 }
-            
+
                 if (editable && !dropdown && !image) {
                     cell.setAttribute('contenteditable', 'true');
                     cell.classList.add('editable-cell');
-            
+
                     const originalContent = cell.textContent;
-            
+
                     cell.addEventListener('blur', () => {
                         const newValue = cell.textContent;
                         if (newValue !== originalContent) {
@@ -1030,7 +1044,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
     document.getElementById('search-input').addEventListener('input', function () {
         const searchValue = this.value.toLowerCase();
-        
+
         // Search in both tables
         ['#airtable-data', '#feild-data'].forEach(tableSelector => {
             const rows = document.querySelectorAll(`${tableSelector} tbody tr`);

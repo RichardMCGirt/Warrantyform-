@@ -1017,6 +1017,23 @@ async function fetchDropboxCredentials() {
         fetchAllData();  // Refresh data after form submission
     }
 
+     // Add event listeners to inputs, selects, and editable cells
+     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+        element.addEventListener('input', () => showSubmitButton(activeRecordId));
+        element.addEventListener('change', () => showSubmitButton(activeRecordId));
+        element.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent default Enter behavior
+                submitChanges(); // Call submitChanges on Enter key press
+            }
+        });
+    });
+
+      // Event listener for dynamic submit button
+      submitButton.addEventListener('click', function () {
+        submitChanges();
+    });
+
     async function updateRecord(recordId, fields) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
         const body = JSON.stringify({ fields });

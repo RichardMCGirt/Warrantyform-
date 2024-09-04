@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     fetchDropboxCredentials();
 
-
     const loadingLogo = document.querySelector('.loading-logo');
     const mainContent = document.getElementById('main-content');
     const secondaryContent = document.getElementById('secoundary-content');

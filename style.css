@@ -523,6 +523,19 @@ tbody tr:hover {
     background-color: #e0e0e0; /* Optional: highlight row on hover */
 }
 
+/* CSS to apply word wrap to text inside tbody */
+/* Apply word wrap to all td elements except the first child in each row */
+/* Apply word wrapping styles to all td elements except the first child in each row */
+tbody td:not(:first-child) {
+    word-wrap: normal;
+    word-break: keep-all; /* Prevent breaking words */
+    white-space: normal;
+    overflow-wrap: break-word; /* Ensures wrapping occurs at word boundaries */
+    max-width: 200px; /* Set max width as needed */
+}
+
+
+
 
 /* Style for the carousel navigation buttons */
 .carousel-nav-button {

@@ -923,11 +923,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const prevButton = document.createElement('button');
             prevButton.textContent = '<';
-            prevButton.classList.add('modal-nav-button', 'prev');
+            prevButton.classList.add('carousel-nav-button', 'prev');
 
             const nextButton = document.createElement('button');
             nextButton.textContent = '>';
-            nextButton.classList.add('modal-nav-button', 'next');
+            nextButton.classList.add('carousel-nav-button', 'next');
 
             imageViewerModal.appendChild(closeModalButton);
             imageViewerModal.appendChild(prevButton);
@@ -943,15 +943,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
                 updateModalImage();
             };
+
+            // Add swipe detection for mobile
+            let startX;
+            imageViewerModal.addEventListener('touchstart', function (e) {
+                startX = e.touches[0].clientX;
+            });
+
+            imageViewerModal.addEventListener('touchend', function (e) {
+                const endX = e.changedTouches[0].clientX;
+                if (startX - endX > 50) {
+                    nextButton.click(); // Swipe left, go to next image
+                } else if (endX - startX > 50) {
+                    prevButton.click(); // Swipe right, go to previous image
+                }
+            });
         }
 
         let currentIndex = startIndex;
-        let currentImagesArray = images;
 
         function updateModalImage() {
             const modalImage = document.querySelector('.modal-image');
-            modalImage.src = currentImagesArray[currentIndex].url;
+            modalImage.src = images[currentIndex].url;
         }
+
+        updateModalImage();
+        imageViewerModal.style.display = 'flex';
+    
 
         // Close modal on click outside or ESC key
         function closeModalOnOutsideClick(event) {

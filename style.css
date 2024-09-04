@@ -36,7 +36,7 @@ h2 {
 
 /* Table Styles */
 table {
-    width: 90%;
+    width: 95%;
     margin: 10px auto;
     border-collapse: collapse;
     background-color: #fff;
@@ -64,13 +64,6 @@ th {
     z-index: 1;
     height: 1.5em;
 }
-
-/* Highlight first column */
-tbody td:first-child {
-    background-color: grey; /* Different color for the first column */
-    color: white;
-}
-
 
 /* Alternate row colors */
 tbody tr:nth-child(odd) {
@@ -420,6 +413,37 @@ button:hover {
     }
 }
 
+/* Ensuring consistency on landscape orientation for small devices */
+@media (max-width: 576px) and (orientation: landscape) {
+    .logo {
+        height: 50px;
+    }
+
+    h1 {
+        font-size: 18px;
+    }
+
+    #search-input {
+        width: 100%;
+        padding: 6px;
+    }
+
+    table {
+        width: 95%;
+        font-size: 12px;
+    }
+
+    th, td {
+        padding: 6px;
+        font-size: 12px;
+    }
+
+    button {
+        width: 140px;
+        font-size: 12px;
+    }
+}
+
 @media (max-width: 400px) {
     .logo {
         height: 40px;
@@ -446,5 +470,37 @@ button:hover {
     button {
         width: 120px;
         font-size: 10px;
+    }
+}
+
+/* Ensuring consistency on landscape orientation for extra small devices */
+@media (max-width: 400px) and (orientation: landscape) {
+    .logo {
+        height: 35px;
+    }
+
+    h1 {
+        font-size: 14px;
+    }
+
+    #search-input {
+        width: 100%;
+        padding: 5px;
+        font-size: 12px;
+    }
+
+    table {
+        width: 100%;
+        font-size: 9px;
+    }
+
+    th, td {
+        padding: 3px;
+        font-size: 9px;
+    }
+
+    button {
+        width: 110px;
+        font-size: 9px;
     }
 }

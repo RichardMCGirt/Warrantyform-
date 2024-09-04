@@ -43,16 +43,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Variables to track dragging
     let isDragging = false;
-    let offsetX, offsetY;
+    let isButtonMoving = false;
 
     // Mouse down event to start dragging
     submitButton.addEventListener('mousedown', function (event) {
+        isButtonMoving = false; // Reset moving flag
         let shiftX = event.clientX - submitButton.getBoundingClientRect().left;
         let shiftY = event.clientY - submitButton.getBoundingClientRect().top;
 
         function moveAt(pageX, pageY) {
             submitButton.style.left = pageX - shiftX + 'px';
             submitButton.style.top = pageY - shiftY + 'px';
+            isButtonMoving = true; // Button is being moved
         }
 
         function onMouseMove(event) {
@@ -63,10 +65,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.addEventListener('mouseup', function () {
             document.removeEventListener('mousemove', onMouseMove);
-
-            // Store the current position of the button in local storage
-            localStorage.setItem('submitButtonTop', submitButton.style.top);
-            localStorage.setItem('submitButtonLeft', submitButton.style.left);
+            if (isButtonMoving) {
+                isDragging = true; // Set dragging to true if the button was moved
+                // Store the current position of the button in local storage
+                localStorage.setItem('submitButtonTop', submitButton.style.top);
+                localStorage.setItem('submitButtonLeft', submitButton.style.left);
+            }
+            setTimeout(() => isDragging = false, 100); // Delay reset to prevent immediate click detection
         }, { once: true });
     });
 
@@ -90,79 +95,73 @@ document.addEventListener('DOMContentLoaded', function () {
         element.addEventListener('change', () => showSubmitButton(activeRecordId));
     });
 
-// Fetch Dropbox credentials from Airtable
-async function fetchDropboxCredentials() {
-    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-    console.log('Starting fetchDropboxCredentials function');
-    console.log('Airtable URL:', url);
-    console.log('Fetching Dropbox credentials from Airtable...');
+    // Fetch Dropbox credentials from Airtable
+    async function fetchDropboxCredentials() {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+        console.log('Starting fetchDropboxCredentials function');
+        console.log('Airtable URL:', url);
+        console.log('Fetching Dropbox credentials from Airtable...');
 
-    try {
-        const response = await fetch(url, {
-            headers: { Authorization: `Bearer ${airtableApiKey}` }
-        });
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
+            });
 
-        console.log(`Response received from Airtable with status: ${response.status}`);
+            console.log(`Response received from Airtable with status: ${response.status}`);
 
-        if (!response.ok) {
-            throw new Error(`Error fetching Dropbox credentials: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log('Fetched Dropbox credentials data:', JSON.stringify(data, null, 2)); // Detailed log of the fetched data
-
-        // Reset Dropbox credentials before setting them
-        dropboxAccessToken = undefined;
-        dropboxAppKey = undefined;
-        dropboxAppSecret = undefined;
-        dropboxRefreshToken = undefined;
-
-        for (const record of data.records) {
-            console.log('Processing record:', JSON.stringify(record, null, 2));
-        
-            if (record.fields) {
-                if (record.fields['Token Token']) {
-                    dropboxAccessToken = record.fields['Token Token'];
-                    console.log('Token Token found:', dropboxAccessToken);
-                }
-                if (record.fields['Dropbox App Key']) {
-                    dropboxAppKey = record.fields['Dropbox App Key'];
-                    console.log('Dropbox App Key found:', dropboxAppKey);
-                }
-                if (record.fields['Dropbox App Secret']) {
-                    dropboxAppSecret = record.fields['Dropbox App Secret'];
-                    console.log('Dropbox App Secret found:', dropboxAppSecret);
-                }
-                // Corrected lines below
-                if (record.fields['Dropbox Refresh Token']) {  // Correct this to match your field name
-                    dropboxRefreshToken = record.fields['Dropbox Refresh Token'];  // Use the correct field name
-                    console.log('Dropbox Refresh Token found:', dropboxRefreshToken);
-                }
-            } else {
-                console.log('No fields found in this record:', record);
+            if (!response.ok) {
+                throw new Error(`Error fetching Dropbox credentials: ${response.status} ${response.statusText}`);
             }
-        }
-        
-        
 
-        // Log the final state of credentials
-        console.log('Final Dropbox Access Token:', dropboxAccessToken);
-        console.log('Final Dropbox App Key:', dropboxAppKey);
-        console.log('Final Dropbox App Secret:', dropboxAppSecret);
-        console.log('Final Dropbox Refresh Token:', dropboxRefreshToken);
+            const data = await response.json();
+            console.log('Fetched Dropbox credentials data:', JSON.stringify(data, null, 2)); // Detailed log of the fetched data
 
-        if (!dropboxAccessToken || !dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
-            console.error('One or more Dropbox credentials are missing after fetching.');
-        } else {
-            console.log('All Dropbox credentials successfully fetched and set.');
+            // Reset Dropbox credentials before setting them
+            dropboxAccessToken = undefined;
+            dropboxAppKey = undefined;
+            dropboxAppSecret = undefined;
+            dropboxRefreshToken = undefined;
+
+            for (const record of data.records) {
+                console.log('Processing record:', JSON.stringify(record, null, 2));
+            
+                if (record.fields) {
+                    if (record.fields['Token Token']) {
+                        dropboxAccessToken = record.fields['Token Token'];
+                        console.log('Token Token found:', dropboxAccessToken);
+                    }
+                    if (record.fields['Dropbox App Key']) {
+                        dropboxAppKey = record.fields['Dropbox App Key'];
+                        console.log('Dropbox App Key found:', dropboxAppKey);
+                    }
+                    if (record.fields['Dropbox App Secret']) {
+                        dropboxAppSecret = record.fields['Dropbox App Secret'];
+                        console.log('Dropbox App Secret found:', dropboxAppSecret);
+                    }
+                    if (record.fields['Dropbox Refresh Token']) {  // Correct this to match your field name
+                        dropboxRefreshToken = record.fields['Dropbox Refresh Token'];  // Use the correct field name
+                        console.log('Dropbox Refresh Token found:', dropboxRefreshToken);
+                    }
+                } else {
+                    console.log('No fields found in this record:', record);
+                }
+            }
+            
+            // Log the final state of credentials
+            console.log('Final Dropbox Access Token:', dropboxAccessToken);
+            console.log('Final Dropbox App Key:', dropboxAppKey);
+            console.log('Final Dropbox App Secret:', dropboxAppSecret);
+            console.log('Final Dropbox Refresh Token:', dropboxRefreshToken);
+
+            if (!dropboxAccessToken || !dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
+                console.error('One or more Dropbox credentials are missing after fetching.');
+            } else {
+                console.log('All Dropbox credentials successfully fetched and set.');
+            }
+        } catch (error) {
+            console.error('Error occurred during fetchDropboxCredentials:', error);
         }
-    } catch (error) {
-        console.error('Error occurred during fetchDropboxCredentials:', error);
     }
-}
-
-
- 
 
     async function refreshDropboxToken() {
         console.log('Attempting to refresh Dropbox token...');
@@ -1001,6 +1000,11 @@ async function fetchDropboxCredentials() {
             return;
         }
 
+        if (isDragging) {
+            console.log('Submit button is moving, submission is temporarily disabled.');
+            return; // Prevent submission while dragging
+        }
+
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
 
@@ -1017,8 +1021,8 @@ async function fetchDropboxCredentials() {
         fetchAllData();  // Refresh data after form submission
     }
 
-     // Add event listeners to inputs, selects, and editable cells
-     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+    // Add event listeners to inputs, selects, and editable cells
+    document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
         element.addEventListener('input', () => showSubmitButton(activeRecordId));
         element.addEventListener('change', () => showSubmitButton(activeRecordId));
         element.addEventListener('keypress', (event) => {
@@ -1029,9 +1033,9 @@ async function fetchDropboxCredentials() {
         });
     });
 
-      // Event listener for dynamic submit button
-      submitButton.addEventListener('click', function () {
-        submitChanges();
+    // Event listener for dynamic submit button
+    submitButton.addEventListener('click', function () {
+        if (!isDragging) submitChanges();
     });
 
     async function updateRecord(recordId, fields) {

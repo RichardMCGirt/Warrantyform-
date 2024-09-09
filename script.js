@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     const airtableApiKey = window.env.AIRTABLE_API_KEY;
     const airtableBaseId = window.env.AIRTABLE_BASE_ID;
     const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
@@ -7,7 +7,56 @@ document.addEventListener('DOMContentLoaded', function () {
     let dropboxAppSecret;
     let dropboxRefreshToken;
 
-    fetchDropboxCredentials();
+    // Fetch Dropbox credentials from Airtable
+    await fetchDropboxCredentials();
+
+    // Check Dropbox token validity on page startup
+    await checkDropboxTokenValidity();
+
+        // Function to check if Dropbox token is still valid
+        async function checkDropboxTokenValidity() {
+            console.log('Checking if Dropbox token is still valid...');
+        
+            if (!dropboxAccessToken) {
+                console.error('Dropbox access token is not available.');
+                return;
+            }
+        
+            const accountInfoUrl = 'https://api.dropboxapi.com/2/users/get_current_account';
+        
+            try {
+                const response = await fetch(accountInfoUrl, {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${dropboxAccessToken.trim()}`,  // Ensure token is trimmed
+                    }
+                });
+        
+                let responseData;
+                const contentType = response.headers.get('content-type');
+        
+                if (contentType && contentType.includes('application/json')) {
+                    responseData = await response.json();  // Capture the response data
+                } else {
+                    responseData = await response.text();  // If not JSON, capture as plain text
+                }
+        
+                if (response.ok) {
+                    console.log('Dropbox token is still valid.');
+                } else if (response.status === 401) {
+                    console.error('Dropbox token is expired or invalid.');
+                    await refreshDropboxToken();  // Call your token refresh function
+                } else {
+                    console.error(`Error while checking Dropbox token: ${response.status} ${response.statusText}`);
+                    console.log('Response data:', responseData);  // Log detailed error message
+                }
+            } catch (error) {
+                console.error('Error occurred while checking Dropbox token validity:', error);
+            }
+        }
+        
+        
+        
 
     const loadingLogo = document.querySelector('.loading-logo');
     const mainContent = document.getElementById('main-content');

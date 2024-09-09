@@ -173,9 +173,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                 console.log('Processing record:', JSON.stringify(record, null, 2));
             
                 if (record.fields) {
-                    if (record.fields['Token Token']) {
-                        dropboxAccessToken = record.fields['Token Token'];
-                        console.log('Token Token found:', dropboxAccessToken);
+                    if (record.fields['Dropbox Token']) {
+                        dropboxAccessToken = record.fields['Dropbox Token'];
+                        console.log('Dropbox Token found:', dropboxAccessToken);
                     }
                     if (record.fields['Dropbox App Key']) {
                         dropboxAppKey = record.fields['Dropbox App Key'];

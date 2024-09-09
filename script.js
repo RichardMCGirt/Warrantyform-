@@ -262,6 +262,28 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     }
 
+    async function fetchRecordsFromAirtable() {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${airtableApiKey}`
+                }
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Error fetching records: ${response.status} ${response.statusText}`);
+            }
+    
+            const data = await response.json();
+            return data.records; // Return the array of records
+        } catch (error) {
+            console.error('Error fetching records from Airtable:', error);
+            return [];
+        }
+    }
+    
+
     async function updateDropboxTokenInAirtable(token) {
         console.log('Updating Dropbox token in Airtable...');
 

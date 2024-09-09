@@ -161,6 +161,15 @@ button:hover {
     display: block;
 }
 
+/* Fullscreen on mobile */
+@media only screen and (max-width: 768px) {
+    .image-viewer-modal img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
 .close-modal-button {
     position: absolute;
     top: 20px;
@@ -353,24 +362,10 @@ button:hover {
     transition: transform 0.3s ease, color 0.3s ease, background-color 0.3s ease;
 }
 
-/* Responsive Media Queries */
+/* Responsive Table Styles for Mobile */
 @media (max-width: 768px) {
-    .header {
-        flex-direction: column;
-        margin-top: 5px;
-    }
-
-    .logo {
-        height: 70px;
-        margin-bottom: 5px;
-    }
-
-    #search-input {
-        width: 90%;
-    }
-
     table {
-        width: 95%;
+        width: 100%; /* Set to 100% for consistency */
     }
 
     th, td {
@@ -385,21 +380,8 @@ button:hover {
 }
 
 @media (max-width: 576px) {
-    .logo {
-        height: 50px;
-    }
-
-    h1 {
-        font-size: 20px;
-    }
-
-    #search-input {
-        width: 100%;
-    }
-
     table {
-        width: 100%;
-        font-size: 12px;
+        width: 100%; /* Ensuring it stays 100% */
     }
 
     th, td {
@@ -412,6 +394,7 @@ button:hover {
         font-size: 12px;
     }
 }
+
 
 /* Ensuring consistency on landscape orientation for small devices */
 @media (max-width: 576px) and (orientation: landscape) {

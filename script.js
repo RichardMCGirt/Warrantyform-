@@ -974,53 +974,53 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     function openImageViewer(images, startIndex) {
-        // Create the modal if it doesn't exist
         let imageViewerModal = document.getElementById('image-viewer-modal');
         if (!imageViewerModal) {
             imageViewerModal = document.createElement('div');
             imageViewerModal.id = 'image-viewer-modal';
             imageViewerModal.classList.add('image-viewer-modal');
             document.body.appendChild(imageViewerModal);
-
+    
             const modalImage = document.createElement('img');
             modalImage.classList.add('modal-image');
-
+    
             const closeModalButton = document.createElement('button');
             closeModalButton.textContent = 'X';
             closeModalButton.classList.add('close-modal-button');
             closeModalButton.onclick = () => {
                 imageViewerModal.style.display = 'none';
+                enablePageScrolling();  // Re-enable scrolling when modal is closed
             };
-
+    
             const prevButton = document.createElement('button');
             prevButton.textContent = '<';
             prevButton.classList.add('carousel-nav-button', 'prev');
-
+    
             const nextButton = document.createElement('button');
             nextButton.textContent = '>';
             nextButton.classList.add('carousel-nav-button', 'next');
-
+    
             imageViewerModal.appendChild(closeModalButton);
             imageViewerModal.appendChild(prevButton);
             imageViewerModal.appendChild(modalImage);
             imageViewerModal.appendChild(nextButton);
-
+    
             prevButton.onclick = () => {
                 currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
                 updateModalImage();
             };
-
+    
             nextButton.onclick = () => {
                 currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
                 updateModalImage();
             };
-
-            // Add swipe detection for mobile
+    
             let startX;
             imageViewerModal.addEventListener('touchstart', function (e) {
                 startX = e.touches[0].clientX;
+                disablePageScrolling();  // Disable scrolling when swiping starts
             });
-
+    
             imageViewerModal.addEventListener('touchend', function (e) {
                 const endX = e.changedTouches[0].clientX;
                 if (startX - endX > 50) {
@@ -1028,42 +1028,49 @@ document.addEventListener('DOMContentLoaded', async function () {
                 } else if (endX - startX > 50) {
                     prevButton.click(); // Swipe right, go to previous image
                 }
+                enablePageScrolling();  // Re-enable scrolling when swiping ends
             });
         }
-
+    
         let currentIndex = startIndex;
-
+    
         function updateModalImage() {
             const modalImage = document.querySelector('.modal-image');
             modalImage.src = images[currentIndex].url;
         }
-
+    
         updateModalImage();
         imageViewerModal.style.display = 'flex';
     
-
-        // Close modal on click outside or ESC key
         function closeModalOnOutsideClick(event) {
             if (event.target === imageViewerModal) {
                 imageViewerModal.style.display = 'none';
-                document.removeEventListener('click', closeModalOnOutsideClick);
+                enablePageScrolling();  // Re-enable scrolling when modal is closed
             }
         }
-
+    
         function closeModalOnEsc(event) {
             if (event.key === 'Escape') {
                 imageViewerModal.style.display = 'none';
-                document.removeEventListener('keydown', closeModalOnEsc);
+                enablePageScrolling();  // Re-enable scrolling on ESC key press
             }
         }
-
+    
         document.addEventListener('click', closeModalOnOutsideClick);
         document.addEventListener('keydown', closeModalOnEsc);
-
+    
         updateModalImage();
         imageViewerModal.style.display = 'block';
     }
-
+    
+    function disablePageScrolling() {
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function enablePageScrolling() {
+        document.body.style.overflow = '';
+    }
+    
     function showToast(message) {
         toast.textContent = message;
         toast.style.visibility = 'visible';

@@ -21,6 +21,27 @@ h2 {
     position: relative;
 }
 
+/* Styling for the draggable submit button */
+#dynamic-submit-button {
+    width: 150px; /* Increase width */
+    height: 50px; /* Increase height */
+    background-color: #4caf50; /* Green background */
+    color: white;
+    font-size: 20px; /* Larger font size */
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: move; /* Show move cursor */
+    transition: background-color 0.3s ease; /* Smooth background color transition */
+    z-index: 1000; /* Ensure it stays above other elements */
+}
+
+/* Change background color on hover */
+#dynamic-submit-button:hover {
+    background-color: #388e3c; /* Darker green on hover */
+}
+
+
 .logo {
     height: 80px;
     margin-right: 10px;
@@ -58,11 +79,11 @@ th {
     background-color: #002244;
     color: white;
     font-weight: bold;
-    font-size: 17px;
+    font-size: 19px;
     position: sticky;
     top: 0;
     z-index: 1;
-    height: 1.5em;
+    height: 3.5em;
 }
 
 /* Alternate row colors */

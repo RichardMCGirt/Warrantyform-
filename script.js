@@ -92,34 +92,79 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Variables to track dragging
     let isDragging = false;
-    let offsetX, offsetY;
-
-    // Mouse down event to start dragging
+    let hasMoved = false; // Track if the button has been moved
+    let dragStarted = false; // To track if dragging has started during this click
+    let clickTimeout;
+    let mouseDownTime = 0; // To track the time the mouse was held down
+    
+    // Mouse down event to start dragging or timing the hold duration
     submitButton.addEventListener('mousedown', function (event) {
         let shiftX = event.clientX - submitButton.getBoundingClientRect().left;
         let shiftY = event.clientY - submitButton.getBoundingClientRect().top;
         isDragging = true;
-
+        hasMoved = false; // Reset move status when dragging starts
+        dragStarted = true; // Set drag start status
+        mouseDownTime = Date.now(); // Record the time when the mouse is pressed down
+    
         function moveAt(pageX, pageY) {
             submitButton.style.left = pageX - shiftX + 'px';
             submitButton.style.top = pageY - shiftY + 'px';
+            hasMoved = true; // Button has been moved
         }
-
+    
         function onMouseMove(event) {
             moveAt(event.pageX, event.pageY);
         }
-
+    
         document.addEventListener('mousemove', onMouseMove);
-
+    
         document.addEventListener('mouseup', function () {
             document.removeEventListener('mousemove', onMouseMove);
             isDragging = false; // Reset dragging state after mouse up
-
+    
+            const mouseUpTime = Date.now(); // Record the time when the mouse is released
+            const heldDuration = mouseUpTime - mouseDownTime; // Calculate how long the mouse was held down
+    
+            if (heldDuration > 2000) {
+                // If the mouse was held down for more than 2 seconds, prevent submission
+                dragStarted = true;
+                console.log('Submission prevented because the mouse was held down for more than 2 seconds.');
+            }
+    
+            if (hasMoved) {
+                // If the button has been moved, prevent any immediate submission
+                dragStarted = true;
+            }
+    
             // Store the current position of the button in local storage
             localStorage.setItem('submitButtonTop', submitButton.style.top);
             localStorage.setItem('submitButtonLeft', submitButton.style.left);
+    
+            // Reset the drag status after a short delay
+            clickTimeout = setTimeout(() => {
+                dragStarted = false;
+            }, 200); // Small delay to prevent click submission after dragging
+    
         }, { once: true });
     });
+    
+    // Event listener for dynamic submit button
+    submitButton.addEventListener('click', function (event) {
+        clearTimeout(clickTimeout); // Clear any pending timeout
+    
+        if (dragStarted || hasMoved) {
+            // Prevent submission if the button was being dragged or held down too long
+            event.preventDefault();
+            hasMoved = false; // Reset movement tracking after preventing submission
+            return;
+        }
+    
+        // Only submit if no dragging occurred and the mouse wasn't held down for too long
+        submitChanges();
+    });
+    
+
+    
 
     // Function to show the submit button and keep it in the last position when a change is made
     function showSubmitButton(recordId) {
@@ -668,15 +713,16 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             const fieldConfigs = isSecondary ? [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
-                { field: 'Builders', value: fields['Builders'] || 'N/A' },
+                { field: 'sub ', value: fields['sub '] || 'N/A' },
+                { field: 'Field Review Needed', value: fields['Field Review Needed'] || false, checkbox: true },
+
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
 
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
 
                 { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },
-                { field: 'StartDate', value: fields['StartDate'] ? formatDateTime(fields['StartDate']) : 'N/A' },
-                { field: 'EndDate', value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A' },
+             
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true, imageField: 'Completed  Pictures' },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
@@ -684,17 +730,21 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
-                { field: 'Builders', value: fields['Builders'] || 'N/A' },
+                { field: 'sub ', value: fields['sub '] || 'N/A' },
+                { field: 'Field Review Needed', value: fields['Field Review Needed'] || false, checkbox: true },
+
+
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
                 { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },
-                { field: 'StartDate', value: fields['StartDate'] ? formatDateTime(fields['StartDate']) : 'N/A' },
-                { field: 'EndDate', value: fields['EndDate'] ? formatDateTime(fields['EndDate']) : 'N/A' },
+               
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
-                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable', ''] },
+                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['','Billable', 'Non Billable'] },
+                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['','Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
+
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true }
             ];
 

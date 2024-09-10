@@ -728,7 +728,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
-                { field: 'sub ', value: fields['sub '] || 'N/A' },
 
 
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
@@ -743,7 +742,9 @@ document.addEventListener('DOMContentLoaded', async function () {
                 { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['','Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
 
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
-                { field: 'Field Review Needed', value: fields['Field Review Needed'] || false, checkbox: true }
+                { field: 'sub ', value: fields['sub '] || 'N/A' },
+
+                { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
 
             ];
 

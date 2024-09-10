@@ -865,14 +865,15 @@ document.addEventListener('DOMContentLoaded', async function () {
                     checkboxElement.checked = value;
                     checkboxElement.classList.add('custom-checkbox');
 
-                    // Ensure "Job Completed" checkbox is never disabled
-                    if (field === 'Job Completed') {
-                        checkboxElement.disabled = false;
-                    } else {
-                        // Disable other checkboxes if "Billable/ Non Billable" has no value
-                        const billableCell = row.querySelector('td[data-field="Billable/ Non Billable"] select');
-                        checkboxElement.disabled = !billableCell || !billableCell.value;
-                    }
+                 // Ensure "Job Completed" and "Subcontractor Not Needed" checkboxes are never disabled
+if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
+    checkboxElement.disabled = false;
+} else {
+    // Disable other checkboxes if "Billable/ Non Billable" has no value
+    const billableCell = row.querySelector('td[data-field="Billable/ Non Billable"] select');
+    checkboxElement.disabled = !billableCell || !billableCell.value;
+}
+
 
                     checkboxElement.addEventListener('change', function () {
                         const newValue = checkboxElement.checked;

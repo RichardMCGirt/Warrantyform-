@@ -9,20 +9,24 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <br>
     <div class="header">
         <img src="VANIR-transparent (1).png" alt="Vanir Installed Sales Logo" class="logo loading-logo">
         <h1 class="hidden"></h1>
     </div>
+    <br>
 
     <!-- Toast Notification -->
     <div id="toast">
         Changes submitted successfully!
     </div>
+    <div class="search-container">
+        <input type="text" id="search-input" placeholder="Search..." />
+    </div>
+    <div class="table-wrapper">
 
     <div id="main-content" style="display: none;">
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Search..." />
-        </div>
+       
         <h2>Field Tech Review Needed</h2>
         <table id="airtable-data">
             <thead>
@@ -48,7 +52,7 @@
         </table>
     </div>
 <br>
-  
+
     <div id="secoundary-content" style="display: none;">
         <h2>Scheduled Awaiting Field Technician</h2>
         <table id="feild-data">
@@ -70,7 +74,7 @@
             </tbody>
         </table>
     </div>
-
+</div>
     <div class="trash-can"></div>
 
     <!-- Configuration for Airtable -->

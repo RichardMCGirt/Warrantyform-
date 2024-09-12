@@ -661,6 +661,20 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
 
+    function syncTableWidths() {
+        const mainTable = document.querySelector('#airtable-data');
+        const secondaryTable = document.querySelector('#feild-data');
+
+        if (mainTable && secondaryTable) {
+            // Get the computed width of the main table
+            const mainTableWidth = mainTable.offsetWidth;
+            
+            // Apply the same width to the secondary table
+            secondaryTable.style.width = `${mainTableWidth}px`;
+        }
+    }
+
+    // Call the function to synchronize widths after the tables are populated
     async function fetchAllData() {
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
@@ -713,10 +727,28 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 mainContent.style.opacity = '1';
                 secondaryContent.style.opacity = '1';
             }, 10);
+
+            // Synchronize the table widths after content is loaded
+            syncTableWidths();
+
         } catch (error) {
             console.error('Error fetching all data:', error);
         }
     }
+
+    // Resize observer to adjust the secondary table width when the main table resizes
+    const mainTable = document.querySelector('#airtable-data');
+    const resizeObserver = new ResizeObserver(() => {
+        syncTableWidths();
+    });
+
+    if (mainTable) {
+        resizeObserver.observe(mainTable); // Observe the main table for any size changes
+    }
+
+    // Fetch data and call syncTableWidths after DOM content is ready
+    fetchAllData();
+
 
     async function displayData(records, tableSelector, isSecondary = false) {
         const tbody = document.querySelector(`${tableSelector} tbody`);
@@ -724,21 +756,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
         if (records.length === 0) return;
 
-        const formatDateTime = (dateString) => {
-            if (!dateString) return 'N/A';
-            const date = new Date(dateString);
-            const formattedDate = date.toLocaleDateString('en-US', {
-                month: '2-digit',
-                day: '2-digit',
-                year: 'numeric'
-            });
-            const formattedTime = date.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true
-            });
-            return `${formattedDate} ${formattedTime}`;
-        };
+       
 
         records.forEach(record => {
             const fields = record.fields;
@@ -746,14 +764,10 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
             const fieldConfigs = isSecondary ? [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
-
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
-
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
-
-                { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },
-             
+                { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },       
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true, imageField: 'Completed  Pictures' },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
@@ -761,24 +775,18 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
-
-
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
                 { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },
-               
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['','Billable', 'Non Billable'] },
                 { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['','Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
-
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
                 { field: 'sub ', value: fields['sub '] || 'N/A' },
-
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
-
             ];
 
             fieldConfigs.forEach(config => {
@@ -1069,64 +1077,51 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
     
             const modalImage = document.createElement('img');
             modalImage.classList.add('modal-image');
+            modalImage.id = 'modal-image'; // Add an ID for easier reference
+            imageViewerModal.appendChild(modalImage);
     
             const closeModalButton = document.createElement('button');
             closeModalButton.textContent = 'X';
             closeModalButton.classList.add('close-modal-button');
             closeModalButton.onclick = () => {
                 imageViewerModal.style.display = 'none';
-                enablePageScrolling();  // Re-enable scrolling when modal is closed
             };
+            imageViewerModal.appendChild(closeModalButton);
     
             const prevButton = document.createElement('button');
             prevButton.textContent = '<';
             prevButton.classList.add('carousel-nav-button', 'prev');
-    
-            const nextButton = document.createElement('button');
-            nextButton.textContent = '>';
-            nextButton.classList.add('carousel-nav-button', 'next');
-    
-            imageViewerModal.appendChild(closeModalButton);
-            imageViewerModal.appendChild(prevButton);
-            imageViewerModal.appendChild(modalImage);
-            imageViewerModal.appendChild(nextButton);
-    
             prevButton.onclick = () => {
                 currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
                 updateModalImage();
             };
+            imageViewerModal.appendChild(prevButton);
     
+            const nextButton = document.createElement('button');
+            nextButton.textContent = '>';
+            nextButton.classList.add('carousel-nav-button', 'next');
             nextButton.onclick = () => {
                 currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
                 updateModalImage();
             };
-    
-            let startX;
-            imageViewerModal.addEventListener('touchstart', function (e) {
-                startX = e.touches[0].clientX;
-                disablePageScrolling();  // Disable scrolling when swiping starts
-            });
-    
-            imageViewerModal.addEventListener('touchend', function (e) {
-                const endX = e.changedTouches[0].clientX;
-                if (startX - endX > 50) {
-                    nextButton.click(); // Swipe left, go to next image
-                } else if (endX - startX > 50) {
-                    prevButton.click(); // Swipe right, go to previous image
-                }
-                enablePageScrolling();  // Re-enable scrolling when swiping ends
-            });
+            imageViewerModal.appendChild(nextButton);
         }
     
         let currentIndex = startIndex;
     
         function updateModalImage() {
-            const modalImage = document.querySelector('.modal-image');
-            modalImage.src = images[currentIndex].url;
+            const modalImage = document.getElementById('modal-image');
+            if (images[currentIndex]) {
+                modalImage.src = images[currentIndex].url;
+            } else {
+                console.error('Image not found at index:', currentIndex);
+            }
         }
     
         updateModalImage();
-        imageViewerModal.style.display = 'flex';
+        imageViewerModal.style.display = 'flex'; // Ensure the modal is shown
+    
+    
     
         function closeModalOnOutsideClick(event) {
             if (event.target === imageViewerModal) {
@@ -1148,11 +1143,7 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
         updateModalImage();
         imageViewerModal.style.display = 'block';
     }
-    
-    function disablePageScrolling() {
-        document.body.style.overflow = 'hidden';
-    }
-    
+       
     function enablePageScrolling() {
         document.body.style.overflow = '';
     }

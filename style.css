@@ -57,10 +57,8 @@ h2 {
 
 /* Table Styles */
 table {
-    width: 95%; /* Use 95% of the screen width */
-    margin: 10px ;
-    table-layout: fixed; /* Fix table layout */
-
+    width: 95%;
+    margin: 10px auto;
     border-collapse: collapse;
     background-color: #fff;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -88,20 +86,6 @@ th {
     height: 3.5em;
 }
 
-.image-carousel {
-    max-width: 100%; /* Ensure carousels fit within cells */
-    overflow: hidden;
-}
-
-.editable-cell {
-    word-wrap: break-word;
-    white-space: pre-wrap; /* Allow text wrapping in editable cells */
-}
-
-thead, tbody {
-    width: 100%; /* Ensure thead and tbody both take 100% of the table width */
-}
-
 /* Alternate row colors */
 tbody tr:nth-child(odd) {
     background-color: #f2f2f2; /* Light grey for odd rows */
@@ -125,18 +109,16 @@ td.edited {
 /* Button Styles */
 button {
     display: block;
-    width: auto; /* Dynamic width based on content */
+    width: 180px;
     margin: 10px auto;
-    padding: 10px 20px; /* Add padding for readability */
+    padding: 8px;
     background-color: #003366;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 16px; /* Slightly larger font size for readability */
-    text-align: center;
+    font-size: 14px;
     transition: all 0.3s ease;
-    white-space: nowrap; /* Prevent text from wrapping */
 }
 
 button:hover {
@@ -144,25 +126,6 @@ button:hover {
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
     transform: translateY(-4px);
 }
-
-/* Make submit button adjust to content */
-#dynamic-submit-button {
-    width: auto; /* Dynamic width */
-    height: auto; /* Allow height to adjust based on content */
-    padding: 10px 20px; /* Padding to make the text more readable */
-    background-color: #4caf50; /* Green background */
-    color: white;
-    font-size: 18px; /* Font size for readability */
-    border: none;
-    border-radius: 8px;
-    cursor: move; /* Show move cursor */
-    transition: background-color 0.3s ease; /* Smooth background color transition */
-}
-
-#dynamic-submit-button:hover {
-    background-color: #388e3c; /* Darker green on hover */
-}
-
 
 /* Trash Can and Image Moving Styles */
 .trash-can {
@@ -199,22 +162,29 @@ button:hover {
 
 /* Image Viewer Modal Styles */
 .image-viewer-modal {
-    display: none;
+    display: flex; /* Ensure flexbox layout is active */
     position: fixed;
     z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.9);
-    justify-content: center;
-    align-items: center;
+    overflow: hidden; /* Hide overflow */
+    background-color: rgba(0, 0, 0, 0.9); /* Semi-transparent black background */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    transition: opacity 0.3s ease; /* Smooth fade-in transition */
+    opacity: 0; /* Initial opacity for fade-in effect */
+}
+
+.image-viewer-modal.show {
+    opacity: 1; /* Fade-in when shown */
 }
 
 .modal-image {
     max-width: 90%;
     max-height: 90%;
+    top: 50%;
     margin: auto;
     display: block;
 }
@@ -222,8 +192,8 @@ button:hover {
 /* Fullscreen on mobile */
 @media only screen and (max-width: 768px) {
     .image-viewer-modal img {
-        width: 100%;
-        height: 100%;
+        width: 50%;
+        height: 50%;
         object-fit: cover;
     }
 }
@@ -385,10 +355,6 @@ button:hover {
     transition: opacity 0.5s ease;
 }
 
-table#feild-data {
-   min-width: 95%;
-}
-
 .modal.show {
     opacity: 1;
 }
@@ -479,6 +445,7 @@ table#feild-data {
     }
 
     table {
+        width: 95%;
         font-size: 12px;
     }
 
@@ -539,6 +506,7 @@ table#feild-data {
     }
 
     table {
+        width: 100%;
         font-size: 9px;
     }
 
@@ -551,12 +519,17 @@ table#feild-data {
         width: 110px;
         font-size: 9px;
     }
+    .image-carousel img {
+        max-width: 50%;
+        height: auto;
+    }
+
 }
 
 
 @media only screen and (max-width: 768px) {
     .image-carousel img {
-        max-width: 100%;
+        max-width: 50%;
         height: auto;
     }
     

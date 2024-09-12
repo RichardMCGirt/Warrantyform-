@@ -151,7 +151,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 // Check if vibration API is supported
 function vibrateDevice() {
     if (navigator.vibrate) {
+        console.log("Vibration supported. Triggering vibration.");
         navigator.vibrate(200); // Vibrate for 200ms
+    } else {
+        console.log("Vibration not supported on this device.");
     }
 }
 
@@ -175,6 +178,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     });
 });
+
 
 
     // Event listener for dynamic submit button

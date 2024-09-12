@@ -513,3 +513,18 @@ button:hover {
         font-size: 9px;
     }
 }
+
+
+@media only screen and (max-width: 768px) {
+    .image-carousel img {
+        max-width: 100%;
+        height: auto;
+    }
+    
+    .submit-button {
+        width: 100%;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+    }
+}

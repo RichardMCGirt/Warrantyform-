@@ -148,6 +148,35 @@ document.addEventListener('DOMContentLoaded', async function () {
         }, { once: true });
     });
     
+// Check if vibration API is supported
+function vibrateDevice() {
+    if (navigator.vibrate) {
+        navigator.vibrate(200); // Vibrate for 200ms
+    }
+}
+
+// Event listener for dynamic submit button
+submitButton.addEventListener('click', function () {
+    submitChanges();
+    
+    // Trigger vibration on submit button click
+    vibrateDevice();
+});
+
+// Event listener for the Enter key press
+document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+    element.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Prevent default Enter behavior
+            submitChanges();
+            
+            // Trigger vibration on Enter key press
+            vibrateDevice();
+        }
+    });
+});
+
+
     // Event listener for dynamic submit button
     submitButton.addEventListener('click', function (event) {
         clearTimeout(clickTimeout); // Clear any pending timeout

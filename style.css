@@ -57,8 +57,10 @@ h2 {
 
 /* Table Styles */
 table {
-    width: 95%;
-    margin: 10px auto;
+    width: 95%; /* Use 95% of the screen width */
+    margin: 10px ;
+    table-layout: fixed; /* Fix table layout */
+
     border-collapse: collapse;
     background-color: #fff;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -86,6 +88,20 @@ th {
     height: 3.5em;
 }
 
+.image-carousel {
+    max-width: 100%; /* Ensure carousels fit within cells */
+    overflow: hidden;
+}
+
+.editable-cell {
+    word-wrap: break-word;
+    white-space: pre-wrap; /* Allow text wrapping in editable cells */
+}
+
+thead, tbody {
+    width: 100%; /* Ensure thead and tbody both take 100% of the table width */
+}
+
 /* Alternate row colors */
 tbody tr:nth-child(odd) {
     background-color: #f2f2f2; /* Light grey for odd rows */
@@ -109,16 +125,18 @@ td.edited {
 /* Button Styles */
 button {
     display: block;
-    width: 180px;
+    width: auto; /* Dynamic width based on content */
     margin: 10px auto;
-    padding: 8px;
+    padding: 10px 20px; /* Add padding for readability */
     background-color: #003366;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: 16px; /* Slightly larger font size for readability */
+    text-align: center;
     transition: all 0.3s ease;
+    white-space: nowrap; /* Prevent text from wrapping */
 }
 
 button:hover {
@@ -126,6 +144,25 @@ button:hover {
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
     transform: translateY(-4px);
 }
+
+/* Make submit button adjust to content */
+#dynamic-submit-button {
+    width: auto; /* Dynamic width */
+    height: auto; /* Allow height to adjust based on content */
+    padding: 10px 20px; /* Padding to make the text more readable */
+    background-color: #4caf50; /* Green background */
+    color: white;
+    font-size: 18px; /* Font size for readability */
+    border: none;
+    border-radius: 8px;
+    cursor: move; /* Show move cursor */
+    transition: background-color 0.3s ease; /* Smooth background color transition */
+}
+
+#dynamic-submit-button:hover {
+    background-color: #388e3c; /* Darker green on hover */
+}
+
 
 /* Trash Can and Image Moving Styles */
 .trash-can {
@@ -349,7 +386,7 @@ button:hover {
 }
 
 table#feild-data {
-    width: 255%;
+   min-width: 95%;
 }
 
 .modal.show {
@@ -442,7 +479,6 @@ table#feild-data {
     }
 
     table {
-        width: 95%;
         font-size: 12px;
     }
 
@@ -503,7 +539,6 @@ table#feild-data {
     }
 
     table {
-        width: 100%;
         font-size: 9px;
     }
 

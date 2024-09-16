@@ -303,7 +303,6 @@ button:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: calc(10vh - 14px);
 }
 
 #search-input {
@@ -377,7 +376,13 @@ button:hover {
     background-color: whitesmoke;
 }
 
-
+.image-carousel img {
+    max-width: 100%; /* Ensures the image fits within the available width */
+    height: auto; /* Maintains aspect ratio */
+    height: 150px;
+    object-fit: cover; /* Ensures the image covers the container without being distorted */
+    border-radius: 5px; /* Optional: Adds rounded corners for a nicer look */
+}
 
 
 .close {
@@ -411,6 +416,36 @@ button:hover {
     button {
         width: 160px;
         font-size: 13px;
+    }
+
+    .image-carousel {
+        display: flex;
+        justify-content: center; /* Centers images horizontally */
+        align-items: center;
+    }
+
+    .image-carousel img {
+        width: auto; /* Adjusts based on image aspect ratio */
+        max-width: 50%; /* Limits the size on larger screens */
+        height: auto;
+    }
+
+    
+        
+        .submit-button {
+            width: 100%;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+        }
+    
+
+}
+
+@media (max-width: 767px) {
+    .image-carousel img {
+        width: 100%; /* Takes up full width on mobile */
+        height: auto;
     }
 }
 
@@ -521,24 +556,7 @@ button:hover {
         width: 110px;
         font-size: 9px;
     }
-    .image-carousel img {
-        max-width: 50%;
-        height: auto;
-    }
-
+   
 }
 
 
-@media only screen and (max-width: 768px) {
-    .image-carousel img {
-        max-width: 50%;
-        height: auto;
-    }
-    
-    .submit-button {
-        width: 100%;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-    }
-}

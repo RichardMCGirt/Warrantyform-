@@ -377,13 +377,18 @@ button:hover {
 }
 
 .image-carousel img {
-    max-width: 100%; /* Ensures the image fits within the available width */
-    height: auto; /* Maintains aspect ratio */
-    height: 150px;
-    object-fit: cover; /* Ensures the image covers the container without being distorted */
-    border-radius: 5px; /* Optional: Adds rounded corners for a nicer look */
+    width: 100%; /* Ensure the image fits within the cell */
+    height: auto; /* Maintain aspect ratio */
+    object-fit: cover;
+    border-radius: 5px; /* Optional: For a rounded look */
+    display: block; /* Prevent the image from overflowing */
 }
-
+.image-carousel button {
+    font-size: 12px; /* Make buttons smaller */
+    padding: 5px; /* Adjust padding for a more compact button */
+    border-radius: 5px; /* Optional: Rounded buttons */
+    margin: 2px;
+}
 
 .close {
     color: #aaa;
@@ -400,6 +405,49 @@ button:hover {
     background-color: #ddd;
     transform: rotate(90deg);
     transition: transform 0.3s ease, color 0.3s ease, background-color 0.3s ease;
+}
+
+@media (min-width: 768px) {
+    .image-carousel img {
+        width: 50%; /* Restrict image width to 50% of the cell on larger screens */
+        max-width: 50%;
+        height: auto;
+        margin: 0 auto; /* Center image */
+    }
+
+    .image-carousel button {
+        font-size: 12px; /* Larger buttons for desktop */
+        padding: 5px;
+    }
+
+    .image-carousel {
+        display: flex;
+        justify-content: center; /* Center the carousel content */
+        align-items: center;
+    }
+}
+
+/* Ensure proper spacing and alignment of content inside the table */
+td {
+    vertical-align: middle; /* Ensure content is vertically aligned in the center */
+    text-align: center; /* Center-align the text */
+    padding: 5px; /* Add padding for a cleaner layout */
+}
+
+/* General styling for buttons */
+button {
+    display: inline-block;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
 }
 
 /* Responsive Table Styles for Mobile */
@@ -443,28 +491,91 @@ button:hover {
 }
 
 @media (max-width: 767px) {
+    image-carousel {
+        max-width: 100%; /* Ensure the container doesn't exceed the cell width */
+        overflow: hidden;
+        display: flex;
+        flex-direction: column; /* Stack content vertically */
+        align-items: center; /* Center content horizontally */
+    }
+
     .image-carousel img {
-        width: 100%; /* Takes up full width on mobile */
+        width: 90%; /* Scale down images to fit better on mobile */
+        max-width: 90%;
         height: auto;
+        object-fit: contain; /* Ensure the whole image is visible */
+        display: block;
+        margin: 0 auto; /* Center the image */
+    }
+
+    /* Buttons inside the carousel on mobile */
+    .image-carousel button {
+        font-size: 10px; /* Make buttons smaller on mobile */
+        padding: 3px; /* Reduce padding for a more compact look */
+        margin: 2px;
+    }
+
+    /* Adjust image count text */
+    .image-count {
+        font-size: 10px; /* Smaller font size for mobile */
+        margin-top: 5px;
+    }
+
+    /* Delete button */
+    .delete-button {
+        font-size: 10px; /* Smaller delete button */
+        padding: 3px;
+    }
+
+    /* "Add Photos" button styling */
+    .image-carousel button {
+        width: 70%; /* Scale down "Add Photos" button */
+        font-size: 10px;
+        padding: 3px;
     }
 }
 
 @media (max-width: 576px) {
-    table {
-        width: 100%; /* Ensuring it stays 100% */
+    .image-carousel {
+        max-width: 100%; /* Ensure the container doesn't exceed the cell width */
+        overflow: hidden;
     }
 
-    th, td {
-        padding: 6px;
-        font-size: 12px;
+    .image-carousel img {
+        width: 90%; /* Scale down images to fit better on mobile */
+        max-width: 90%;
+        height: auto;
+        object-fit: contain; /* Ensure the whole image is visible */
+        display: block;
+        margin: 0 auto; /* Center the image */
     }
 
-    button {
-        width: 140px;
-        font-size: 12px;
+    /* Buttons inside the carousel on mobile */
+    .image-carousel button {
+        font-size: 10px; /* Make buttons smaller on mobile */
+        padding: 3px; /* Reduce padding for a more compact look */
+        margin: 2px;
+    }
+
+    /* Adjust image count text */
+    .image-count {
+        font-size: 10px; /* Smaller font size for mobile */
+        margin-top: 5px;
+    }
+
+    /* Delete button */
+    .delete-button {
+        font-size: 10px; /* Smaller delete button */
+        padding: 3px;
+    }
+
+    /* "Add Photos" button styling */
+    .image-carousel button {
+        width: 70%; /* Scale down "Add Photos" button */
+        font-size: 10px;
+        padding: 3px;
     }
 }
-
 
 /* Ensuring consistency on landscape orientation for small devices */
 @media (max-width: 576px) and (orientation: landscape) {

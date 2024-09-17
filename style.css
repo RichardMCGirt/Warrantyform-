@@ -75,6 +75,8 @@ th, td {
     overflow-wrap: break-word;
     word-break: keep-all;
     max-width: 200px;
+    text-overflow: ellipsis; /* Add ellipsis (...) to truncated text if needed */
+
 }
 
 th {
@@ -199,6 +201,82 @@ button:hover {
         object-fit: cover;
     }
 }
+
+ /* Target the 7th column in the table and display as block */
+ .image-viewer-modal img {
+    width: 100%; /* Ensure the image takes full width */
+    height: auto; /* Maintain aspect ratio */
+    object-fit: cover;
+}
+
+/* Target the 7th column in the table and ensure content fits well */
+td:nth-child(7), th:nth-child(7) {
+    width: 100%; /* Allow full width */
+    padding: 10px;
+    box-sizing: border-box;
+    overflow: hidden; /* Hide overflow */
+    text-align: center; /* Center content, especially images */
+}
+
+/* Ensure images in the 7th column do not overflow */
+tbody tr td:nth-child(7) img {
+    max-width: 100%; /* Ensure the image fits within the cell width */
+    height: auto; /* Maintain the aspect ratio */
+    object-fit: contain; /* Ensure the image scales properly without overflow */
+    display: block;
+    margin: 0 auto; /* Center the image within the cell */
+}
+/* Prevent overflow and keep content within the boundaries */
+tbody tr td:nth-child(7) {
+    padding: 10px;
+    border: none;
+    background-color: #f9f9f9;
+    max-width: 200px; /* Limit the width of the cell */
+    white-space: normal; /* Allow text to wrap naturally */
+    overflow-wrap: break-word; /* Ensure long words break and wrap */
+    text-align: center; /* Center content inside the cell */
+    position: relative;
+}
+
+button {
+    width: 100%; /* Full width on mobile */
+    margin: 10px 0; /* Ensure buttons are spaced vertically */
+    font-size: 16px; /* Increase font size for better readability */
+}
+
+    /* Stack buttons vertically */
+    .dynamic-buttons-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Center buttons horizontally */
+    }
+
+    /* Adjust the size of other dynamically added buttons */
+    .carousel-nav-button {
+        width: 100px;
+        height: 50px;
+        font-size: 14px;
+    }
+
+    /* Ensure proper display of modal buttons in mobile */
+    .close-modal-button {
+        top: 10px;
+        right: 10px;
+        font-size: 24px;
+    }
+
+    .carousel-nav-button {
+        top: auto;
+        bottom: 20px;
+        width: 50%;
+    }
+
+    .prev, .next {
+        width: 50%; /* Make navigation buttons take 50% width */
+        margin: 5px;
+        text-align: center;
+    }
+
 
 .close-modal-button {
     position: absolute;
@@ -377,18 +455,13 @@ button:hover {
 }
 
 .image-carousel img {
-    width: 100%; /* Ensure the image fits within the cell */
-    height: auto; /* Maintain aspect ratio */
-    object-fit: cover;
-    border-radius: 5px; /* Optional: For a rounded look */
-    display: block; /* Prevent the image from overflowing */
+    max-width: 100%; /* Ensures the image fits within the available width */
+    height: auto; /* Maintains aspect ratio */
+    height: 150px;
+    object-fit: cover; /* Ensures the image covers the container without being distorted */
+    border-radius: 5px; /* Optional: Adds rounded corners for a nicer look */
 }
-.image-carousel button {
-    font-size: 12px; /* Make buttons smaller */
-    padding: 5px; /* Adjust padding for a more compact button */
-    border-radius: 5px; /* Optional: Rounded buttons */
-    margin: 2px;
-}
+
 
 .close {
     color: #aaa;
@@ -405,49 +478,6 @@ button:hover {
     background-color: #ddd;
     transform: rotate(90deg);
     transition: transform 0.3s ease, color 0.3s ease, background-color 0.3s ease;
-}
-
-@media (min-width: 768px) {
-    .image-carousel img {
-        width: 50%; /* Restrict image width to 50% of the cell on larger screens */
-        max-width: 50%;
-        height: auto;
-        margin: 0 auto; /* Center image */
-    }
-
-    .image-carousel button {
-        font-size: 12px; /* Larger buttons for desktop */
-        padding: 5px;
-    }
-
-    .image-carousel {
-        display: flex;
-        justify-content: center; /* Center the carousel content */
-        align-items: center;
-    }
-}
-
-/* Ensure proper spacing and alignment of content inside the table */
-td {
-    vertical-align: middle; /* Ensure content is vertically aligned in the center */
-    text-align: center; /* Center-align the text */
-    padding: 5px; /* Add padding for a cleaner layout */
-}
-
-/* General styling for buttons */
-button {
-    display: inline-block;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    padding: 5px 10px;
-    font-size: 12px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: #0056b3;
 }
 
 /* Responsive Table Styles for Mobile */
@@ -491,91 +521,28 @@ button:hover {
 }
 
 @media (max-width: 767px) {
-    image-carousel {
-        max-width: 100%; /* Ensure the container doesn't exceed the cell width */
-        overflow: hidden;
-        display: flex;
-        flex-direction: column; /* Stack content vertically */
-        align-items: center; /* Center content horizontally */
-    }
-
     .image-carousel img {
-        width: 90%; /* Scale down images to fit better on mobile */
-        max-width: 90%;
+        width: 100%; /* Takes up full width on mobile */
         height: auto;
-        object-fit: contain; /* Ensure the whole image is visible */
-        display: block;
-        margin: 0 auto; /* Center the image */
-    }
-
-    /* Buttons inside the carousel on mobile */
-    .image-carousel button {
-        font-size: 10px; /* Make buttons smaller on mobile */
-        padding: 3px; /* Reduce padding for a more compact look */
-        margin: 2px;
-    }
-
-    /* Adjust image count text */
-    .image-count {
-        font-size: 10px; /* Smaller font size for mobile */
-        margin-top: 5px;
-    }
-
-    /* Delete button */
-    .delete-button {
-        font-size: 10px; /* Smaller delete button */
-        padding: 3px;
-    }
-
-    /* "Add Photos" button styling */
-    .image-carousel button {
-        width: 70%; /* Scale down "Add Photos" button */
-        font-size: 10px;
-        padding: 3px;
     }
 }
 
 @media (max-width: 576px) {
-    .image-carousel {
-        max-width: 100%; /* Ensure the container doesn't exceed the cell width */
-        overflow: hidden;
+    table {
+        width: 100%; /* Ensuring it stays 100% */
     }
 
-    .image-carousel img {
-        width: 90%; /* Scale down images to fit better on mobile */
-        max-width: 90%;
-        height: auto;
-        object-fit: contain; /* Ensure the whole image is visible */
-        display: block;
-        margin: 0 auto; /* Center the image */
+    th, td {
+        padding: 6px;
+        font-size: 12px;
     }
 
-    /* Buttons inside the carousel on mobile */
-    .image-carousel button {
-        font-size: 10px; /* Make buttons smaller on mobile */
-        padding: 3px; /* Reduce padding for a more compact look */
-        margin: 2px;
-    }
-
-    /* Adjust image count text */
-    .image-count {
-        font-size: 10px; /* Smaller font size for mobile */
-        margin-top: 5px;
-    }
-
-    /* Delete button */
-    .delete-button {
-        font-size: 10px; /* Smaller delete button */
-        padding: 3px;
-    }
-
-    /* "Add Photos" button styling */
-    .image-carousel button {
-        width: 70%; /* Scale down "Add Photos" button */
-        font-size: 10px;
-        padding: 3px;
+    button {
+        width: 140px;
+        font-size: 12px;
     }
 }
+
 
 /* Ensuring consistency on landscape orientation for small devices */
 @media (max-width: 576px) and (orientation: landscape) {
@@ -669,5 +636,3 @@ button:hover {
     }
    
 }
-
-

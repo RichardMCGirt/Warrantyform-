@@ -1085,6 +1085,7 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
             closeModalButton.classList.add('close-modal-button');
             closeModalButton.onclick = () => {
                 imageViewerModal.style.display = 'none';
+                enablePageScrolling();
             };
             imageViewerModal.appendChild(closeModalButton);
     
@@ -1121,28 +1122,12 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
         updateModalImage();
         imageViewerModal.style.display = 'flex'; // Ensure the modal is shown
     
-    
-    
-        function closeModalOnOutsideClick(event) {
-            if (event.target === imageViewerModal) {
-                imageViewerModal.style.display = 'none';
-                enablePageScrolling();  // Re-enable scrolling when modal is closed
-            }
-        }
-    
-        function closeModalOnEsc(event) {
-            if (event.key === 'Escape') {
-                imageViewerModal.style.display = 'none';
-                enablePageScrolling();  // Re-enable scrolling on ESC key press
-            }
-        }
-    
-        document.addEventListener('click', closeModalOnOutsideClick);
-        document.addEventListener('keydown', closeModalOnEsc);
-    
-        updateModalImage();
-        imageViewerModal.style.display = 'block';
+        // Fullscreen functionality
+        imageViewerModal.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        });
     }
+    
        
     function enablePageScrolling() {
         document.body.style.overflow = '';
@@ -1201,6 +1186,17 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
             }
         });
     });
+
+// Assuming dynamic buttons are added to a container
+const dynamicButtonsContainer = document.createElement('div');
+dynamicButtonsContainer.classList.add('dynamic-buttons-container'); // Add the class to the container
+
+// Add the dynamically created submit button to this container
+dynamicButtonsContainer.appendChild(submitButton);
+
+// Add the container to the body or wherever it should be displayed
+document.body.appendChild(dynamicButtonsContainer);
+
 
     // Event listener for dynamic submit button
     submitButton.addEventListener('click', function () {

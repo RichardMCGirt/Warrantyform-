@@ -1066,7 +1066,6 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
             callback(); // Execute the callback function after animation
         });
     }
-
     function openImageViewer(images, startIndex) {
         let imageViewerModal = document.getElementById('image-viewer-modal');
         if (!imageViewerModal) {
@@ -1083,10 +1082,7 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
             const closeModalButton = document.createElement('button');
             closeModalButton.textContent = 'X';
             closeModalButton.classList.add('close-modal-button');
-            closeModalButton.onclick = () => {
-                imageViewerModal.style.display = 'none';
-                enablePageScrolling();
-            };
+            closeModalButton.onclick = () => closeModal(); // Close modal when 'X' is clicked
             imageViewerModal.appendChild(closeModalButton);
     
             const prevButton = document.createElement('button');
@@ -1119,14 +1115,38 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
             }
         }
     
-        updateModalImage();
-        imageViewerModal.style.display = 'flex'; // Ensure the modal is shown
+        function closeModal() {
+            imageViewerModal.style.display = 'none';
+            enablePageScrolling();
+            document.removeEventListener('keydown', handleKeyNavigation); // Remove the keydown listener
+        }
     
         // Fullscreen functionality
         imageViewerModal.requestFullscreen().catch(err => {
             console.error(`Error attempting to enable full-screen mode: ${err.message}`);
         });
+    
+        updateModalImage();
+        imageViewerModal.style.display = 'flex'; // Ensure the modal is shown
+    
+        // Add keyboard navigation support
+        function handleKeyNavigation(event) {
+            if (event.key === 'ArrowLeft') {
+                currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
+                updateModalImage();
+            } else if (event.key === 'ArrowRight') {
+                currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
+                updateModalImage();
+            } else if (event.key === 'Escape') {
+                closeModal(); // Close modal when 'Esc' is pressed
+            }
+        }
+    
+        // Listen for keydown events to navigate with arrow keys and close with Esc
+        document.addEventListener('keydown', handleKeyNavigation);
     }
+    
+    
     
        
     function enablePageScrolling() {
@@ -1174,6 +1194,28 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
         showToast('Changes submitted successfully!');
         fetchAllData();  // Refresh data after form submission
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        function adjustImageSize() {
+            const images = document.querySelectorAll('td:nth-child(7) .image-carousel img');
+            images.forEach(img => {
+                if (window.innerWidth < 576) {
+                    img.style.maxWidth = '80px';
+                    img.style.maxHeight = '80px';
+                } else if (window.innerWidth < 768) {
+                    img.style.maxWidth = '100px';
+                    img.style.maxHeight = '100px';
+                } else {
+                    img.style.maxWidth = '150px';
+                    img.style.maxHeight = '150px';
+                }
+            });
+        }
+    
+        window.addEventListener('resize', adjustImageSize);
+        adjustImageSize(); // Call it initially
+    });
+    
 
     // Add event listeners to inputs, selects, and editable cells
     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {

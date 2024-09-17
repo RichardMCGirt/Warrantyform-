@@ -11,6 +11,18 @@ h2 {
     text-align: center;
 }
 
+td:nth-child(7) .delete-button,
+td:nth-child(7) .add-photo-button {
+    width: 100%;
+ 
+    border: none;
+    border-radius: 5px;
+    background-color: darkred;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
 /* Header Styles */
 .header {
     display: flex;
@@ -20,29 +32,6 @@ h2 {
     cursor: pointer;
     position: relative;
 }
-
-
-
-/* Styling for the draggable submit button */
-#dynamic-submit-button {
-    width: 150px; /* Increase width */
-    height: 50px; /* Increase height */
-    background-color: #4caf50; /* Green background */
-    color: white;
-    font-size: 20px; /* Larger font size */
-    border: none;
-    border-radius: 8px;
-    padding: 10px;
-    cursor: move; /* Show move cursor */
-    transition: background-color 0.3s ease; /* Smooth background color transition */
-    z-index: 1000; /* Ensure it stays above other elements */
-}
-
-/* Change background color on hover */
-#dynamic-submit-button:hover {
-    background-color: #388e3c; /* Darker green on hover */
-}
-
 
 .logo {
     height: 80px;
@@ -75,8 +64,6 @@ th, td {
     overflow-wrap: break-word;
     word-break: keep-all;
     max-width: 200px;
-    text-overflow: ellipsis; /* Add ellipsis (...) to truncated text if needed */
-
 }
 
 th {
@@ -92,12 +79,14 @@ th {
 
 /* Alternate row colors */
 tbody tr:nth-child(odd) {
-    background-color: #f2f2f2; /* Light grey for odd rows */
+    background-color: #f2f2f2;
 }
 
 tbody tr:nth-child(even) {
-    background-color: #e6e6e6; /* Slightly darker grey for even rows */
+    background-color: #e6e6e6;
 }
+
+
 
 /* Editable Cell Styles */
 td[contenteditable="true"] {
@@ -131,16 +120,35 @@ button:hover {
     transform: translateY(-4px);
 }
 
-/* Trash Can and Image Moving Styles */
-.trash-can {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 50px;
+/* Draggable Submit Button */
+#dynamic-submit-button {
+    width: 150px;
     height: 50px;
-    background-image: url('path/to/trash-can-icon.png');
-    background-size: contain;
+    background-color: #4caf50;
+    color: white;
+    font-size: 20px;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: move;
+    transition: background-color 0.3s ease;
     z-index: 1000;
+    position: fixed;
+}
+
+#dynamic-submit-button:hover {
+    background-color: #388e3c;
+}
+
+/* Image Styles */
+.image-carousel {
+    position: relative;
+}
+
+.image-carousel img {
+    height: auto;
+    object-fit: cover;
+    border-radius: 5px;
 }
 
 .image-moving {
@@ -164,118 +172,35 @@ button:hover {
     }
 }
 
-/* Image Viewer Modal Styles */
+/* Image Viewer Modal */
 .image-viewer-modal {
-    display: flex; /* Ensure flexbox layout is active */
+    display: flex;
     position: fixed;
     z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: hidden; /* Hide overflow */
-    background-color: rgba(0, 0, 0, 0.9); /* Semi-transparent black background */
-    justify-content: center; /* Center horizontally */
-    align-items: center; /* Center vertically */
-    transition: opacity 0.3s ease; /* Smooth fade-in transition */
-    opacity: 0; /* Initial opacity for fade-in effect */
+    background-color: rgba(0, 0, 0, 0.9);
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease;
 }
 
 .image-viewer-modal.show {
-    opacity: 1; /* Fade-in when shown */
+    opacity: 1;
 }
 
 .modal-image {
-    max-width: 90%;
-    max-height: 90%;
-    top: 50%;
+    max-width: 90vw; /* 90% of the viewport width */
+    max-height: 90vh; /* 90% of the viewport height */
+    width: auto; /* Ensure the image width is automatically adjusted */
+    height: auto; /* Ensure the image height is automatically adjusted */
+    object-fit: contain; /* Ensure the image maintains aspect ratio and fits within bounds */
     margin: auto;
     display: block;
+    border-radius: 5px; /* Optional: add rounded corners */
 }
-
-/* Fullscreen on mobile */
-@media only screen and (max-width: 768px) {
-    .image-viewer-modal img {
-        width: 50%;
-        height: 50%;
-        object-fit: cover;
-    }
-}
-
- /* Target the 7th column in the table and display as block */
- .image-viewer-modal img {
-    width: 100%; /* Ensure the image takes full width */
-    height: auto; /* Maintain aspect ratio */
-    object-fit: cover;
-}
-
-/* Target the 7th column in the table and ensure content fits well */
-td:nth-child(7), th:nth-child(7) {
-    width: 100%; /* Allow full width */
-    padding: 10px;
-    box-sizing: border-box;
-    overflow: hidden; /* Hide overflow */
-    text-align: center; /* Center content, especially images */
-}
-
-/* Ensure images in the 7th column do not overflow */
-tbody tr td:nth-child(7) img {
-    max-width: 100%; /* Ensure the image fits within the cell width */
-    height: auto; /* Maintain the aspect ratio */
-    object-fit: contain; /* Ensure the image scales properly without overflow */
-    display: block;
-    margin: 0 auto; /* Center the image within the cell */
-}
-/* Prevent overflow and keep content within the boundaries */
-tbody tr td:nth-child(7) {
-    padding: 10px;
-    border: none;
-    background-color: #f9f9f9;
-    max-width: 200px; /* Limit the width of the cell */
-    white-space: normal; /* Allow text to wrap naturally */
-    overflow-wrap: break-word; /* Ensure long words break and wrap */
-    text-align: center; /* Center content inside the cell */
-    position: relative;
-}
-
-button {
-    width: 100%; /* Full width on mobile */
-    margin: 10px 0; /* Ensure buttons are spaced vertically */
-    font-size: 16px; /* Increase font size for better readability */
-}
-
-    /* Stack buttons vertically */
-    .dynamic-buttons-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center; /* Center buttons horizontally */
-    }
-
-    /* Adjust the size of other dynamically added buttons */
-    .carousel-nav-button {
-        width: 100px;
-        height: 50px;
-        font-size: 14px;
-    }
-
-    /* Ensure proper display of modal buttons in mobile */
-    .close-modal-button {
-        top: 10px;
-        right: 10px;
-        font-size: 24px;
-    }
-
-    .carousel-nav-button {
-        top: auto;
-        bottom: 20px;
-        width: 50%;
-    }
-
-    .prev, .next {
-        width: 50%; /* Make navigation buttons take 50% width */
-        margin: 5px;
-        text-align: center;
-    }
 
 
 .close-modal-button {
@@ -291,6 +216,8 @@ button {
 /* Carousel Navigation Buttons */
 .carousel-nav-button {
     background-color: transparent;
+    width: 25%; /* Set the width to 25% of the parent container */
+
     border: none;
     color: white;
     font-size: 13px;
@@ -300,7 +227,6 @@ button {
     cursor: pointer;
     z-index: 2;
     opacity: 0.7;
-    width: 50%;
     transition: opacity 0.3s;
 }
 
@@ -309,18 +235,17 @@ button {
 }
 
 .carousel-nav-button.prev {
-    left: 10px;
+    left: 35%;
+    width: 5%;
 }
 
 .carousel-nav-button.next {
-    right: 10px;
+    right: 35%;
+    width: 5%;
+
 }
 
-.image-carousel {
-    position: relative;
-}
-
-/* Custom Checkbox Styles */
+/* Custom Checkbox */
 .custom-checkbox {
     width: 25px;
     height: 25px;
@@ -329,8 +254,6 @@ button {
     background-color: #e0e0e0;
     border-radius: 5px;
     border: 2px solid #9e9e9e;
-    display: inline-block;
-    position: relative;
     transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
 }
 
@@ -365,7 +288,6 @@ button {
     background-color: #e0e0e0;
 }
 
-/* Specific Styles for Select Options */
 .styled-select option[value='Billable'] {
     background-color: #ffeb3b;
     color: #000;
@@ -376,7 +298,7 @@ button {
     color: #fff;
 }
 
-/* Search Input Styles */
+/* Search Input */
 .search-container {
     display: flex;
     justify-content: center;
@@ -413,7 +335,6 @@ button {
     font-size: 15px;
     opacity: 0;
     transition: opacity 0.5s;
-    box-sizing: border-box;
 }
 
 /* Modal Styles */
@@ -425,11 +346,9 @@ button {
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
     background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
     opacity: 0;
     transition: opacity 0.5s ease;
 }
@@ -454,15 +373,6 @@ button {
     background-color: whitesmoke;
 }
 
-.image-carousel img {
-    max-width: 100%; /* Ensures the image fits within the available width */
-    height: auto; /* Maintains aspect ratio */
-    height: 150px;
-    object-fit: cover; /* Ensures the image covers the container without being distorted */
-    border-radius: 5px; /* Optional: Adds rounded corners for a nicer look */
-}
-
-
 .close {
     color: #aaa;
     float: right;
@@ -472,18 +382,64 @@ button {
     transition: color 0.3s ease, background-color 0.3s ease;
 }
 
-.close:hover,
-.close:focus {
+.close:hover, .close:focus {
     color: black;
     background-color: #ddd;
     transform: rotate(90deg);
-    transition: transform 0.3s ease, color 0.3s ease, background-color 0.3s ease;
 }
 
-/* Responsive Table Styles for Mobile */
 @media (max-width: 768px) {
+    .logo {
+        height: 60px; /* Smaller logo size for mobile */
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+}
+
+/* Centering the Toast Notification */
+#toast {
+    visibility: hidden;
+    min-width: 60%; /* Adjust the width to 60% */
+    background-color: navy;
+    color: #fff;
+    text-align: center;
+    border-radius: 5px;
+    padding: 12px;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px; /* Adjust font size for mobile */
+    opacity: 0;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+/* Search Container Styles */
+.search-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px auto; /* Center and add margin */
+}
+
+#search-input {
+    padding: 10px;
+    width: 80%;
+    max-width: 500px; /* Limit the width on larger screens */
+    border-radius: 4px;
+    font-size: 16px;
+    border: 2px solid #8B0000;
+}
+
+/* Responsive Styles for Mobile */
+@media (max-width: 768px) {
+
+    
     table {
-        width: 100%; /* Set to 100% for consistency */
+        width: 100%;
     }
 
     th, td {
@@ -491,88 +447,106 @@ button {
         font-size: 14px;
     }
 
-    button {
-        width: 160px;
-        font-size: 13px;
-    }
-
-    .image-carousel {
+    /* Adjust image carousel in table index 7 */
+    td:nth-child(7) .image-carousel {
         display: flex;
-        justify-content: center; /* Centers images horizontally */
+        justify-content: center;
         align-items: center;
+        flex-wrap: wrap;
+        max-width: 100%;
+        margin: 0 auto;
     }
 
-    .image-carousel img {
-        width: auto; /* Adjusts based on image aspect ratio */
-        max-width: 50%; /* Limits the size on larger screens */
-        height: auto;
+    td:nth-child(7) .image-carousel img {
+        max-width: 100px;
+        max-height: 100px;
+        object-fit: cover;
+        margin: 5px;
+        border-radius: 5px;
     }
 
-    
-        
-        .submit-button {
-            width: 100%;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-        }
-    
+    /* Carousel navigation buttons */
+    td:nth-child(7) .carousel-nav-button {
+        font-size: 20px;
+        width: 30px;
+        height: 40px;
+        display: inline-block;
+        line-height: 30px;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        text-align: center;
+        border-radius: 50%;
+        margin: 5px;
+        cursor: pointer;
+    }
 
+    /* Buttons */
+    td:nth-child(7) .delete-button,
+    td:nth-child(7) .add-photo-button {
+        width: 100%;
+        padding: 10px;
+     
+        font-size: 14px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #4caf50;
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    td:nth-child(7) .delete-button:hover,
+    td:nth-child(7) .add-photo-button:hover {
+        background-color: #388e3c;
+    }
 }
 
-@media (max-width: 767px) {
-    .image-carousel img {
-        width: 100%; /* Takes up full width on mobile */
-        height: auto;
+
+@media (max-width: 576px) {
+    .logo {
+        height: 50px; /* Smaller logo for extra small screens */
+    }
+
+    #search-input {
+        width: 95%;
+        padding: 6px;
+    }
+    
+    h1 {
+        font-size: 16px;
     }
 }
 
 @media (max-width: 576px) {
-    table {
-        width: 100%; /* Ensuring it stays 100% */
-    }
-
     th, td {
         padding: 6px;
         font-size: 12px;
     }
 
-    button {
-        width: 140px;
+    /* Further reduce image sizes in index 7 for small devices */
+    td:nth-child(7) .image-carousel img {
+        max-width: 80px;
+        max-height: 80px;
+    }
+
+    td:nth-child(7) .carousel-nav-button {
+        font-size: 18px;
+        width: 25px;
+        height: 25px;
+        line-height: 25px;
+    }
+
+    td:nth-child(7) .delete-button,
+    td:nth-child(7) .add-photo-button {
         font-size: 12px;
     }
 }
 
-
-/* Ensuring consistency on landscape orientation for small devices */
-@media (max-width: 576px) and (orientation: landscape) {
-    .logo {
-        height: 50px;
-    }
-
-    h1 {
-        font-size: 18px;
-    }
-
-    #search-input {
-        width: 100%;
-        padding: 6px;
-    }
-
-    table {
-        width: 95%;
-        font-size: 12px;
-    }
-
-    th, td {
-        padding: 6px;
-        font-size: 12px;
-    }
-
-    button {
-        width: 140px;
-        font-size: 12px;
-    }
+/* Ensure that images and buttons don't overflow */
+td:nth-child(7) {
+    overflow: hidden;
+    word-wrap: break-word;
 }
 
 @media (max-width: 400px) {
@@ -590,11 +564,8 @@ button {
         font-size: 14px;
     }
 
-    table {
+    table, th, td {
         font-size: 10px;
-    }
-
-    th, td {
         padding: 4px;
     }
 
@@ -604,7 +575,33 @@ button {
     }
 }
 
-/* Ensuring consistency on landscape orientation for extra small devices */
+/* Landscape Orientation for Small Devices */
+@media (max-width: 576px) and (orientation: landscape) {
+    .logo {
+        height: 50px;
+    }
+
+    h1 {
+        font-size: 18px;
+    }
+
+    #search-input {
+        width: 100%;
+        padding: 6px;
+    }
+
+    table, th, td {
+        width: 95%;
+        font-size: 12px;
+        padding: 6px;
+    }
+
+    button {
+        width: 140px;
+        font-size: 12px;
+    }
+}
+
 @media (max-width: 400px) and (orientation: landscape) {
     .logo {
         height: 35px;
@@ -620,19 +617,13 @@ button {
         font-size: 12px;
     }
 
-    table {
-        width: 100%;
+    table, th, td {
         font-size: 9px;
-    }
-
-    th, td {
         padding: 3px;
-        font-size: 9px;
     }
 
     button {
         width: 110px;
         font-size: 9px;
     }
-   
 }

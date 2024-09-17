@@ -236,12 +236,12 @@ button:hover {
 
 .carousel-nav-button.prev {
     left: 35%;
-    width: 5%;
+    width: 15%;
 }
 
 .carousel-nav-button.next {
     right: 35%;
-    width: 5%;
+    width: 15%;
 
 }
 

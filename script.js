@@ -846,6 +846,17 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                             carouselDiv.appendChild(nextButton);
                         }
 
+   // Ensure the "Add Photos" button is always displayed
+   const addPhotoButton = document.createElement('button');
+   addPhotoButton.textContent = 'Add Photos';
+   addPhotoButton.onclick = () => {
+       fileInput.setAttribute('data-record-id', record.id);
+       fileInput.setAttribute('data-target-field', imageField);
+       fileInput.click();
+   };
+   carouselDiv.appendChild(addPhotoButton);
+   cell.appendChild(carouselDiv);
+
                         // Add Delete Button for images
                         const deleteButton = document.createElement('button');
                         deleteButton.innerHTML = '🗑️'; // Trash can icon
@@ -872,23 +883,15 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                                             fileInput.click();
                                         };
                                         carouselDiv.appendChild(addPhotoButton);
+                                        carouselDiv.appendChild(deleteButton);
+
                                     }
                                 });
                             }
                         };
-                        carouselDiv.appendChild(deleteButton);
                     }
 
-                    // Ensure the "Add Photos" button is always displayed
-                    const addPhotoButton = document.createElement('button');
-                    addPhotoButton.textContent = 'Add Photos';
-                    addPhotoButton.onclick = () => {
-                        fileInput.setAttribute('data-record-id', record.id);
-                        fileInput.setAttribute('data-target-field', imageField);
-                        fileInput.click();
-                    };
-                    carouselDiv.appendChild(addPhotoButton);
-                    cell.appendChild(carouselDiv);
+                 
 
                     // Add keyboard navigation support
                     carouselDiv.tabIndex = 0;  // Make div focusable

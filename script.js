@@ -1118,16 +1118,25 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
             }
         }
     
-        function closeModal() {
-            imageViewerModal.style.display = 'none';
-            enablePageScrolling();
-            document.removeEventListener('keydown', handleKeyNavigation); // Remove the keydown listener
-        }
+     // Get the modal and image elements
+const modalImage = document.getElementById('modalImage');
+
+// Function to close the modal
+function closeModal() {
+    imageViewerModal.style.display = 'none';
+    enablePageScrolling();
+    document.removeEventListener('keydown', handleKeyNavigation); // Remove the keydown listener
+}
+
+// Function to close modal when clicking outside the image
+imageViewerModal.addEventListener('click', function(event) {
+    if (event.target === imageViewerModal) { // Check if clicked outside the image
+        closeModal();
+    }
+});
+
     
-        // Fullscreen functionality
-        imageViewerModal.requestFullscreen().catch(err => {
-            console.error(`Error attempting to enable full-screen mode: ${err.message}`);
-        });
+     
     
         updateModalImage();
         imageViewerModal.style.display = 'flex'; // Ensure the modal is shown
@@ -1215,9 +1224,29 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
             });
         }
     
-        window.addEventListener('resize', adjustImageSize);
-        adjustImageSize(); // Call it initially
-    });
+  // Adjust button size and position dynamically
+  function adjustButtonPosition() {
+    const submitButton = document.getElementById('dynamic-submit-button');
+    if (window.innerWidth < 576) {
+        submitButton.style.fontSize = '14px';
+        submitButton.style.padding = '10px';
+    } else {
+        submitButton.style.fontSize = '';
+        submitButton.style.padding = '';
+    }
+}
+
+// Add resize event listener
+window.addEventListener('resize', () => {
+    adjustImageSize();
+    adjustButtonPosition();
+});
+
+// Call functions on initial load
+adjustImageSize();
+adjustButtonPosition();
+});
+    
     
 
     // Add event listeners to inputs, selects, and editable cells

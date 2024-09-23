@@ -27,6 +27,7 @@ td:nth-child(7) .add-photo-button {
         .scrollable-div {
             max-height: 1000px; /* Set a max-height for scrollable area */
             overflow-y: auto; /* Enable vertical scrolling */
+            overflow-x: auto;
         }
 
         /* CSS for Dropbox Dropdown or other elements */
@@ -424,6 +425,13 @@ button:hover {
     }
 }
 
+  /* Add styles to make divs scrollable */
+  .scrollable-div {
+    max-height: 1000px; /* Set a max-height for scrollable area */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: auto;
+}
+
 .styled-select select {
     width: 100%;
     font-size: 14px;
@@ -472,13 +480,15 @@ button:hover {
 
     
     table {
-        width: 100%;
+        width: 95%;
     }
 
     th, td {
         padding: 8px;
         font-size: 14px;
     }
+
+    
 
     /* Adjust image carousel in table index 7 */
     td:nth-child(7) .image-carousel {
@@ -536,6 +546,13 @@ button:hover {
         z-index: 1000; /* Ensure dropdown is above other elements */
     }
 
+      /* Add styles to make divs scrollable */
+      .scrollable-div {
+        max-height: 1000px; /* Set a max-height for scrollable area */
+        overflow-y: auto; /* Enable vertical scrolling */
+        overflow-x: auto;
+    }
+
     td:nth-child(7) .delete-button:hover,
     td:nth-child(7) .add-photo-button:hover {
         background-color: #388e3c;
@@ -546,6 +563,13 @@ button:hover {
 @media (max-width: 576px) {
     .logo {
         height: 50px; /* Smaller logo for extra small screens */
+    }
+
+      /* Add styles to make divs scrollable */
+      .scrollable-div {
+        max-height: 1000px; /* Set a max-height for scrollable area */
+        overflow-y: auto; /* Enable vertical scrolling */
+        overflow-x: auto;
     }
 
     #search-input {
@@ -570,6 +594,13 @@ button:hover {
         padding: 6px;
         font-size: 12px;
     }
+
+  /* Add styles to make divs scrollable */
+  .scrollable-div {
+    max-height: 1000px; /* Set a max-height for scrollable area */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: auto;
+}
 
     .styled-select select {
         width: 100%;
@@ -610,6 +641,13 @@ td:nth-child(7) {
 
     h1 {
         font-size: 16px;
+    }
+
+      /* Add styles to make divs scrollable */
+      .scrollable-div {
+        max-height: 1000px; /* Set a max-height for scrollable area */
+        overflow-y: auto; /* Enable vertical scrolling */
+        overflow-x: auto;
     }
 
     .styled-select select {
@@ -653,6 +691,13 @@ td:nth-child(7) {
         z-index: 1000; /* Ensure dropdown is above other elements */
     }
 
+      /* Add styles to make divs scrollable */
+      .scrollable-div {
+        max-height: 1000px; /* Set a max-height for scrollable area */
+        overflow-y: auto; /* Enable vertical scrolling */
+        overflow-x: auto;
+    }
+
     #search-input {
         width: 100%;
         padding: 6px;
@@ -694,6 +739,13 @@ td:nth-child(7) {
 
     .search-container {
         left: 50%;
+    }
+
+      /* Add styles to make divs scrollable */
+      .scrollable-div {
+        max-height: 1000px; /* Set a max-height for scrollable area */
+        overflow-y: auto; /* Enable vertical scrolling */
+        overflow-x: auto;
     }
 
     table, th, td {

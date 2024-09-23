@@ -306,7 +306,7 @@ button:hover {
     border: 1px solid #ccc;
     background-color: #f9f9f9;
     transition: background-color 0.2s ease;
-    max-width: 90%;
+    max-width: 100%;
     position: relative;
 
 }
@@ -423,7 +423,7 @@ button:hover {
     h1 {
         font-size: 20px;
     }
-}
+
 
   /* Add styles to make divs scrollable */
   .scrollable-div {
@@ -475,6 +475,10 @@ button:hover {
     border: 2px solid #8B0000;
 }
 
+
+
+}
+
 /* Responsive Styles for Mobile */
 @media (max-width: 768px) {
 
@@ -488,6 +492,10 @@ button:hover {
         font-size: 14px;
     }
 
+    #search-input {
+        padding: 8px;
+        width: 80%;
+    }
     
 
     /* Adjust image carousel in table index 7 */

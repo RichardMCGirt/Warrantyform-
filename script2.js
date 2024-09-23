@@ -788,6 +788,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'sub ', value: fields['sub '] || 'N/A' },
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
             ];
+
             fieldConfigs.forEach(config => {
                 const { field, value, checkbox, editable, link, image, dropdown, options, email, directions, imageField } = config;
                 const cell = document.createElement('td');
@@ -888,8 +889,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     };
                     carouselDiv.appendChild(addPhotoButton);
                     cell.appendChild(carouselDiv);
-
-                 
 
                     // Add keyboard navigation support
                     carouselDiv.tabIndex = 0;  // Make div focusable
@@ -1007,56 +1006,54 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
     }
 
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
-        const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, imageField);
-    
-        // Remove the image with the specific ID from the array
+
         const updatedImages = currentImages.filter(image => image.id !== imageId);
-    
-        // If no images left, make sure to send an empty array
-        const body = JSON.stringify({ fields: { [imageField]: updatedImages.length > 0 ? updatedImages : [] } });
-    
-        // Add animation for the image deletion
+        const body = JSON.stringify({ fields: { [imageField]: updatedImages } });
+
+        // Find the image element that matches the imageId
         const imageElement = document.querySelector(`img[src="${currentImages.find(img => img.id === imageId)?.url}"]`);
         const trashCan = document.querySelector('.trash-can');
-    
+
         if (!imageElement || !trashCan) {
             console.error('Image element or trash can element not found.');
             return;
         }
-    
-        // Get bounding rectangles for the image and trash can
+
+        // Get the bounding rectangles for the image and trash can
         const imageRect = imageElement.getBoundingClientRect();
         const trashCanRect = trashCan.getBoundingClientRect();
-    
-        // Animate the image to the trash can
+
+        // Add animation to the image
         imageElement.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
         imageElement.style.transform = `translate(${trashCanRect.left - imageRect.left}px, ${trashCanRect.top - imageRect.top}px) scale(0)`;
-    
+        imageElement.classList.add('image-moving');
+
         setTimeout(async () => {
             try {
-                // Send the updated image array back to Airtable
                 const response = await fetch(url, {
                     method: 'PATCH',
                     headers: {
-                        Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`,
+                        Authorization: `Bearer ${airtableApiKey}`,
                         'Content-Type': 'application/json'
                     },
                     body: body
                 });
-    
+
                 if (!response.ok) {
                     console.error(`Error deleting image from Airtable: ${response.status} ${response.statusText}`);
                 } else {
                     console.log('Image successfully deleted from Airtable:', await response.json());
-                    imageElement.remove();  // Remove the image element after successful deletion
+                    imageElement.classList.add('image-deleted');
+                    showToast('Image successfully deleted!');
+                    imageElement.remove(); // Remove image element from DOM
                 }
             } catch (error) {
                 console.error('Error deleting image from Airtable:', error);
             }
         }, 800); // Delay to match the animation duration
     }
-    
 
     function animateImageToTrash(imgElement, trashCan, callback) {
         const imageRect = imgElement.getBoundingClientRect();
@@ -1069,6 +1066,7 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
             callback(); // Execute the callback function after animation
         });
     }
+
     function openImageViewer(images, startIndex) {
         let imageViewerModal = document.getElementById('image-viewer-modal');
         if (!imageViewerModal) {
@@ -1085,7 +1083,10 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
             const closeModalButton = document.createElement('button');
             closeModalButton.textContent = 'X';
             closeModalButton.classList.add('close-modal-button');
-            closeModalButton.onclick = () => closeModal(); // Close modal when 'X' is clicked
+            closeModalButton.onclick = () => {
+                imageViewerModal.style.display = 'none';
+                enablePageScrolling();
+            };
             imageViewerModal.appendChild(closeModalButton);
     
             const prevButton = document.createElement('button');
@@ -1118,47 +1119,14 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
             }
         }
     
-     // Get the modal and image elements
-const modalImage = document.getElementById('modalImage');
-
-// Function to close the modal
-function closeModal() {
-    imageViewerModal.style.display = 'none';
-    enablePageScrolling();
-    document.removeEventListener('keydown', handleKeyNavigation); // Remove the keydown listener
-}
-
-// Function to close modal when clicking outside the image
-imageViewerModal.addEventListener('click', function(event) {
-    if (event.target === imageViewerModal) { // Check if clicked outside the image
-        closeModal();
-    }
-});
-
-    
-     
-    
         updateModalImage();
         imageViewerModal.style.display = 'flex'; // Ensure the modal is shown
     
-        // Add keyboard navigation support
-        function handleKeyNavigation(event) {
-            if (event.key === 'ArrowLeft') {
-                currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
-                updateModalImage();
-            } else if (event.key === 'ArrowRight') {
-                currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
-                updateModalImage();
-            } else if (event.key === 'Escape') {
-                closeModal(); // Close modal when 'Esc' is pressed
-            }
-        }
-    
-        // Listen for keydown events to navigate with arrow keys and close with Esc
-        document.addEventListener('keydown', handleKeyNavigation);
+        // Fullscreen functionality
+        imageViewerModal.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        });
     }
-    
-    
     
        
     function enablePageScrolling() {
@@ -1206,48 +1174,6 @@ imageViewerModal.addEventListener('click', function(event) {
         showToast('Changes submitted successfully!');
         fetchAllData();  // Refresh data after form submission
     }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        function adjustImageSize() {
-            const images = document.querySelectorAll('td:nth-child(7) .image-carousel img');
-            images.forEach(img => {
-                if (window.innerWidth < 576) {
-                    img.style.maxWidth = '80px';
-                    img.style.maxHeight = '80px';
-                } else if (window.innerWidth < 768) {
-                    img.style.maxWidth = '100px';
-                    img.style.maxHeight = '100px';
-                } else {
-                    img.style.maxWidth = '150px';
-                    img.style.maxHeight = '150px';
-                }
-            });
-        }
-    
-  // Adjust button size and position dynamically
-  function adjustButtonPosition() {
-    const submitButton = document.getElementById('dynamic-submit-button');
-    if (window.innerWidth < 576) {
-        submitButton.style.fontSize = '14px';
-        submitButton.style.padding = '10px';
-    } else {
-        submitButton.style.fontSize = '';
-        submitButton.style.padding = '';
-    }
-}
-
-// Add resize event listener
-window.addEventListener('resize', () => {
-    adjustImageSize();
-    adjustButtonPosition();
-});
-
-// Call functions on initial load
-adjustImageSize();
-adjustButtonPosition();
-});
-    
-    
 
     // Add event listeners to inputs, selects, and editable cells
     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {

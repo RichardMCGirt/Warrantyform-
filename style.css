@@ -28,6 +28,23 @@ td:nth-child(7) .add-photo-button {
             max-height: 1000px; /* Set a max-height for scrollable area */
             overflow-y: auto; /* Enable vertical scrolling */
         }
+
+        /* CSS for Dropbox Dropdown or other elements */
+.dropbox-container {
+    position: relative; /* Ensures it's positioned relative to its parent */
+    z-index: 1000; /* Ensures it is above other elements when dropdown is open */
+}
+
+.dropbox-dropdown {
+    position: absolute; /* Absolute within the relative container */
+    top: 100%; /* Position dropdown just below the element */
+    left: 0;
+    background-color: white; /* Adjust based on your UI */
+    border: 1px solid #ccc;
+    z-index: 2000; /* Higher index to ensure it shows above other content */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
    
 
 /* Header Styles */
@@ -288,7 +305,9 @@ button:hover {
     border: 1px solid #ccc;
     background-color: #f9f9f9;
     transition: background-color 0.2s ease;
-    max-width: 100%;
+    max-width: 90%;
+    position: relative;
+
 }
 
 .styled-select:focus {
@@ -405,6 +424,13 @@ button:hover {
     }
 }
 
+.styled-select select {
+    width: 100%;
+    font-size: 14px;
+    position: relative;
+    z-index: 1000; /* Ensure dropdown is above other elements */
+}
+
 /* Centering the Toast Notification */
 #toast {
     visibility: hidden;
@@ -503,6 +529,13 @@ button:hover {
         transition: background-color 0.3s ease;
     }
 
+    .styled-select select {
+        width: 100%;
+        font-size: 14px;
+        position: relative;
+        z-index: 1000; /* Ensure dropdown is above other elements */
+    }
+
     td:nth-child(7) .delete-button:hover,
     td:nth-child(7) .add-photo-button:hover {
         background-color: #388e3c;
@@ -519,6 +552,13 @@ button:hover {
         width: 95%;
         padding: 6px;
     }
+
+    .styled-select select {
+        width: 100%;
+        font-size: 14px;
+        position: relative;
+        z-index: 1000; /* Ensure dropdown is above other elements */
+    }
     
     h1 {
         font-size: 16px;
@@ -529,6 +569,13 @@ button:hover {
     th, td {
         padding: 6px;
         font-size: 12px;
+    }
+
+    .styled-select select {
+        width: 100%;
+        font-size: 14px;
+        position: relative;
+        z-index: 1000; /* Ensure dropdown is above other elements */
     }
 
     /* Further reduce image sizes in index 7 for small devices */
@@ -565,6 +612,13 @@ td:nth-child(7) {
         font-size: 16px;
     }
 
+    .styled-select select {
+        width: 100%;
+        font-size: 14px;
+        position: relative;
+        z-index: 1000; /* Ensure dropdown is above other elements */
+    }
+
     #search-input {
         width: 100%;
         padding: 6px;
@@ -592,6 +646,13 @@ td:nth-child(7) {
         font-size: 18px;
     }
 
+    .styled-select select {
+        width: 100%;
+        font-size: 14px;
+        position: relative;
+        z-index: 1000; /* Ensure dropdown is above other elements */
+    }
+
     #search-input {
         width: 100%;
         padding: 6px;
@@ -616,6 +677,13 @@ td:nth-child(7) {
 
     h1 {
         font-size: 14px;
+    }
+
+    .styled-select select {
+        width: 100%;
+        font-size: 14px;
+        position: relative;
+        z-index: 1000; /* Ensure dropdown is above other elements */
     }
 
     #search-input {

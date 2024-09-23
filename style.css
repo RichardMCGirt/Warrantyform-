@@ -23,6 +23,13 @@ td:nth-child(7) .add-photo-button {
     transition: background-color 0.3s ease;
 }
 
+        /* Add styles to make divs scrollable */
+        .scrollable-div {
+            max-height: 1000px; /* Set a max-height for scrollable area */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+   
+
 /* Header Styles */
 .header {
     display: flex;
@@ -617,9 +624,17 @@ td:nth-child(7) {
         font-size: 12px;
     }
 
+    .search-container {
+        left: 50%;
+    }
+
     table, th, td {
         font-size: 9px;
         padding: 3px;
+    }
+
+    table {
+        width: 95%;
     }
 
     button {

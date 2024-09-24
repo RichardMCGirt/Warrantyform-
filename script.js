@@ -1013,7 +1013,7 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
         // Remove the image with the specific ID from the array
         const updatedImages = currentImages.filter(image => image.id !== imageId);
     
-        // If no images left, make sure to send an empty array
+        // If no images are left, send an empty array to Airtable
         const body = JSON.stringify({ fields: { [imageField]: updatedImages.length > 0 ? updatedImages : [] } });
     
         // Add animation for the image deletion
@@ -1035,7 +1035,6 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
     
         setTimeout(async () => {
             try {
-                // Send the updated image array back to Airtable
                 const response = await fetch(url, {
                     method: 'PATCH',
                     headers: {
@@ -1046,16 +1045,23 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
                 });
     
                 if (!response.ok) {
-                    console.error(`Error deleting image from Airtable: ${response.status} ${response.statusText}`);
+                    const errorDetails = await response.json();
+                    console.error(`Error updating record: ${response.status} ${response.statusText}`, errorDetails);
                 } else {
                     console.log('Image successfully deleted from Airtable:', await response.json());
-                    imageElement.remove();  // Remove the image element after successful deletion
+    
+                    // Remove the image element after successful deletion
+                    imageElement.remove();
+    
+                    // Refresh the data to reflect the changes
+                    await fetchAllData();
                 }
             } catch (error) {
-                console.error('Error deleting image from Airtable:', error);
+                console.error('Error updating record in Airtable:', error);
             }
         }, 800); // Delay to match the animation duration
     }
+    
     
 
     function animateImageToTrash(imgElement, trashCan, callback) {

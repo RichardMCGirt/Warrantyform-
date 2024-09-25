@@ -10,12 +10,10 @@
 
 </head>
 <body>
-    <br>
     <div class="header">
         <img src="VANIR-transparent (1).png" alt="Vanir Installed Sales Logo" class="logo loading-logo">
         <h1 class="hidden"></h1>
     </div>
-    <br>
 
     <!-- Toast Notification -->
     <div id="toast">
@@ -90,6 +88,29 @@
             AIRTABLE_TABLE_NAME: 'tbl6EeKPsNuEvt5yJ'
         };
     </script>
+
+<script>
+    document.addEventListener("scroll", function () {
+        const table = document.querySelector("table");
+        const th = document.querySelectorAll("thead th");
+        const rect = table.getBoundingClientRect();
+        const windowHeight = window.innerHeight || document.documentElement.clientHeight;
+
+        // If the bottom of the table is in view, remove the sticky positioning
+        if (rect.bottom < windowHeight) {
+            th.forEach(header => {
+                header.style.position = "relative";
+            });
+        } else {
+            // Apply sticky positioning when scrolling
+            th.forEach(header => {
+                header.style.position = "sticky";
+                header.style.top = "0"; // Keep sticky when reaching the top of the viewport
+            });
+        }
+    });
+</script>
+
 
     <!-- JavaScript for interactivity -->
     <script src="script.js"></script>

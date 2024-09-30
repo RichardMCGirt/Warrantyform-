@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     let dropboxAppKey;
     let dropboxAppSecret;
     let dropboxRefreshToken;
+    let debounceTimeout = null; // Declare debounce timer in the global scope
 
     // Fetch Dropbox credentials from Airtable
     await fetchDropboxCredentials();
@@ -147,6 +148,41 @@ document.addEventListener('DOMContentLoaded', async function () {
     
         }, { once: true });
     });
+
+    let originalValues = {};
+
+    function storeOriginalValues(records) {
+        records.forEach(record => {
+            originalValues[record.id] = {};
+    
+            Object.keys(record.fields).forEach(field => {
+                originalValues[record.id][field] = record.fields[field];
+            });
+        });
+    }
+    
+    document.querySelectorAll('input[type="checkbox"], select, td[contenteditable="true"]').forEach(element => {
+        // For checkboxes and dropdowns
+        element.addEventListener('change', function () {
+            const recordId = this.closest('tr').dataset.id;
+            checkForChanges(recordId);  // Check for any changes
+            if (hasChanges) {
+                submitChanges();  // Submit immediately on change
+            }
+        });
+    
+        // For editable text cells, submit after each key stroke
+        if (element.getAttribute('contenteditable') === 'true') {
+            element.addEventListener('input', function () {
+                const recordId = this.closest('tr').dataset.id;
+                checkForChanges(recordId);  // Check for any changes
+                if (hasChanges) {
+                    submitChanges();  // Submit immediately after each key stroke
+                }
+            });
+        }
+    });
+    
     
 // Check if vibration API is supported
 function vibrateDevice() {
@@ -201,17 +237,24 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
     // Function to show the submit button and keep it in the last position when a change is made
     function showSubmitButton(recordId) {
-        if (submitButton.style.display === 'none') {
-            // Only set the button to the last known position if it hasn't been displayed yet
-            const lastTop = localStorage.getItem('submitButtonTop') || '50%';
-            const lastLeft = localStorage.getItem('submitButtonLeft') || '50%';
-            submitButton.style.top = lastTop;
-            submitButton.style.left = lastLeft;
+        if (hasChanges) {  // Only show the button if there are changes
+            if (submitButton.style.display === 'none') {
+                const lastTop = localStorage.getItem('submitButtonTop') || '50%';
+                const lastLeft = localStorage.getItem('submitButtonLeft') || '50%';
+                submitButton.style.top = lastTop;
+                submitButton.style.left = lastLeft;
+            }
+            submitButton.style.display = 'block';
+            activeRecordId = recordId;
         }
-
-        submitButton.style.display = 'block';
-        activeRecordId = recordId;
     }
+    
+    function hideSubmitButton() {
+        submitButton.style.display = 'none';
+        activeRecordId = null;
+        hasChanges = false; // Reset hasChanges
+    }
+    
 
     // Event listeners to show the submit button when input is typed or value is changed
     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
@@ -736,6 +779,47 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
 
+    function checkForChanges(recordId) {
+        const currentValues = updatedFields[recordId] || {};
+    
+        // Check if there are any changes compared to the original values
+        const fieldsHaveChanged = Object.keys(currentValues).some(field => {
+            const currentValue = currentValues[field];
+            const originalValue = originalValues[recordId] ? originalValues[recordId][field] : undefined;
+    
+            return currentValue !== originalValue; // True if the current value differs from the original
+        });
+    
+        hasChanges = fieldsHaveChanged; // Update hasChanges flag based on the comparison
+        if (!hasChanges) {
+            hideSubmitButton();  // Hide the button if no changes detected
+        }
+    }
+    
+
+    
+    // Event listeners to detect changes
+    document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+        element.addEventListener('input', function () {
+            const recordId = this.closest('tr').dataset.id;
+            checkForChanges(recordId); // Check if changes exist
+        });
+    
+        element.addEventListener('change', function () {
+            const recordId = this.closest('tr').dataset.id;
+            checkForChanges(recordId); // Check if changes exist
+        });
+    
+        element.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                submitChanges(); // Call submitChanges on Enter key press
+            }
+        });
+    });
+    
+         
+
     // Resize observer to adjust the secondary table width when the main table resizes
     const mainTable = document.querySelector('#airtable-data');
     const resizeObserver = new ResizeObserver(() => {
@@ -1194,24 +1278,33 @@ imageViewerModal.addEventListener('click', function(event) {
     async function submitChanges() {
         if (!hasChanges || !activeRecordId) {
             showToast('No changes to submit.');
+            hideSubmitButton();  // Hide the button if no changes detected
             return;
         }
-
+    
+        // Clear the debounceTimeout to prevent duplicate submissions
+        clearTimeout(debounceTimeout);
+    
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
-
+    
+        // Submit the changes for the active record
         await updateRecord(activeRecordId, updatedFields[activeRecordId]);
-
+    
+        // Reset the state after submission
         updatedFields = {};
         hasChanges = false;
         activeRecordId = null;
-        submitButton.style.display = 'none';
+    
+        hideSubmitButton(); // Ensure button is hidden after successful submission
         mainContent.style.display = 'block';
         secondaryContent.style.display = 'block';
-
+    
         showToast('Changes submitted successfully!');
-        fetchAllData();  // Refresh data after form submission
+        fetchAllData();  // Optionally refresh the data after submission
     }
+    
+    
 
     document.addEventListener('DOMContentLoaded', function () {
         function adjustImageSize() {
@@ -1230,6 +1323,10 @@ imageViewerModal.addEventListener('click', function(event) {
             });
         }
     
+    
+        
+        
+
   // Adjust button size and position dynamically
   function adjustButtonPosition() {
     const submitButton = document.getElementById('dynamic-submit-button');
@@ -1255,17 +1352,91 @@ adjustButtonPosition();
     
     
 
-    // Add event listeners to inputs, selects, and editable cells
-    document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
-        element.addEventListener('input', () => showSubmitButton(activeRecordId));
-        element.addEventListener('change', () => showSubmitButton(activeRecordId));
-        element.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault(); // Prevent default Enter behavior
-                submitChanges(); // Call submitChanges on Enter key press
+document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+    element.addEventListener('input', () => {
+        if (hasChanges) {
+            showSubmitButton(activeRecordId);
+        } else {
+            hideSubmitButton();
+        }
+    });
+
+    element.addEventListener('change', () => {
+        if (hasChanges) {
+            showSubmitButton(activeRecordId);
+        } else {
+            hideSubmitButton();
+        }
+    });
+
+    element.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault(); // Prevent default Enter behavior
+            if (hasChanges) {
+                showSubmitButton(activeRecordId);
+            } else {
+                hideSubmitButton();
+            }
+            submitChanges(); // Call submitChanges on Enter key press
+        }
+    });
+});
+
+document.addEventListener('DOMContentLoaded', async function () {
+    let debounceTimeout = null; // Declare debounce timer
+
+    // Function to handle delayed submit
+    function handleDelayedSubmit(recordId) {
+        clearTimeout(debounceTimeout); // Clear previous timeout if exists
+        debounceTimeout = setTimeout(() => {
+            if (hasChanges) {
+                submitChanges();  // Submit changes after the 3-second delay
+            }
+        }, 3000); // Delay of 3 seconds (3000 milliseconds)
+    }
+
+    // Modify the input event listener for text inputs to delay submission
+    document.querySelectorAll('input[type="text"], td[contenteditable="true"]').forEach(element => {
+        if (element.id !== 'search-input') {  // Exclude the search input box
+            element.addEventListener('input', function () {
+                const recordId = this.closest('tr').dataset.id;
+                checkForChanges(recordId);  // Check for any changes
+                if (hasChanges) {
+                    showSubmitButton(recordId);  // Show the submit button
+                    handleDelayedSubmit(recordId);  // Call the delayed submit handler
+                } else {
+                    hideSubmitButton();  // Hide the button if no changes
+                }
+            });
+        }
+    });
+
+    // Existing change event listener for select, checkboxes, etc.
+    document.querySelectorAll('select, input[type="checkbox"]').forEach(element => {
+        element.addEventListener('change', function () {
+            const recordId = this.closest('tr').dataset.id;
+            checkForChanges(recordId);  // Check for any changes
+            if (hasChanges) {
+                submitChanges();  // Submit immediately on change
             }
         });
     });
+
+    // Existing enter key listener for immediate submission on pressing enter
+    document.querySelectorAll('td[contenteditable="true"], input[type="text"]').forEach(element => {
+        element.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter' && element.id !== 'search-input') {
+                event.preventDefault();
+                submitChanges();  // Submit immediately on enter key press
+            }
+        });
+    });
+
+    // Fetch all data or other existing logic here
+    fetchAllData();
+});
+
+
 
 // Assuming dynamic buttons are added to a container
 const dynamicButtonsContainer = document.createElement('div');

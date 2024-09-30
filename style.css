@@ -25,9 +25,11 @@ td:nth-child(7) .add-photo-button {
 
         /* Add styles to make divs scrollable */
         .scrollable-div {
-            max-height: 1000px; /* Set a max-height for scrollable area */
+            max-height: 480px; /* Set a max-height for scrollable area */
             overflow-y: auto; /* Enable vertical scrolling */
             overflow-x: auto;
+            position: relative; /* Required for sticky to work */
+
         }
 
         /* CSS for Dropbox Dropdown or other elements */
@@ -97,10 +99,8 @@ th {
     font-weight: bold;
     font-size: 19px;
     position: sticky;
-    top: 0;
-    position: sticky;
-    z-index: 100;
-
+    top: 0; /* Stick to the top */
+    z-index: 100; /* Ensure headers are above other content */
     height: 3.5em;
 }
 

@@ -90,27 +90,6 @@
         };
     </script>
 
-<script>
-    document.addEventListener("scroll", function () {
-        const table = document.querySelector("table");
-        const th = document.querySelectorAll("thead th");
-        const rect = table.getBoundingClientRect();
-        const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-
-        // If the bottom of the table is in view, remove the sticky positioning
-        if (rect.bottom < windowHeight) {
-            th.forEach(header => {
-                header.style.position = "relative";
-            });
-        } else {
-            // Apply sticky positioning when scrolling
-            th.forEach(header => {
-                header.style.position = "sticky";
-                header.style.top = "0"; // Keep sticky when reaching the top of the viewport
-            });
-        }
-    });
-</script>
 
 
     <!-- JavaScript for interactivity -->

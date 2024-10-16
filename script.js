@@ -747,8 +747,11 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 offset = data.offset;
             } while (offset);
 
-            const primaryRecords = allRecords.filter(record => record.fields['Status'] === 'Field Tech Review Needed');
-            const secondaryRecords = allRecords.filter(record => record.fields['Status'] === 'Scheduled- Awaiting Field');
+            const primaryRecords = allRecords.filter(record => 
+                record.fields['Status'] === 'Field Tech Review Needed' && 
+                !record.fields['Field Tech Reviewed'] // Checks if the checkbox is not checked
+            );
+                        const secondaryRecords = allRecords.filter(record => record.fields['Status'] === 'Scheduled- Awaiting Field');
 
             primaryRecords.sort((a, b) => {
                 const dateA = new Date(a.fields['StartDate']);

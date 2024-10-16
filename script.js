@@ -9,10 +9,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     let debounceTimeout = null; // Declare debounce timer in the global scope
 
     // Fetch Dropbox credentials from Airtable
-    await fetchDropboxCredentials();
+ fetchDropboxCredentials();
 
     // Check Dropbox token validity on page startup
-    await checkDropboxTokenValidity();
+    checkDropboxTokenValidity();
 
         // Function to check if Dropbox token is still valid
         async function checkDropboxTokenValidity() {
@@ -249,13 +249,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-    function hideSubmitButton() {
-        submitButton.style.display = 'none';
-        activeRecordId = null;
-        hasChanges = false; // Reset hasChanges
-    }
-    
-
     // Event listeners to show the submit button when input is typed or value is changed
     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
         element.addEventListener('input', () => showSubmitButton(activeRecordId));
@@ -717,55 +710,60 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
 
-    // Call the function to synchronize widths after the tables are populated
     async function fetchAllData() {
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
-
+    
         let loadProgress = 0;
         const loadInterval = setInterval(() => {
             loadProgress += (100 - loadProgress) * 0.1;
             const roundedProgress = Math.round(loadProgress);
-
+    
             loadingLogo.style.maskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
             loadingLogo.style.webkitMaskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
-
+    
             if (roundedProgress >= 99) {
                 clearInterval(loadInterval);
                 loadingLogo.classList.add('full-color');
             }
         }, 50);
-
+    
         try {
             let allRecords = [];
             let offset = null;
-
+    
             do {
                 const data = await fetchData(offset);
                 if (data.records.length === 0 && !offset) break;
                 allRecords = allRecords.concat(data.records);
                 offset = data.offset;
             } while (offset);
-
+    
+            // Call storeOriginalValues after fetching all records
+            storeOriginalValues(allRecords);
+    
             const primaryRecords = allRecords.filter(record => 
                 record.fields['Status'] === 'Field Tech Review Needed' && 
                 !record.fields['Field Tech Reviewed'] // Checks if the checkbox is not checked
             );
-                        const secondaryRecords = allRecords.filter(record => record.fields['Status'] === 'Scheduled- Awaiting Field');
-
+    
+            const secondaryRecords = allRecords.filter(record => 
+                record.fields['Status'] === 'Scheduled- Awaiting Field' && 
+                !record.fields['Job Completed'] // Ensures 'Job Completed' is unchecked
+            );
+    
             primaryRecords.sort((a, b) => {
                 const dateA = new Date(a.fields['StartDate']);
                 const dateB = new Date(b.fields['StartDate']);
-
+                
                 if (dateA < dateB) return -1;
                 if (dateA > dateB) return 1;
-
                 return (a.fields['b'] || '').localeCompare(b.fields['b'] || '');
             });
-
+    
             await displayData(primaryRecords, '#airtable-data');
             await displayData(secondaryRecords, '#feild-data', true);
-
+    
             mainContent.style.display = 'block';
             secondaryContent.style.display = 'block';
             headerTitle.classList.add('visible');
@@ -773,14 +771,15 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 mainContent.style.opacity = '1';
                 secondaryContent.style.opacity = '1';
             }, 10);
-
+    
             // Synchronize the table widths after content is loaded
             syncTableWidths();
-
+    
         } catch (error) {
             console.error('Error fetching all data:', error);
         }
     }
+
 
     function checkForChanges(recordId) {
         const currentValues = updatedFields[recordId] || {};
@@ -888,6 +887,32 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     const images = Array.isArray(fields[field]) ? fields[field] : [];
                     const carouselDiv = document.createElement('div');
                     carouselDiv.classList.add('image-carousel');
+
+                    if (checkbox) {
+                        const checkboxElement = document.createElement('input');
+                        checkboxElement.type = 'checkbox';
+                        checkboxElement.checked = value;
+                        checkboxElement.classList.add('custom-checkbox');
+                        cell.appendChild(checkboxElement);
+    
+                        // Add confirmation logic
+                        checkboxElement.addEventListener('change', function () {
+                            const isChecked = checkboxElement.checked;
+                            const confirmationMessage = field === 'Job Completed'
+                                ? 'Are you sure you want to mark the job as completed?'
+                                : 'Are you sure you want to mark the field tech review as completed?';
+    
+                            if (confirm(confirmationMessage)) {
+                                updatedFields[record.id] = updatedFields[record.id] || {};
+                                updatedFields[record.id][field] = isChecked;
+                                updateRecord(record.id, updatedFields[record.id]);
+                            } else {
+                                checkboxElement.checked = !isChecked; // Revert if not confirmed
+                            }
+                        });
+                    } else {
+                        cell.textContent = value;
+                    }
 
                     if (images.length > 0) {
                         let currentIndex = 0; // Initialize currentIndex
@@ -1277,36 +1302,76 @@ imageViewerModal.addEventListener('click', function(event) {
             addPhotoButton.disabled = disable;
         }
     }
-
-    async function submitChanges() {
-        if (!hasChanges || !activeRecordId) {
-            showToast('No changes to submit.');
-            hideSubmitButton();  // Hide the button if no changes detected
-            return;
+    function hideSubmitButton() {
+        const submitButton = document.getElementById('dynamic-submit-button');
+        if (submitButton) {
+            submitButton.style.display = 'none'; // Hide the submit button
         }
+        activeRecordId = null;
+        hasChanges = false; // Reset changes flag
+    }
     
-        // Clear the debounceTimeout to prevent duplicate submissions
-        clearTimeout(debounceTimeout);
     
+
+// Flag to prevent multiple submissions
+let isSubmitting = false;
+
+// Function to handle submission with single confirmation
+async function submitChanges() {
+    if (isSubmitting) {
+        return;  // Prevent further submissions while one is in progress
+    }
+
+    if (!hasChanges || !activeRecordId) {
+        showToast('No changes to submit.');
+        hideSubmitButton();  // Hide the button if no changes detected
+        return;
+    }
+
+    // Set flag to indicate that submission is in progress
+    isSubmitting = true;
+
+    // Show confirmation once before proceeding
+    const userConfirmed = confirm("Are you sure you want to submit these changes?");
+    if (!userConfirmed) {
+        showToast('Submission canceled.');
+        isSubmitting = false;  // Reset flag if user cancels
+        return;  // Exit if user doesn't confirm
+    }
+
+    // Proceed with the submission
+    try {
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
-    
+
         // Submit the changes for the active record
         await updateRecord(activeRecordId, updatedFields[activeRecordId]);
-    
+
         // Reset the state after submission
         updatedFields = {};
         hasChanges = false;
         activeRecordId = null;
-    
-        hideSubmitButton(); // Ensure button is hidden after successful submission
+
+        showToast('Changes submitted successfully!');
+    } catch (error) {
+        console.error('Error during submission:', error);
+        showToast('Error submitting changes.');
+    } finally {
+        isSubmitting = false;  // Reset the flag after completion
+        hideSubmitButton();
         mainContent.style.display = 'block';
         secondaryContent.style.display = 'block';
-    
-        showToast('Changes submitted successfully!');
         fetchAllData();  // Optionally refresh the data after submission
     }
-    
+}
+
+    // Event listener for dynamic submit button
+submitButton.addEventListener('click', function () {
+    // Ensure that submitChanges is called only once
+    if (!isSubmitting) {
+        submitChanges();
+    }
+});
     
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -1326,7 +1391,81 @@ imageViewerModal.addEventListener('click', function(event) {
             });
         }
     
-    
+   // Global variables
+let originalValues = {};  // Store the original values
+let updatedFields = {};   // Track changes made by the user
+let hasChanges = false;   // Track if there are any unsaved changes
+let activeRecordId = null;  // Track the current active record
+
+// Function to store original values when data is fetched
+function storeOriginalValues(records) {
+    records.forEach(record => {
+        originalValues[record.id] = {};
+        Object.keys(record.fields).forEach(field => {
+            originalValues[record.id][field] = record.fields[field];
+        });
+    });
+}
+        
+// Function to check if the current values are different from the original values
+function checkForChanges(recordId) {
+    const currentValues = updatedFields[recordId] || {};
+
+    // Check if any fields have changed compared to the original values
+    const fieldsHaveChanged = Object.keys(currentValues).some(field => {
+        const currentValue = currentValues[field];
+        const originalValue = originalValues[recordId] ? originalValues[recordId][field] : undefined;
+
+        return currentValue !== originalValue; // True if the current value differs from the original
+    });
+
+    // Update hasChanges flag based on whether fields have changed
+    hasChanges = fieldsHaveChanged;
+
+    if (!hasChanges) {
+        hideSubmitButton();  // Hide the button if no changes detected
+    } else {
+        showSubmitButton(recordId);  // Show the button if there are changes
+    }
+}
+        
+// Function to handle input or change events
+function handleInputChange(event) {
+    const recordId = this.closest('tr').dataset.id;
+    const field = this.dataset.field;
+
+    // Update the changed value in the updatedFields object
+    updatedFields[recordId] = updatedFields[recordId] || {};
+    updatedFields[recordId][field] = this.value || this.textContent;
+
+    checkForChanges(recordId);  // Check if there are changes after the update
+}
+
+// Attach event listeners to input fields
+document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+    element.addEventListener('input', handleInputChange);  // For real-time input changes
+    element.addEventListener('change', handleInputChange);  // For dropdowns and checkboxes
+});
+     
+        
+        // Function to show the submit button
+        function showSubmitButton(recordId) {
+            if (hasChanges) {
+                const lastTop = localStorage.getItem('submitButtonTop') || '50%';
+                const lastLeft = localStorage.getItem('submitButtonLeft') || '50%';
+                submitButton.style.top = lastTop;
+                submitButton.style.left = lastLeft;
+                submitButton.style.display = 'block';
+                activeRecordId = recordId;
+            }
+        }
+        
+   
+       // Reset updatedFields and hide submit button if the user undoes all changes
+function resetChanges(recordId) {
+    delete updatedFields[recordId];
+    checkForChanges(recordId);
+} 
         
         
 
@@ -1415,15 +1554,18 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     // Existing change event listener for select, checkboxes, etc.
-    document.querySelectorAll('select, input[type="checkbox"]').forEach(element => {
-        element.addEventListener('change', function () {
-            const recordId = this.closest('tr').dataset.id;
-            checkForChanges(recordId);  // Check for any changes
-            if (hasChanges) {
-                submitChanges();  // Submit immediately on change
+    document.querySelectorAll('input[type="checkbox"], select, td[contenteditable="true"]').forEach(element => {
+        element.addEventListener('input', function () {
+            const closestRow = this.closest('tr'); // Save closest row to a variable
+            if (closestRow) {  // Check if the closest <tr> exists
+                const recordId = closestRow.dataset.id;
+                checkForChanges(recordId);  // Check for any changes
+            } else {
+                console.warn('No parent <tr> found for the element', this);
             }
         });
     });
+    
 
     // Existing enter key listener for immediate submission on pressing enter
     document.querySelectorAll('td[contenteditable="true"], input[type="text"]').forEach(element => {

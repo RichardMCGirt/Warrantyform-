@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableApiKey = window.env.AIRTABLE_API_KEY;
     const airtableBaseId = window.env.AIRTABLE_BASE_ID;
     const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
+    const airtableTableName2 = window.env.AIRTABLE_TABLE_NAME2;
+
     let dropboxAccessToken;
     let dropboxAppKey;
     let dropboxAppSecret;
@@ -10,6 +12,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Fetch Dropbox credentials from Airtable
  fetchDropboxCredentials();
+ fetchAndPopulateSubcontractorOptions();
+
 
     // Check Dropbox token validity on page startup
     checkDropboxTokenValidity();
@@ -842,7 +846,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
         if (records.length === 0) return;
 
-       
+
 
         records.forEach(record => {
             const fields = record.fields;
@@ -871,7 +875,8 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['','Billable', 'Non Billable'] },
                 { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['','Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
-                { field: 'sub ', value: fields['sub '] || 'N/A' },
+                { field: 'sub', value: fields['Subcontractor Company Name'] || '', dropdown: true, options: [''] },
+
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
             ];
             fieldConfigs.forEach(config => {
@@ -882,6 +887,29 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 cell.style.wordWrap = 'break-word';
                 cell.style.maxWidth = '200px';
                 cell.style.position = 'relative';
+
+                if (dropdown) {
+                    const select = document.createElement('select');
+                    options.forEach(option => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option;
+                        optionElement.textContent = option;
+                        if (option === value) optionElement.selected = true;
+                        select.appendChild(optionElement);
+                    });
+    
+                    select.addEventListener('change', () => {
+                        const newValue = select.value;
+                        updatedFields[record.id] = updatedFields[record.id] || {};
+                        updatedFields[record.id][field] = newValue;
+                        hasChanges = true;
+                        showSubmitButton(record.id);
+                    });
+    
+                    cell.appendChild(select);
+                } else {
+                    cell.textContent = value;
+                }
 
                 if (image) {
                     const images = Array.isArray(fields[field]) ? fields[field] : [];
@@ -1118,6 +1146,103 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
         });
     }
 
+    async function fetchAndPopulateSubcontractorOptions() {
+        try {
+            // Fetch subcontractor options first
+            const subcontractorOptions = await fetchSubcontractorOptions(); 
+        
+            // Fetch the actual records from Airtable that need the subcontractor dropdown
+            const responseData = await fetchData();  // Ensure fetchData() returns the correct structure
+        
+            // Check if responseData contains a `records` array
+            const records = responseData.records || [];  // Safely access records array
+        
+            if (!Array.isArray(records) || records.length === 0) {
+                console.error('No records found to populate.');
+                return;
+            }
+        
+            // Assuming you are populating rows for a table
+            const tbody = document.querySelector('tbody');  // Assuming you have a <tbody> for your table
+        
+            records.forEach(record => {
+                const fields = record.fields;
+    
+                // Create the table row
+                const row = document.createElement('tr');
+    
+                // Define field configurations for each row, including the subcontractor dropdown
+                const fieldConfigs = [
+                    
+                    { field: 'sub', value: fields['Subcontractor Company Name'] || '', dropdown: true, options: subcontractorOptions }  // Adding subcontractor dropdown
+                ];
+                
+                // Iterate over field configurations and create table cells
+                fieldConfigs.forEach(config => {
+                    const { field, value, dropdown, options } = config;
+                    const cell = document.createElement('td');
+    
+                    if (dropdown) {
+                        // Create subcontractor dropdown (select element)
+                        const select = document.createElement('select');
+                        select.classList.add('styled-select');
+    
+                        // Append default empty option
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = 'Select Subcontractor';
+                        select.appendChild(defaultOption);
+    
+                        // Populate dropdown with fetched subcontractor options
+                        options.forEach(option => {
+                            const optionElement = document.createElement('option');
+                            optionElement.value = option.name;  // Subcontractor company name
+                            optionElement.textContent = option.name;
+    
+                            // Select the current value if it matches
+                            if (value === option.name) {
+                                optionElement.selected = true;
+                            }
+    
+                            select.appendChild(optionElement);
+                        });
+    
+                        // Add event listener for change
+                        select.addEventListener('change', () => {
+                            const newValue = select.value;
+                            updatedFields[record.id] = updatedFields[record.id] || {};
+                            updatedFields[record.id]['Subcontractor Company Name'] = newValue;
+                            hasChanges = true;
+                            showSubmitButton(record.id);
+                        });
+    
+                        // Append the select element to the cell
+                        cell.appendChild(select);
+                    } else {
+                        // Default display for non-dropdown fields
+                        cell.textContent = value;
+                    }
+    
+                    // Append the cell to the row
+                    row.appendChild(cell);
+                });
+    
+                // Append the full row to the table body
+                tbody.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error fetching and populating subcontractor options:', error);
+        }
+    }
+    
+
+    
+    
+    
+    
+    
+    
+
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, imageField);
@@ -1173,6 +1298,40 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
             }
         }, 800); // Delay to match the animation duration
     }
+    
+    async function fetchSubcontractorOptions() {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName2}`; // Ensure you're fetching from the correct table
+        console.log('Fetching subcontractor options from:', url);
+    
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
+            });
+    
+            console.log('Response received with status:', response.status);
+    
+            if (!response.ok) {
+                throw new Error(`Error fetching subcontractor options: ${response.status} ${response.statusText}`);
+            }
+    
+            const data = await response.json();
+            console.log('Subcontractor data fetched:', JSON.stringify(data, null, 2));
+    
+            // Extract the 'Subcontractor Company Name' field from the fetched records
+            const subcontractorOptions = data.records.map(record => ({
+                name: record.fields['Subcontractor Company Name'],
+                id: record.id
+            }));
+    
+            console.log('Mapped subcontractor options:', subcontractorOptions);
+    
+            return subcontractorOptions; // Return the mapped options
+        } catch (error) {
+            console.error('Error fetching subcontractor options:', error);
+            return [];
+        }
+    }
+    
     
     
 

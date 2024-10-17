@@ -895,15 +895,13 @@ async function fetchAllData() {
     async function displayData(records, tableSelector, isSecondary = false) {
         const tbody = document.querySelector(`${tableSelector} tbody`);
         tbody.innerHTML = '';
-
+    
         if (records.length === 0) return;
-
-       
-
+    
         records.forEach(record => {
             const fields = record.fields;
             const row = document.createElement('tr');
-
+    
             const fieldConfigs = isSecondary ? [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
@@ -911,10 +909,10 @@ async function fetchAllData() {
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
                 { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },       
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
-                { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true, imageField: 'Completed  Pictures' },
+                { field: 'Completed Pictures', value: fields['Completed Pictures'] || [], image: true, imageField: 'Completed Pictures' },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
                 { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true }
-
+    
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
@@ -930,6 +928,7 @@ async function fetchAllData() {
                 { field: 'sub', value: fields['sub'] || '', dropdown: true, options: subOptions },
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
             ];
+    
             fieldConfigs.forEach(config => {
                 const { field, value, checkbox, editable, link, image, dropdown, options, email, directions, imageField } = config;
                 const cell = document.createElement('td');
@@ -938,194 +937,27 @@ async function fetchAllData() {
                 cell.style.wordWrap = 'break-word';
                 cell.style.maxWidth = '200px';
                 cell.style.position = 'relative';
-
-                if (dropdown) {
+    
+                // Handle dropdowns for 'sub' and other fields
+                if (dropdown || field === 'sub') {
                     const select = document.createElement('select');
                     select.classList.add('styled-select');
-                    options.forEach(option => {
+    
+                   // Use subOptions for 'sub', otherwise use hardcoded options
+    let dropdownOptions = field === 'sub' ? subOptions : options;
+
+    // Sort subOptions alphabetically if it's the 'sub' field
+    if (field === 'sub') {
+        dropdownOptions = dropdownOptions.sort((a, b) => a.localeCompare(b));
+    }
+
+    
+                    dropdownOptions.forEach(option => {
                         const optionElement = document.createElement('option');
                         optionElement.value = option;
                         optionElement.textContent = option;
-                        if (option === value) optionElement.selected = true;
-                        select.appendChild(optionElement);
-                    });
     
-                    select.addEventListener('change', () => {
-                        const newValue = select.value;
-                        updatedFields[record.id] = updatedFields[record.id] || {};
-                        updatedFields[record.id][field] = newValue;
-                        hasChanges = true;
-                        showSubmitButton(record.id);
-                    });
-    
-                    cell.appendChild(select);
-                } else {
-                    cell.textContent = value;
-                }
-
-                if (image) {
-                    const images = Array.isArray(fields[field]) ? fields[field] : [];
-                    const carouselDiv = document.createElement('div');
-                    carouselDiv.classList.add('image-carousel');
-
-                    if (checkbox) {
-                        const checkboxElement = document.createElement('input');
-                        checkboxElement.type = 'checkbox';
-                        checkboxElement.checked = value;
-                        checkboxElement.classList.add('custom-checkbox');
-                        cell.appendChild(checkboxElement);
-    
-                        // Add confirmation logic
-                        checkboxElement.addEventListener('change', function () {
-                            const isChecked = checkboxElement.checked;
-                            const confirmationMessage = field === 'Job Completed'
-                                ? 'Are you sure you want to mark the job as completed?'
-                                : 'Are you sure you want to mark the field tech review as completed?';
-    
-                            if (confirm(confirmationMessage)) {
-                                updatedFields[record.id] = updatedFields[record.id] || {};
-                                updatedFields[record.id][field] = isChecked;
-                                updateRecord(record.id, updatedFields[record.id]);
-                            } else {
-                                checkboxElement.checked = !isChecked; // Revert if not confirmed
-                            }
-                        });
-                    } else {
-                        cell.textContent = value;
-                    }
-
-                    if (images.length > 0) {
-                        let currentIndex = 0; // Initialize currentIndex
-                        const imgElement = document.createElement('img');
-                        imgElement.src = images[0].url;
-                        imgElement.alt = "Issue Picture";
-                        imgElement.style.maxWidth = '100%';
-                        imgElement.style.height = 'auto';
-                        imgElement.classList.add('carousel-image');
-                        imgElement.onclick = () => openImageViewer(images, 0); // Add click event to open modal
-                        carouselDiv.appendChild(imgElement);
-
-                        const imageCount = document.createElement('div');
-                        imageCount.classList.add('image-count');
-                        imageCount.textContent = `1 of ${images.length}`;
-                        carouselDiv.appendChild(imageCount);
-
-                        let prevButton, nextButton; // Initialize navigation buttons
-
-                        if (images.length > 1) {
-                            // Create Previous Button
-                            prevButton = document.createElement('button');
-                            prevButton.textContent = '<';
-                            prevButton.classList.add('carousel-nav-button', 'prev');
-                            prevButton.onclick = () => {
-                                currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
-                                imgElement.src = images[currentIndex].url;
-                                imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
-                            };
-
-                            // Create Next Button
-                            nextButton = document.createElement('button');
-                            nextButton.textContent = '>';
-                            nextButton.classList.add('carousel-nav-button', 'next');
-                            nextButton.onclick = () => {
-                                currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
-                                imgElement.src = images[currentIndex].url;
-                                imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
-                            };
-
-                            carouselDiv.appendChild(prevButton);
-                            carouselDiv.appendChild(nextButton);
-                        }
-
-                        // Add Delete Button for images
-                        const deleteButton = document.createElement('button');
-                        deleteButton.innerHTML = '🗑️'; // Trash can icon
-                        deleteButton.classList.add('delete-button');
-                        deleteButton.onclick = async () => {
-                            const confirmed = confirm('Are you sure you want to delete this image?');
-                            if (confirmed) {
-                                // Animate image to trash can
-                                animateImageToTrash(imgElement, deleteButton, async () => {
-                                    await deleteImageFromAirtable(record.id, images[currentIndex].id, imageField);
-                                    images.splice(currentIndex, 1);
-                                    if (images.length > 0) {
-                                        currentIndex = currentIndex % images.length; // Adjust index if needed
-                                        imgElement.src = images[currentIndex].url;
-                                        imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
-                                    } else {
-                                        // Show "Add Photos" button when all images are deleted
-                                        carouselDiv.innerHTML = '';
-                                        const addPhotoButton = document.createElement('button');
-                                        addPhotoButton.textContent = 'Add Photos';
-                                        addPhotoButton.onclick = () => {
-                                            fileInput.setAttribute('data-record-id', record.id);
-                                            fileInput.setAttribute('data-target-field', imageField);
-                                            fileInput.click();
-                                        };
-                                        carouselDiv.appendChild(addPhotoButton);
-                                    }
-                                });
-                            }
-                        };
-                        carouselDiv.appendChild(deleteButton);
-                    }
-
-                    // Ensure the "Add Photos" button is always displayed
-                    const addPhotoButton = document.createElement('button');
-                    addPhotoButton.textContent = 'Add Photos';
-                    addPhotoButton.onclick = () => {
-                        fileInput.setAttribute('data-record-id', record.id);
-                        fileInput.setAttribute('data-target-field', imageField);
-                        fileInput.click();
-                    };
-                    carouselDiv.appendChild(addPhotoButton);
-                    cell.appendChild(carouselDiv);
-
-                 
-
-                    // Add keyboard navigation support
-                    carouselDiv.tabIndex = 0;  // Make div focusable
-                    carouselDiv.addEventListener('keydown', (event) => {
-                        if (event.key === 'ArrowLeft' && prevButton) {
-                            prevButton.click();
-                        } else if (event.key === 'ArrowRight' && nextButton) {
-                            nextButton.click();
-                        }
-                    });
-
-                } else if (checkbox) {
-                    const checkboxElement = document.createElement('input');
-                    checkboxElement.type = 'checkbox';
-                    checkboxElement.checked = value;
-                    checkboxElement.classList.add('custom-checkbox');
-
-                 // Ensure "Job Completed" and "Subcontractor Not Needed" checkboxes are never disabled
-if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
-    checkboxElement.disabled = false;
-} else {
-    // Disable other checkboxes if "Billable/ Non Billable" has no value
-    const billableCell = row.querySelector('td[data-field="Billable/ Non Billable"] select');
-    checkboxElement.disabled = !billableCell || !billableCell.value;
-}
-
-
-                    checkboxElement.addEventListener('change', function () {
-                        const newValue = checkboxElement.checked;
-                        updatedFields[record.id] = updatedFields[record.id] || {};
-                        updatedFields[record.id][field] = newValue;
-                        hasChanges = true;
-                        showSubmitButton(record.id);
-                    });
-
-                    cell.appendChild(checkboxElement);
-                } else if (dropdown) {
-                    const select = document.createElement('select');
-                    select.classList.add('styled-select');
-                    options.forEach(option => {
-                        const optionElement = document.createElement('option');
-                        optionElement.value = option;
-                        optionElement.textContent = option;
-
+                        // Optionally style 'Billable/ Non Billable' dropdown
                         if (field === 'Billable/ Non Billable') {
                             if (option === 'Billable') {
                                 optionElement.style.backgroundColor = '#ffeb3b';
@@ -1135,68 +967,180 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
                                 optionElement.style.color = '#fff';
                             }
                         }
-
+    
                         if (option === value) optionElement.selected = true;
                         select.appendChild(optionElement);
                     });
-
-                    
-
+    
                     select.addEventListener('change', () => {
                         const newValue = select.value;
                         updatedFields[record.id] = updatedFields[record.id] || {};
                         updatedFields[record.id][field] = newValue;
                         hasChanges = true;
                         showSubmitButton(record.id);
-
-                        // Enable or disable the checkbox based on the select value
+    
+                        // Enable or disable checkbox based on the selected value
                         const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
                         if (fieldReviewCheckbox) {
-                            fieldReviewCheckbox.disabled = !newValue;  // Disable if no value is selected
+                            fieldReviewCheckbox.disabled = !newValue;  // Disable checkbox if no value selected
                         }
                     });
-
+    
                     cell.appendChild(select);
-                } else if (email) {
-                    cell.innerHTML = value ? `<a href="mailto:${value}">${value}</a>` : 'N/A';
-                } else if (directions) {
-                    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(value)}`;
-                    cell.innerHTML = value ? `<a href="${googleMapsUrl}" target="_blank">${value}</a>` : 'N/A';
-                } else if (link) {
+                }
+    
+                // Handle image carousel
+                else if (image) {
+                    const images = Array.isArray(fields[field]) ? fields[field] : [];
+                    const carouselDiv = document.createElement('div');
+                    carouselDiv.classList.add('image-carousel');
+    
+                    if (images.length > 0) {
+                        let currentIndex = 0;
+                        const imgElement = document.createElement('img');
+                        imgElement.src = images[0].url;
+                        imgElement.alt = "Issue Picture";
+                        imgElement.style.maxWidth = '100%';
+                        imgElement.style.height = 'auto';
+                        imgElement.classList.add('carousel-image');
+                        imgElement.onclick = () => openImageViewer(images, 0);
+                        carouselDiv.appendChild(imgElement);
+    
+                        const imageCount = document.createElement('div');
+                        imageCount.classList.add('image-count');
+                        imageCount.textContent = `1 of ${images.length}`;
+                        carouselDiv.appendChild(imageCount);
+    
+                        let prevButton, nextButton;
+                        if (images.length > 1) {
+                            prevButton = document.createElement('button');
+                            prevButton.textContent = '<';
+                            prevButton.classList.add('carousel-nav-button', 'prev');
+                            prevButton.onclick = () => {
+                                currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
+                                imgElement.src = images[currentIndex].url;
+                                imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
+                            };
+    
+                            nextButton = document.createElement('button');
+                            nextButton.textContent = '>';
+                            nextButton.classList.add('carousel-nav-button', 'next');
+                            nextButton.onclick = () => {
+                                currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
+                                imgElement.src = images[currentIndex].url;
+                                imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
+                            };
+    
+                            carouselDiv.appendChild(prevButton);
+                            carouselDiv.appendChild(nextButton);
+                        }
+    
+                        // Add Delete Button for images
+                        const deleteButton = document.createElement('button');
+                        deleteButton.innerHTML = '🗑️';
+                        deleteButton.classList.add('delete-button');
+                        deleteButton.onclick = async () => {
+                            const confirmed = confirm('Are you sure you want to delete this image?');
+                            if (confirmed) {
+                                await deleteImageFromAirtable(record.id, images[currentIndex].id, imageField);
+                                images.splice(currentIndex, 1);
+                                if (images.length > 0) {
+                                    currentIndex = currentIndex % images.length;
+                                    imgElement.src = images[currentIndex].url;
+                                    imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
+                                } else {
+                                    carouselDiv.innerHTML = '';
+                                    const addPhotoButton = document.createElement('button');
+                                    addPhotoButton.textContent = 'Add Photos';
+                                    addPhotoButton.onclick = () => {
+                                        fileInput.setAttribute('data-record-id', record.id);
+                                        fileInput.setAttribute('data-target-field', imageField);
+                                        fileInput.click();
+                                    };
+                                    carouselDiv.appendChild(addPhotoButton);
+                                }
+                            }
+                        };
+                        carouselDiv.appendChild(deleteButton);
+                    }
+    
+                    const addPhotoButton = document.createElement('button');
+                    addPhotoButton.textContent = 'Add Photos';
+                    addPhotoButton.onclick = () => {
+                        fileInput.setAttribute('data-record-id', record.id);
+                        fileInput.setAttribute('data-target-field', imageField);
+                        fileInput.click();
+                    };
+                    carouselDiv.appendChild(addPhotoButton);
+                    cell.appendChild(carouselDiv);
+                }
+    
+                // Handle checkboxes
+                else if (checkbox) {
+                    const checkboxElement = document.createElement('input');
+                    checkboxElement.type = 'checkbox';
+                    checkboxElement.checked = value;
+                    checkboxElement.classList.add('custom-checkbox');
+    
+                    if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
+                        checkboxElement.disabled = false;
+                    } else {
+                        const billableCell = row.querySelector('td[data-field="Billable/ Non Billable"] select');
+                        checkboxElement.disabled = !billableCell || !billableCell.value;
+                    }
+    
+                    checkboxElement.addEventListener('change', function () {
+                        const newValue = checkboxElement.checked;
+                        updatedFields[record.id] = updatedFields[record.id] || {};
+                        updatedFields[record.id][field] = newValue;
+                        hasChanges = true;
+                        showSubmitButton(record.id);
+                    });
+    
+                    cell.appendChild(checkboxElement);
+                }
+    
+                // Handle text and links
+                else if (link) {
                     const matchingCalendar = calendarLinks.find(calendar => calendar.name === value);
                     if (matchingCalendar) {
                         cell.innerHTML = `<a href="${matchingCalendar.id}" target="_blank">${value}</a>`;
                     } else {
                         cell.textContent = value;
                     }
+                } else if (email) {
+                    cell.innerHTML = value ? `<a href="mailto:${value}">${value}</a>` : 'N/A';
+                } else if (directions) {
+                    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(value)}`;
+                    cell.innerHTML = value ? `<a href="${googleMapsUrl}" target="_blank">${value}</a>` : 'N/A';
                 } else {
                     cell.textContent = value;
                 }
-
+    
+                // Handle editable text cells
                 if (editable && !dropdown && !image) {
                     cell.setAttribute('contenteditable', 'true');
                     cell.classList.add('editable-cell');
-
                     const originalContent = cell.textContent;
-
+    
                     cell.addEventListener('blur', () => {
                         const newValue = cell.textContent;
                         if (newValue !== originalContent) {
                             updatedFields[record.id] = updatedFields[record.id] || {};
                             updatedFields[record.id][field] = newValue;
-                            cell.classList.add('edited');
                             hasChanges = true;
                             showSubmitButton(record.id);
                         }
                     });
                 }
-
+    
                 row.appendChild(cell);
             });
-
+    
             tbody.appendChild(row);
         });
     }
+    
 
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;

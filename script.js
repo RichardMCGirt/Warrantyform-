@@ -2,8 +2,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableApiKey = window.env.AIRTABLE_API_KEY;
     const airtableBaseId = window.env.AIRTABLE_BASE_ID;
     const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
-    const airtableTableName2 = window.env.AIRTABLE_TABLE_NAME2;
-
     let dropboxAccessToken;
     let dropboxAppKey;
     let dropboxAppSecret;
@@ -12,8 +10,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Fetch Dropbox credentials from Airtable
  fetchDropboxCredentials();
- fetchAndPopulateSubcontractorOptions();
-
 
     // Check Dropbox token validity on page startup
     checkDropboxTokenValidity();
@@ -713,76 +709,102 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             secondaryTable.style.width = `${mainTableWidth}px`;
         }
     }
+    
+    
+    let subOptions = []; // Declare subOptions globally
 
-    async function fetchAllData() {
-        mainContent.style.display = 'none';
-        secondaryContent.style.display = 'none';
-    
-        let loadProgress = 0;
-        const loadInterval = setInterval(() => {
-            loadProgress += (100 - loadProgress) * 0.1;
-            const roundedProgress = Math.round(loadProgress);
-    
-            loadingLogo.style.maskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
-            loadingLogo.style.webkitMaskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
-    
-            if (roundedProgress >= 99) {
-                clearInterval(loadInterval);
-                loadingLogo.classList.add('full-color');
-            }
-        }, 50);
-    
-        try {
-            let allRecords = [];
-            let offset = null;
-    
-            do {
-                const data = await fetchData(offset);
-                if (data.records.length === 0 && !offset) break;
-                allRecords = allRecords.concat(data.records);
-                offset = data.offset;
-            } while (offset);
-    
-            // Call storeOriginalValues after fetching all records
-            storeOriginalValues(allRecords);
-    
-            const primaryRecords = allRecords.filter(record => 
-                record.fields['Status'] === 'Field Tech Review Needed' && 
-                !record.fields['Field Tech Reviewed'] // Checks if the checkbox is not checked
-            );
-    
-            const secondaryRecords = allRecords.filter(record => 
-                record.fields['Status'] === 'Scheduled- Awaiting Field' && 
-                !record.fields['Job Completed'] // Ensures 'Job Completed' is unchecked
-            );
-    
-            primaryRecords.sort((a, b) => {
-                const dateA = new Date(a.fields['StartDate']);
-                const dateB = new Date(b.fields['StartDate']);
-                
-                if (dateA < dateB) return -1;
-                if (dateA > dateB) return 1;
-                return (a.fields['b'] || '').localeCompare(b.fields['b'] || '');
-            });
-    
-            await displayData(primaryRecords, '#airtable-data');
-            await displayData(secondaryRecords, '#feild-data', true);
-    
-            mainContent.style.display = 'block';
-            secondaryContent.style.display = 'block';
-            headerTitle.classList.add('visible');
-            setTimeout(() => {
-                mainContent.style.opacity = '1';
-                secondaryContent.style.opacity = '1';
-            }, 10);
-    
-            // Synchronize the table widths after content is loaded
-            syncTableWidths();
-    
-        } catch (error) {
-            console.error('Error fetching all data:', error);
+async function fetchAllData() {
+    mainContent.style.display = 'none';
+    secondaryContent.style.display = 'none';
+
+    let loadProgress = 0;
+    const loadInterval = setInterval(() => {
+        loadProgress += (100 - loadProgress) * 0.1;
+        const roundedProgress = Math.round(loadProgress);
+
+        loadingLogo.style.maskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
+        loadingLogo.style.webkitMaskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
+
+        if (roundedProgress >= 99) {
+            clearInterval(loadInterval);
+            loadingLogo.classList.add('full-color');
         }
+    }, 50);
+
+    try {
+        let allRecords = [];
+        let offset = null;
+
+        // Fetch sub options, and if it fails, log the error and proceed with an empty array
+        try {
+            subOptions = await fetchAirtableSubOptionsFromDifferentTable() || [];
+        } catch (error) {
+            console.error('Error fetching sub options:', error);
+            subOptions = []; // Continue with an empty subOptions array
+        }
+
+        do {
+            const data = await fetchData(offset);
+            if (data.records.length === 0 && !offset) break;
+            allRecords = allRecords.concat(data.records);
+            offset = data.offset;
+        } while (offset);
+
+        const primaryRecords = allRecords.filter(record =>
+            record.fields['Status'] === 'Field Tech Review Needed' &&
+            !record.fields['Field Tech Reviewed'] // Checks if the checkbox is not checked
+        );
+
+        const secondaryRecords = allRecords.filter(record =>
+            record.fields['Status'] === 'Scheduled- Awaiting Field' &&
+            !record.fields['Job Completed'] // Ensures 'Job Completed' is unchecked
+        );
+
+        primaryRecords.sort((a, b) => {
+            const dateA = new Date(a.fields['StartDate']);
+            const dateB = new Date(b.fields['StartDate']);
+
+            if (dateA < dateB) return -1;
+            if (dateA > dateB) return 1;
+            return (a.fields['b'] || '').localeCompare(b.fields['b'] || '');
+        });
+
+        // Pass subOptions to displayData, ensuring it's available
+        await displayData(primaryRecords, '#airtable-data', false, subOptions);
+        await displayData(secondaryRecords, '#feild-data', true, subOptions);
+
+        mainContent.style.display = 'block';
+        secondaryContent.style.display = 'block';
+        headerTitle.classList.add('visible');
+        setTimeout(() => {
+            mainContent.style.opacity = '1';
+            secondaryContent.style.opacity = '1';
+        }, 10);
+
+        syncTableWidths();
+    } catch (error) {
+        console.error('Error fetching all data:', error);
+
+        // Ensure that the page still loads even if fetching data fails
+        mainContent.style.display = 'block';
+        secondaryContent.style.display = 'block';
+        headerTitle.classList.add('visible');
+        setTimeout(() => {
+            mainContent.style.opacity = '1';
+            secondaryContent.style.opacity = '1';
+        }, 10);
+
+        syncTableWidths();
     }
+}
+
+
+    
+    
+    
+
+    
+    
 
 
     function checkForChanges(recordId) {
@@ -839,6 +861,36 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     // Fetch data and call syncTableWidths after DOM content is ready
     fetchAllData();
 
+    async function fetchAirtableSubOptionsFromDifferentTable() {
+        let records = [];
+        let offset = null;
+        const subTableId = 'tbl6EeKPsNuEvt5y';  // Replace with the table ID you're using for the 'sub' field
+        const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME2}`;
+    
+        do {
+            const response = await fetch(`${url}?fields[]=Subcontractor Company Name${offset ? `&offset=${offset}` : ''}`, {
+                headers: {
+                    Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
+                }
+            });
+    
+            if (!response.ok) {
+                console.error(`Error fetching sub options: ${response.status} ${response.statusText}`);
+                break;
+            }
+    
+            const data = await response.json();
+            records = records.concat(data.records);  // Append new records
+            offset = data.offset;  // Airtable pagination: set offset for next batch
+    
+        } while (offset);  // Loop until there are no more records
+    
+        // Extract unique 'sub' field values and return as an array
+        const subOptions = Array.from(new Set(records.map(record => record.fields['Subcontractor Company Name']).filter(Boolean)));
+        return subOptions;
+    }
+    
+
 
     async function displayData(records, tableSelector, isSecondary = false) {
         const tbody = document.querySelector(`${tableSelector} tbody`);
@@ -846,7 +898,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
         if (records.length === 0) return;
 
-
+       
 
         records.forEach(record => {
             const fields = record.fields;
@@ -875,8 +927,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['','Billable', 'Non Billable'] },
                 { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['','Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
-                { field: 'sub', value: fields['Subcontractor Company Name'] || '', dropdown: true, options: [''] },
-
+                { field: 'sub', value: fields['sub'] || '', dropdown: true, options: subOptions },
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
             ];
             fieldConfigs.forEach(config => {
@@ -890,6 +941,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
                 if (dropdown) {
                     const select = document.createElement('select');
+                    select.classList.add('styled-select');
                     options.forEach(option => {
                         const optionElement = document.createElement('option');
                         optionElement.value = option;
@@ -1146,103 +1198,6 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
         });
     }
 
-    async function fetchAndPopulateSubcontractorOptions() {
-        try {
-            // Fetch subcontractor options first
-            const subcontractorOptions = await fetchSubcontractorOptions(); 
-        
-            // Fetch the actual records from Airtable that need the subcontractor dropdown
-            const responseData = await fetchData();  // Ensure fetchData() returns the correct structure
-        
-            // Check if responseData contains a `records` array
-            const records = responseData.records || [];  // Safely access records array
-        
-            if (!Array.isArray(records) || records.length === 0) {
-                console.error('No records found to populate.');
-                return;
-            }
-        
-            // Assuming you are populating rows for a table
-            const tbody = document.querySelector('tbody');  // Assuming you have a <tbody> for your table
-        
-            records.forEach(record => {
-                const fields = record.fields;
-    
-                // Create the table row
-                const row = document.createElement('tr');
-    
-                // Define field configurations for each row, including the subcontractor dropdown
-                const fieldConfigs = [
-                    
-                    { field: 'sub', value: fields['Subcontractor Company Name'] || '', dropdown: true, options: subcontractorOptions }  // Adding subcontractor dropdown
-                ];
-                
-                // Iterate over field configurations and create table cells
-                fieldConfigs.forEach(config => {
-                    const { field, value, dropdown, options } = config;
-                    const cell = document.createElement('td');
-    
-                    if (dropdown) {
-                        // Create subcontractor dropdown (select element)
-                        const select = document.createElement('select');
-                        select.classList.add('styled-select');
-    
-                        // Append default empty option
-                        const defaultOption = document.createElement('option');
-                        defaultOption.value = '';
-                        defaultOption.textContent = 'Select Subcontractor';
-                        select.appendChild(defaultOption);
-    
-                        // Populate dropdown with fetched subcontractor options
-                        options.forEach(option => {
-                            const optionElement = document.createElement('option');
-                            optionElement.value = option.name;  // Subcontractor company name
-                            optionElement.textContent = option.name;
-    
-                            // Select the current value if it matches
-                            if (value === option.name) {
-                                optionElement.selected = true;
-                            }
-    
-                            select.appendChild(optionElement);
-                        });
-    
-                        // Add event listener for change
-                        select.addEventListener('change', () => {
-                            const newValue = select.value;
-                            updatedFields[record.id] = updatedFields[record.id] || {};
-                            updatedFields[record.id]['Subcontractor Company Name'] = newValue;
-                            hasChanges = true;
-                            showSubmitButton(record.id);
-                        });
-    
-                        // Append the select element to the cell
-                        cell.appendChild(select);
-                    } else {
-                        // Default display for non-dropdown fields
-                        cell.textContent = value;
-                    }
-    
-                    // Append the cell to the row
-                    row.appendChild(cell);
-                });
-    
-                // Append the full row to the table body
-                tbody.appendChild(row);
-            });
-        } catch (error) {
-            console.error('Error fetching and populating subcontractor options:', error);
-        }
-    }
-    
-
-    
-    
-    
-    
-    
-    
-
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, imageField);
@@ -1298,40 +1253,6 @@ if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
             }
         }, 800); // Delay to match the animation duration
     }
-    
-    async function fetchSubcontractorOptions() {
-        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName2}`; // Ensure you're fetching from the correct table
-        console.log('Fetching subcontractor options from:', url);
-    
-        try {
-            const response = await fetch(url, {
-                headers: { Authorization: `Bearer ${airtableApiKey}` }
-            });
-    
-            console.log('Response received with status:', response.status);
-    
-            if (!response.ok) {
-                throw new Error(`Error fetching subcontractor options: ${response.status} ${response.statusText}`);
-            }
-    
-            const data = await response.json();
-            console.log('Subcontractor data fetched:', JSON.stringify(data, null, 2));
-    
-            // Extract the 'Subcontractor Company Name' field from the fetched records
-            const subcontractorOptions = data.records.map(record => ({
-                name: record.fields['Subcontractor Company Name'],
-                id: record.id
-            }));
-    
-            console.log('Mapped subcontractor options:', subcontractorOptions);
-    
-            return subcontractorOptions; // Return the mapped options
-        } catch (error) {
-            console.error('Error fetching subcontractor options:', error);
-            return [];
-        }
-    }
-    
     
     
 

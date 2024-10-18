@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     let dropboxRefreshToken;
     let debounceTimeout = null; // Declare debounce timer in the global scope
 
-    filterSubcontractorsByBranch();
 
     
     // Fetch Dropbox credentials from Airtable
@@ -270,7 +269,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             }
 
             const data = await response.json();
-            console.log('Fetched Dropbox credentials data:', JSON.stringify(data, null, 2)); // Detailed log of the fetched data
 
             // Reset Dropbox credentials before setting them
             dropboxAccessToken = undefined;
@@ -766,21 +764,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 return (a.fields['b'] || '').localeCompare(b.fields['b'] || '');
             });
     
-            // Process records and filter subcontractors based on the Vanir Branch
-            allRecords.forEach(record => {
-                const vanirBranchValue = record.fields['b']; // Assuming field 'b' holds the branch value
-    
-                // Ensure vanirBranchValue exists before filtering
-                if (vanirBranchValue) {
-                    const filteredSubOptions = filterSubcontractorsByBranch(subOptions, vanirBranchValue); // Call filtering
-                    console.log(`Filtered options for record ${record.id}:`, filteredSubOptions);
-    
-                    // Proceed to populate dropdowns or display data using filteredSubOptions
-                    populateDropdown(record, filteredSubOptions);
-                } else {
-                    console.error(`Vanir Branch value is missing for record ID ${record.id}`);
-                }
-            });
+       
     
             // Display the primary and secondary records in your tables
             await displayData(primaryRecords, '#airtable-data', false, subOptions);
@@ -812,31 +796,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
 
-    function populateDropdown(record, filteredOptions) {
-        // Find the target element in the DOM where you want to append the dropdown
-        const targetElement = document.querySelector(`#record-${record.id}`);
-    
-        // Check if the target element exists before appending
-        if (targetElement) {
-            const select = document.createElement('select');
-            select.classList.add('styled-select');
-    
-            // Populate the dropdown with the filtered options
-            filteredOptions.forEach(option => {
-                const optionElement = document.createElement('option');
-                const displayText = option.name || '';
-                optionElement.value = displayText;
-                optionElement.textContent = displayText;
-                select.appendChild(optionElement);
-            });
-    
-            // Append the dropdown to the target element
-            targetElement.appendChild(select);
-        } else {
-            console.error(`Target element for record ID ${record.id} not found.`);
-        }
-    }
-    
+        
     function checkForChanges(recordId) {
         const currentValues = updatedFields[recordId] || {};
     
@@ -894,31 +854,47 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     async function fetchAirtableSubOptionsFromDifferentTable() {
         let records = [];
         let offset = null;
-        const subTableId = 'tbl6EeKPsNuEvt5y';  // Replace with the table ID you're using for the 'sub' field
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME2}`;
-    
+        
         do {
-            const response = await fetch(`${url}?fields[]=Subcontractor Company Name${offset ? `&offset=${offset}` : ''}`, {
+            const response = await fetch(`${url}?fields[]=Subcontractor%20Company%20Name&fields[]=Vanir%20Branch${offset ? `&offset=${offset}` : ''}`, {
                 headers: {
                     Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
                 }
             });
     
             if (!response.ok) {
-                console.error(`Error fetching sub options: ${response.status} ${response.statusText}`);
+                console.error(`Error fetching subcontractor options: ${response.status} ${response.statusText}`);
                 break;
             }
     
             const data = await response.json();
             records = records.concat(data.records);  // Append new records
             offset = data.offset;  // Airtable pagination: set offset for next batch
+        } while (offset);
     
-        } while (offset);  // Loop until there are no more records
+        // Add logging for detailed inspection of records
+        console.log('Fetched subcontractor records:', records);
     
-        // Extract unique 'sub' field values and return as an array
-        const subOptions = Array.from(new Set(records.map(record => record.fields['Subcontractor Company Name']).filter(Boolean)));
-        return subOptions;
+        // Extract subcontractor options
+        const subOptions = Array.from(new Set(records.map(record => {
+            // Log the exact structure of each record's fields to troubleshoot the branch issue
+            console.log('Inspecting record fields:', record.fields);
+    
+            return {
+                name: record.fields['Subcontractor Company Name'] || 'Unnamed Subcontractor',
+                vanirOffice: record.fields['Vanir Branch'] || 'Unknown Branch'  // Log and handle missing branches
+            };
+        }).filter(Boolean)));
+    
+        console.log('Final subcontractor options with branches:', subOptions);  // Log the final options
+    
+        return subOptions;  // Return the subcontractor options array
     }
+    
+    
+    
+    
     
 
 
@@ -967,46 +943,69 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 cell.style.maxWidth = '200px';
                 cell.style.position = 'relative';
     
-            // Handle dropdowns for 'sub' and other fields
-if (dropdown || field === 'sub') {
-    const select = document.createElement('select');
-    select.classList.add('styled-select');
-
-    // Use subOptions for 'Subcontractor Company Name', otherwise use hardcoded options
-    let dropdownOptions = field === 'Subcontractor Company Name' ? subOptions : options;
-    console.log(`Original Sub Options Count: ${dropdownOptions.length}`);
-
-    // Sort options alphabetically (case insensitive)
-    dropdownOptions.sort((a, b) => {
-        const nameA = a.name ? a.name.toLowerCase() : ''; // Ensure a valid string
-        const nameB = b.name ? b.name.toLowerCase() : ''; // Ensure a valid string
-        return nameA.localeCompare(nameB); // Compare the names alphabetically
-    });
-    console.log('Sorted Sub Options:', dropdownOptions);
-
-
-
-                // Ensure the first option is always an empty value
-                const emptyOption = document.createElement('option');
-                emptyOption.value = '';
-                emptyOption.textContent = 'Select a Subcontractor...';
-                select.appendChild(emptyOption);
-
-                // Add the filtered options with proper value display
-                dropdownOptions.forEach(option => {
-                    const optionElement = document.createElement('option');
-                    
-                    // Use option.name if available, otherwise fall back to a default string
-                    const displayText = option.name || option || 'Unnamed Option';  
-                    optionElement.value = displayText;  
-                    optionElement.textContent = displayText;  
-
-                    // Select the matching value if it exists
-                    if (displayText === value) {
-                        optionElement.selected = true;
+            
+                if (dropdown || field === 'sub') {
+                    const select = document.createElement('select');
+                    select.classList.add('styled-select');
+                
+                    // Get Vanir Branch value from column 1 (field 'b')
+                    const vanirBranchValue = fields['b'];  // Get the 'b' field value (Vanir Branch) for filtering
+                    console.log(`[Record ID: ${record.id}] Vanir Branch: ${vanirBranchValue}`);
+                
+                    // Filter subOptions based on Vanir Branch (only if the field is 'sub')
+                    let filteredOptions = [];
+                    if (field === 'sub') {
+                        filteredOptions = subOptions.filter(sub => sub.vanirOffice === vanirBranchValue);
+                
+                        // Enhanced log: If no filtered options are found
+                        if (filteredOptions.length === 0) {
+                            console.warn(`[Record ID: ${record.id}] No subcontractors found for Vanir Branch: "${vanirBranchValue}".`);
+                        } else {
+                            // Log filtered options in a structured way
+                            console.groupCollapsed(`[Record ID: ${record.id}] Filtered Subcontractors for Vanir Branch: "${vanirBranchValue}"`);
+                            console.table(filteredOptions.map(sub => ({ Name: sub.name, 'Vanir Branch': sub.vanirOffice })));
+                            console.groupEnd();
+                        }
+                    } else {
+                        filteredOptions = options;  // Use hardcoded options for other dropdowns
+                        console.log(`[Record ID: ${record.id}] Using hardcoded options for non-sub field:`, filteredOptions);
                     }
-                    select.appendChild(optionElement);
-                });
+
+                    
+
+    console.log(`Filtered Sub Options for Vanir Branch ${vanirBranchValue}:`, filteredOptions);
+
+    // Ensure the first option is always an empty value
+    const emptyOption = document.createElement('option');
+    emptyOption.value = '';
+    emptyOption.textContent = 'Select a Subcontractor...';
+    select.appendChild(emptyOption);
+
+    // Sort the filtered options alphabetically
+    filteredOptions.sort((a, b) => {
+        const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase(); // Ensure valid string comparison
+        const nameB = b.name ? b.name.toLowerCase() : b.toLowerCase();
+        return nameA.localeCompare(nameB);
+    });
+
+    // Add the filtered and sorted options to the dropdown
+  // Populate dropdown with filtered options
+filteredOptions.forEach(option => {
+    const optionElement = document.createElement('option');
+    optionElement.value = option.name;  // Set the option value
+    optionElement.textContent = option.name;  // Set the display text
+
+    if (option.name === value) {
+        optionElement.selected = true;  // Pre-select if it matches the current value
+    }
+
+    select.appendChild(optionElement);  // Add option to the select element
+});
+
+
+    cell.appendChild(select);
+
+
 
                      // Detect changes and update checkbox state
                 select.addEventListener('change', () => {
@@ -1324,9 +1323,7 @@ imageViewerModal.addEventListener('click', function(event) {
         closeModal();
     }
 });
-
-    
-     
+       
     
         updateModalImage();
         imageViewerModal.style.display = 'flex'; // Ensure the modal is shown
@@ -1346,10 +1343,7 @@ imageViewerModal.addEventListener('click', function(event) {
     
         // Listen for keydown events to navigate with arrow keys and close with Esc
         document.addEventListener('keydown', handleKeyNavigation);
-    }
-    
-    
-    
+    }   
        
     function enablePageScrolling() {
         document.body.style.overflow = '';
@@ -1383,8 +1377,6 @@ imageViewerModal.addEventListener('click', function(event) {
         hasChanges = false; // Reset changes flag
     }
     
-    
-
 // Flag to prevent multiple submissions
 let isSubmitting = false;
 
@@ -1469,15 +1461,6 @@ let updatedFields = {};   // Track changes made by the user
 let hasChanges = false;   // Track if there are any unsaved changes
 let activeRecordId = null;  // Track the current active record
 
-// Function to store original values when data is fetched
-function storeOriginalValues(records) {
-    records.forEach(record => {
-        originalValues[record.id] = {};
-        Object.keys(record.fields).forEach(field => {
-            originalValues[record.id][field] = record.fields[field];
-        });
-    });
-}
         
 // Function to check if the current values are different from the original values
 function checkForChanges(recordId) {
@@ -1531,15 +1514,12 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 activeRecordId = recordId;
             }
         }
-        
-   
+           
        // Reset updatedFields and hide submit button if the user undoes all changes
 function resetChanges(recordId) {
     delete updatedFields[recordId];
     checkForChanges(recordId);
-} 
-        
-        
+}      
 
   // Adjust button size and position dynamically
   function adjustButtonPosition() {
@@ -1671,91 +1651,6 @@ document.body.appendChild(dynamicButtonsContainer);
         submitChanges();
     });
 
-   // Function to filter subcontractors based on Vanir Branch value
-function filterSubcontractorsByBranch(subOptions, vanirBranchValue) {
-    // Check if subOptions and vanirBranchValue are valid before proceeding
-    if (!subOptions || !Array.isArray(subOptions)) {
-        console.error('subOptions is undefined or not an array:', subOptions);
-        return []; // Return an empty array if subOptions is not valid
-    }
-    if (!vanirBranchValue) {
-        console.error('vanirBranchValue is undefined or empty:', vanirBranchValue);
-        return subOptions; // Return all options if no branch value is provided
-    }
-
-    console.log(`Filtering subcontractors by Vanir Branch: ${vanirBranchValue}`);
-
-    // Filter subOptions to only include those where 'vanirOffice' matches 'vanirBranchValue'
-    const filteredOptions = subOptions.filter(sub => {
-        console.log(`Checking subcontractor '${sub.name}' with vanirOffice: ${sub.vanirOffice}`);
-        return sub.vanirOffice === vanirBranchValue;
-    });
-
-    console.log(`Filtered options count: ${filteredOptions.length}`);
-    return filteredOptions;
-}
-
-
-// Handle dropdowns for 'sub' and other fields
-if (dropdown || field === 'sub') {
-    const select = document.createElement('select');
-    select.classList.add('styled-select');
-
-    // Get the Vanir Branch value from the record (assuming 'b' holds the value for Vanir Branch)
-    const vanirBranchValue = record.fields['b'];  // Adjust 'b' to the actual field name if necessary
-    console.log(`Vanir Branch Value for record ID ${record.id}:`, vanirBranchValue);
-
-    // Use subOptions for 'Subcontractor Company Name', otherwise use hardcoded options
-    let dropdownOptions = field === 'Subcontractor Company Name' ? subOptions : options;
-    console.log(`Original Sub Options Count: ${dropdownOptions.length}`);  // Log the original count of subOptions
-
-    // **Trigger the filtering function here**
-    if (field === 'Subcontractor Company Name') {
-        dropdownOptions = filterSubcontractorsByBranch(dropdownOptions, vanirBranchValue);  // Triggering the function
-        console.log(`Filtered Sub Options Count: ${dropdownOptions.length}`);  // Log the count of filtered options
-    }
-
-    // Sort options alphabetically (case insensitive)
-    console.log('Sorting filtered Sub Options alphabetically...');
-    dropdownOptions.sort((a, b) => {
-        const nameA = a.name ? a.name.toLowerCase() : ''; // Ensure a valid string
-        const nameB = b.name ? b.name.toLowerCase() : ''; // Ensure a valid string
-        return nameA.localeCompare(nameB); // Compare the names
-    });
-    console.log('Sorted Sub Options:', dropdownOptions);
-
-    // Ensure the first option is always an empty value
-    const emptyOption = document.createElement('option');
-    emptyOption.value = '';
-    emptyOption.textContent = 'Select a Subcontractor...';
-    select.appendChild(emptyOption);
-    console.log('Added empty option to dropdown.');
-
-    // Counter for added options
-    let addedOptionsCount = 0;
-
-    // Add the filtered and sorted options to the dropdown
-    dropdownOptions.forEach(option => {
-        const optionElement = document.createElement('option');
-
-        // Since option is a string, use it directly
-        const displayText = option.name || 'Unnamed Option';  // Use the string value or fallback to 'Unnamed Option'
-        optionElement.value = displayText;  // Option value
-        optionElement.textContent = displayText;  // Option text to display
-
-        // Select the matching value if it exists
-        if (displayText === value) {
-            optionElement.selected = true;
-            console.log(`Selected option '${displayText}' as it matches the current value.`);
-        }
-
-        console.log('Appending option to dropdown:', displayText);
-        select.appendChild(optionElement);
-        addedOptionsCount++; // Increment the counter for each added option
-    });
-
-    console.log(`Total options added to dropdown: ${addedOptionsCount}`);
-}
 
 
     async function updateRecord(recordId, fields) {

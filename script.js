@@ -965,11 +965,22 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             
                     console.log(`Filtered Options for Field "${field}" (Vanir Branch: ${fields['b']}):`, filteredOptions);
             
-                    // Ensure the first option is always a placeholder (empty) for all dropdowns
-                    const emptyOption = document.createElement('option');
-                    emptyOption.value = '';
-                    emptyOption.textContent = 'Select an Option...';
-                    select.appendChild(emptyOption);
+        // Custom placeholder for each field
+        let placeholderText = 'Select an Option...'; // Default placeholder
+        if (field === 'sub') {
+            placeholderText = 'Select a Subcontractor...';
+        } else if (field === 'Billable/ Non Billable') {
+            placeholderText = 'Select Billable Status...';
+        } else if (field === 'Billable Reason (If Billable)') {
+            placeholderText = 'Select a Reason...';
+        }
+                   
+        // Ensure the first option is always a placeholder (empty)
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = placeholderText;
+        select.appendChild(emptyOption);
+
             
                     // Sort the filtered options alphabetically
                     filteredOptions.sort((a, b) => {

@@ -927,8 +927,8 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
-                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['','Billable', 'Non Billable'] },
-                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['','Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
+                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
+                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
                 { field: 'sub', value: fields['sub'] || '', dropdown: true, options: subOptions },
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
@@ -965,7 +965,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             
                     console.log(`Filtered Options for Field "${field}" (Vanir Branch: ${fields['b']}):`, filteredOptions);
             
-                    // Ensure the first option is always a placeholder (empty)
+                    // Ensure the first option is always a placeholder (empty) for all dropdowns
                     const emptyOption = document.createElement('option');
                     emptyOption.value = '';
                     emptyOption.textContent = 'Select an Option...';
@@ -995,24 +995,21 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     // Append the select element to the cell
                     cell.appendChild(select);
             
-
-
-
-                     // Detect changes and update checkbox state
-                select.addEventListener('change', () => {
-                    const newValue = select.value;
-                    updatedFields[record.id] = updatedFields[record.id] || {};
-                    updatedFields[record.id][field] = newValue;
-                    hasChanges = true;
-
-                    showSubmitButton(record.id);
-
-                    const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
-                    if (fieldReviewCheckbox) {
-                        fieldReviewCheckbox.disabled = (newValue === "");
-                        fieldReviewCheckbox.checked = false;  
-                    }
-                });
+                    // Detect changes and handle state updates
+                    select.addEventListener('change', () => {
+                        const newValue = select.value;
+                        updatedFields[record.id] = updatedFields[record.id] || {};
+                        updatedFields[record.id][field] = newValue;
+                        hasChanges = true;
+            
+                        showSubmitButton(record.id);
+            
+                        const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
+                        if (fieldReviewCheckbox) {
+                            fieldReviewCheckbox.disabled = (newValue === "");
+                            fieldReviewCheckbox.checked = false;
+                        }
+                    });
     
                       // Initially disable checkbox if placeholder is selected
                 const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');

@@ -1,79 +1,293 @@
 /* General Reset */
 body {
     font-family: Arial, sans-serif;
-    background-color: lightgray ;
+    background-color: lightgray;
     color: #333;
     margin: 0;
     padding: 0;
 }
+
+h2 {
+    text-align: center;
+}
+
+td {
+    max-height: 100px;
+}
+
+td:nth-child(7) .delete-button,
+td:nth-child(7) .add-photo-button {
+    width: 100%;
+ 
+    border: none;
+    border-radius: 5px;
+    background-color: darkred;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+        /* Add styles to make divs scrollable */
+        .scrollable-div {
+            max-height: 480px; /* Set a max-height for scrollable area */
+            overflow-y: auto; /* Enable vertical scrolling */
+            overflow-x: auto;
+            position: relative; /* Required for sticky to work */
+
+        }
+
+        /* CSS for Dropbox Dropdown or other elements */
+.dropbox-container {
+    position: relative; /* Ensures it's positioned relative to its parent */
+    z-index: 1000; /* Ensures it is above other elements when dropdown is open */
+}
+
+.dropbox-dropdown {
+    position: absolute; /* Absolute within the relative container */
+    top: 100%; /* Position dropdown just below the element */
+    left: 0;
+    background-color: white; /* Adjust based on your UI */
+    border: 1px solid #ccc;
+    z-index: 2000; /* Higher index to ensure it shows above other content */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+   
 
 /* Header Styles */
 .header {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-top: 10px; /* Reduced margin */
+    margin-top: 10px;
     cursor: pointer;
     position: relative;
 }
 
 .logo {
-    height: 80px; /* Keep the logo size constant */
-    margin-right: 10px; /* Reduced space between logo and h1 */
-    transition: opacity 1s ease-in-out; /* Smooth transition for opacity */
+    height: 80px;
+    margin-right: 10px;
+    transition: opacity 1s ease-in-out;
 }
 
-/* Initially hidden h1 */
-h1 {
-    color: black;
-    margin: 0;
-    padding: 10px 0; /* Reduced padding */
-    text-align: center;
-    opacity: 0; /* Initially hidden */
-    transition: opacity 1s ease-in-out; /* Smooth transition for visibility */
+/* Main Content Styles */
+#main-content, #secoundary-content {
+    display: none;
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
 }
 
-/* Show h1 when data is loaded */
-h1.visible {
-    opacity: 1; /* Make h1 visible */
-}
-
-/* Search Container */
-.search-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: calc(10vh - 14px); /* Adjusted to center within the remaining space */
-}
-
-#search-input {
-    padding: 8px; /* Reduced padding */
-    width: 80%;
-    max-width: 500px;
-    border-radius: 4px; /* Slightly reduced border radius */
-    font-size: 16px;
+/* Table Styles */
+table {
+    width: 95%;
+    margin: 10px auto;
+    border-collapse: collapse;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     border: 2px solid #8B0000;
 }
 
-.zoomable-image {
-    transition: transform 0.2s; /* Animation */
-}
-.zoomable-image:hover {
-    transform: scale(2); /* Zoom in on hover */
+th, td {
+    border: 3px solid #131010;
+    padding: 8px;
+    text-align: center;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: keep-all;
+    max-width: 200px;
 }
 
+th {
+    background-color: #002244;
+    color: white;
+    font-weight: bold;
+    font-size: 19px;
+    position: sticky;
+    top: 0; /* Stick to the top */
+    z-index: 100; /* Ensure headers are above other content */
+    height: 3.5em;
+}
+
+
+
+
+/* Alternate row colors */
+tbody tr:nth-child(odd) {
+    background-color: #f2f2f2;
+}
+
+tbody tr:nth-child(even) {
+    background-color: #e6e6e6;
+}
+
+
+
+/* Editable Cell Styles */
+td[contenteditable="true"] {
+    background-color: grey;
+    color: white;
+    cursor: text;
+}
+
+td.edited {
+    background-color: rgb(85, 82, 82) !important;
+}
+
+/* Button Styles */
+button {
+    display: block;
+    width: 180px;
+    margin: 10px auto;
+    padding: 8px;
+    background-color: #003366;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: #002244;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    transform: translateY(-4px);
+}
+
+/* Draggable Submit Button */
+#dynamic-submit-button {
+    width: 150px;
+    height: 50px;
+    background-color: #4caf50;
+    color: white;
+    font-size: 20px;
+    border: none;
+    border-radius: 8px;
+    padding: 10px;
+    cursor: move;
+    transition: background-color 0.3s ease;
+    z-index: 1000;
+    position: fixed;
+}
+
+#dynamic-submit-button:hover {
+    background-color: #388e3c;
+}
+
+/* Image Styles */
+.image-carousel {
+    position: relative;
+}
+
+.image-carousel img {
+    height: auto;
+    object-fit: cover;
+    border-radius: 5px;
+}
+
+.image-moving {
+    position: absolute;
+    transition: all 0.8s ease-in-out;
+    opacity: 0;
+}
+
+.image-deleted {
+    animation: shrink 0.5s forwards;
+}
+
+@keyframes shrink {
+    from {
+        transform: scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+/* Image Viewer Modal */
+.image-viewer-modal {
+    display: flex;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease;
+}
+
+.image-viewer-modal.show {
+    opacity: 1;
+}
+
+.modal-image {
+    max-width: 90vw; /* 90% of the viewport width */
+    max-height: 90vh; /* 90% of the viewport height */
+    width: auto; /* Ensure the image width is automatically adjusted */
+    height: auto; /* Ensure the image height is automatically adjusted */
+    object-fit: contain; /* Ensure the image maintains aspect ratio and fits within bounds */
+    margin: auto;
+    display: block;
+    border-radius: 5px; /* Optional: add rounded corners */
+}
+
+
+.close-modal-button {
+    position: absolute;
+    top: 20px;
+    right: 40px;
+    color: white;
+    font-size: 30px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+/* Carousel Navigation Buttons */
+.carousel-nav-button {
+    background-color: transparent;
+    width: 25%; /* Set the width to 25% of the parent container */
+
+    border: none;
+    color: white;
+    font-size: 13px;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    z-index: 2;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+}
+
+.carousel-nav-button:hover {
+    opacity: .9;
+}
+
+.carousel-nav-button.prev {
+    left: 35%;
+    width: 15%;
+}
+
+.carousel-nav-button.next {
+    right: 35%;
+    width: 15%;
+
+}
+
+/* Custom Checkbox */
 .custom-checkbox {
     width: 25px;
     height: 25px;
     cursor: pointer;
-    -webkit-appearance: none;
-    -moz-appearance: none;
     appearance: none;
     background-color: #e0e0e0;
     border-radius: 5px;
     border: 2px solid #9e9e9e;
-    display: inline-block;
-    position: relative;
     transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease;
 }
 
@@ -89,30 +303,27 @@ h1.visible {
     left: 7px;
     width: 6px;
     height: 14px;
-    border: solid green; /* Changed the checkmark color to black */
+    border: solid green;
     border-width: 0 3px 3px 0;
     transform: rotate(45deg);
 }
 
-
+/* Styled Select */
 .styled-select {
     border-radius: 12px;
     padding: 5px;
     border: 1px solid #ccc;
     background-color: #f9f9f9;
     transition: background-color 0.2s ease;
+    max-width: 100%;
+    position: relative;
+
 }
 
 .styled-select:focus {
     background-color: #e0e0e0;
 }
 
-.styled-select option {
-    padding: 10px;
-    border-radius: 8px;
-}
-
-/* Specific styles for Billable/Non-Billable select elements */
 .styled-select option[value='Billable'] {
     background-color: #ffeb3b;
     color: #000;
@@ -123,494 +334,23 @@ h1.visible {
     color: #fff;
 }
 
-/* Ensure the 'Lot Number and Community' column is more narrow and text wraps */
-#airtable-data th:nth-child(3), 
-#airtable-data td:nth-child(3),
-#airtable-data th:nth-child(5), 
-#airtable-data td:nth-child(5) {
-    max-width: 150px; 
-    word-wrap: break-word;
-    white-space: normal; 
-    overflow-wrap: break-word;
-}
-
-
-
-#airtable-data {
-    max-width: 85%;
-    width: 100%;
-    margin: 0 auto;
-    border-collapse: collapse;
-}
-
-/* CSS for modal */
-.modal {
-    display: none; 
-    position: fixed; 
-    z-index: 1000; 
-    left: 0;
-    top: 0;
-    width: 100%; 
-    height: 100%; 
-    overflow: auto; 
-    background-color: rgb(0,0,0);
-    background-color: rgba(0,0,0,0.9);
-}
-
-.modal-content {
-    position: relative;
-    margin: auto;
-    padding: 0;
-    width: 80%;
-    max-width: 700px;
-}
-
-.close {
-    position: absolute;
-    top: 10px;
-    right: 25px;
-    color: white;
-    font-size: 35px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.multi-image-indicator {
-    background-color: red;
-    color: white;
-    padding: 2px 5px;
-    border-radius: 50%;
-    font-size: 0.8em;
-    position: absolute;
-    top: 5px;
-    right: 5px;
-}
-
-
-.image-modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgb(0,0,0);
-    background-color: rgba(0,0,0,0.9);
-}
-#airtable-data td {
-    white-space: normal;
-    word-wrap: break-word;
-    max-width: 200px; /* You can adjust this width as needed */
-    text-align: center;
-}
-
-#airtable-data td[contenteditable="true"] {
-    padding: 5px;
-    border: 2px solid #ddd;
-    background-color: #f9f9f9;
-}
-
-#airtable-data td.editable-cell {
-    background-color: #888581; /* Light background to indicate editability */
-    cursor: text;
-}
-
-#airtable-data td.edited {
-    background-color: rgb(85, 82, 82) !important; /* Light yellow color for edited cells */
-    color: white;
-}
-
-
-.modal-content {
-    margin: auto;
-    display: block;
-    max-width: 90%;
-    max-height: 90%;
-}
-
-.close {
-    position: absolute;
-    top: 15px;
-    right: 35px;
-    color: #fff;
-    font-size: 40px;
-    font-weight: bold;
-    transition: 0.3s;
-}
-
-.close:hover,
-.close:focus {
-    color: #bbb;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-
-/* Modal styles */
-/* Modal styles */
-.modal {
-    display: none; /* Hidden by default */
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: rgba(0, 0, 0, 0.5);
+/* Search Input */
+.search-container {
     display: flex;
-    align-items: center;
     justify-content: center;
-    opacity: 0;
-    transition: opacity 0.5s ease; /* Smooth fade-in and fade-out */
+    align-items: center;
 }
 
-.modal.show {
-    opacity: 1; /* Show the modal */
+#search-input {
+    padding: 8px;
+    width: 80%;
+    max-width: 500px;
+    border-radius: 4px;
+    font-size: 16px;
+    border: 2px solid #8B0000;
 }
 
-.modal-content {
-    background-color: white;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 650px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    text-align: center;
-    border-radius: 10px;
-    transform: scale(0.9);
-    transition: transform 0.3s ease, background-color 0.3s ease; /* Smooth pop-in effect and background color change */
-}
-
-.modal.show .modal-content {
-    transform: scale(1); /* Animate to full size */
-}
-
-.modal-content:hover {
-    background-color: whitesmoke /* Change background color on hover */
-}
-
-.close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: color 0.3s ease, background-color 0.3s ease; /* Smooth color transition on hover */
-}
-
-.close:hover,
-.close:focus {
-    color: black;
-    background-color: #ddd; /* Change background color on hover */
-    text-decoration: none;
-    cursor: pointer;
-    transform: rotate(90deg); /* Add rotation animation */
-    transition: transform 0.3s ease, color 0.3s ease, background-color 0.3s ease; /* Smooth rotation, color, and background color transition */
-}
-
-/* Wave Text Animation */
-/* Wave Text Animation */
-.wave-text span {
-    display: inline-block;
-    transform-origin: 70% 70%;
-    transition: transform 0.3s ease; /* Ensures smooth transition when not animating */
-}
-
-.wave-text:hover span {
-    animation: wave-animation 1.5s ease-in-out infinite;
-}
-
-.wave-text span:nth-child(1) {
-    animation-delay: 0s;
-}
-
-.wave-text span:nth-child(2) {
-    animation-delay: 0.05s;
-}
-
-.wave-text span:nth-child(3) {
-    animation-delay: 0.1s;
-}
-
-.wave-text span:nth-child(4) {
-    animation-delay: 0.15s;
-}
-
-.wave-text span:nth-child(5) {
-    animation-delay: 0.2s;
-}
-
-.wave-text span:nth-child(6) {
-    animation-delay: 0.25s;
-}
-
-.wave-text span:nth-child(7) {
-    animation-delay: 0.3s;
-}
-
-.wave-text span:nth-child(8) {
-    animation-delay: 0.35s;
-}
-
-.wave-text span:nth-child(9) {
-    animation-delay: 0.4s;
-}
-
-.wave-text span:nth-child(10) {
-    animation-delay: 0.45s;
-}
-
-.wave-text span:nth-child(11) {
-    animation-delay: 0.5s;
-}
-
-.wave-text span:nth-child(12) {
-    animation-delay: 0.55s;
-}
-
-.wave-text span:nth-child(13) {
-    animation-delay: 0.6s;
-}
-
-.wave-text span:nth-child(14) {
-    animation-delay: 0.65s;
-}
-
-.wave-text span:nth-child(15) {
-    animation-delay: 0.7s;
-}
-
-.wave-text span:nth-child(16) {
-    animation-delay: 0.75s;
-}
-
-.wave-text span:nth-child(17) {
-    animation-delay: 0.8s;
-}
-
-.wave-text span:nth-child(18) {
-    animation-delay: 0.85s;
-}
-
-.wave-text span:nth-child(19) {
-    animation-delay: 0.9s;
-}
-
-.wave-text span:nth-child(20) {
-    animation-delay: 0.95s;
-}
-
-.wave-text span:nth-child(21) {
-    animation-delay: 1s;
-}
-
-.wave-text span:nth-child(22) {
-    animation-delay: 1.05s;
-}
-
-.wave-text span:nth-child(23) {
-    animation-delay: 1.1s;
-}
-
-.wave-text span:nth-child(24) {
-    animation-delay: 1.15s;
-}
-
-.wave-text span:nth-child(25) {
-    animation-delay: 1.2s;
-}
-
-.wave-text span:nth-child(26) {
-    animation-delay: 1.25s;
-}
-
-.wave-text span:nth-child(27) {
-    animation-delay: 1.3s;
-}
-
-.wave-text span:nth-child(28) {
-    animation-delay: 1.35s;
-}
-
-.wave-text span:nth-child(29) {
-    animation-delay: 1.4s;
-}
-
-.wave-text span:nth-child(30) {
-    animation-delay: 1.45s;
-}
-
-.wave-text span:nth-child(31) {
-    animation-delay: 1.5s;
-}
-
-.wave-text span:nth-child(32) {
-    animation-delay: 1.55s;
-}
-
-.wave-text span:nth-child(33) {
-    animation-delay: 1.6s;
-}
-
-.wave-text span:nth-child(34) {
-    animation-delay: 1.65s;
-}
-
-.wave-text span:nth-child(35) {
-    animation-delay: 1.7s;
-}
-
-.wave-text span:nth-child(36) {
-    animation-delay: 1.75s;
-}
-
-.wave-text span:nth-child(37) {
-    animation-delay: 1.8s;
-}
-
-.wave-text span:nth-child(38) {
-    animation-delay: 1.85s;
-}
-
-.wave-text span:nth-child(39) {
-    animation-delay: 1.9s;
-}
-
-.wave-text span:nth-child(40) {
-    animation-delay: 1.95s;
-}
-
-.wave-text span:nth-child(41) {
-    animation-delay: 2s;
-}
-
-.wave-text span:nth-child(42) {
-    animation-delay: 2.05s;
-}
-
-.wave-text span:nth-child(43) {
-    animation-delay: 2.1s;
-}
-
-.wave-text span:nth-child(44) {
-    animation-delay: 2.15s;
-}
-
-.wave-text span:nth-child(45) {
-    animation-delay: 2.2s;
-}
-
-.wave-text span:nth-child(46) {
-    animation-delay: 2.25s;
-}
-
-.wave-text span:nth-child(47) {
-    animation-delay: 2.3s;
-}
-
-.wave-text span:nth-child(48) {
-    animation-delay: 2.35s;
-}
-
-.wave-text span:nth-child(49) {
-    animation-delay: 2.4s;
-}
-
-.wave-text span:nth-child(50) {
-    animation-delay: 2.45s;
-}
-
-.wave-text span:nth-child(51) {
-    animation-delay: 2.5s;
-}
-
-.wave-text span:nth-child(52) {
-    animation-delay: 2.55s;
-}
-
-.wave-text span:nth-child(53) {
-    animation-delay: 2.6s;
-}
-
-.wave-text span:nth-child(54) {
-    animation-delay: 2.65s;
-}
-
-.wave-text span:nth-child(55) {
-    animation-delay: 2.7s;
-}
-
-.wave-text span:nth-child(56) {
-    animation-delay: 2.75s;
-}
-
-.wave-text span:nth-child(57) {
-    animation-delay: 2.8s;
-}
-
-.wave-text span:nth-child(58) {
-    animation-delay: 2.85s;
-}
-
-.wave-text span:nth-child(59) {
-    animation-delay: 2.9s;
-}
-
-.wave-text span:nth-child(60) {
-    animation-delay: 2.95s;
-}
-
-.wave-text span:nth-child(61) {
-    animation-delay: 3s;
-}
-
-.wave-text span:nth-child(62) {
-    animation-delay: 3.05s;
-}
-
-.wave-text span:nth-child(63) {
-    animation-delay: 3.1s;
-}
-
-.wave-text span:nth-child(64) {
-    animation-delay: 3.15s;
-}
-
-@keyframes wave-animation {
-    0%, 60%, 100% {
-        transform: translateY(0);
-    }
-    30% {
-        transform: translateY(-20px);
-    }
-}
-
-
-
-
-/* Hide main content by default */
-#main-content {
-    display: none;
-    opacity: 0; /* Start fully transparent */
-    transition: opacity 1s ease-in-out; /* Smooth fade-in effect */
-}
-
-/* Loading Logo */
-.loading-logo {
-    mask-image: linear-gradient(to right, black 0%, transparent 0%);
-    -webkit-mask-image: linear-gradient(to right, black 0%, transparent 0%);
-    transition: mask-position 2s ease-in-out, -webkit-mask-position 2s ease-in-out;
-}
-
-/* Full color logo after loading */
-.loading-logo.full-color {
-    mask-image: none; /* Remove the mask to show the full logo */
-    -webkit-mask-image: none; /* Remove the mask to show the full logo */
-}
-
-/* Toast notification */
+/* Toast Notification */
 #toast {
     visibility: hidden;
     min-width: 15%;
@@ -622,239 +362,420 @@ h1.visible {
     align-items: center;
     justify-content: center;
     border-radius: 5px;
-    padding: 12px; /* Reduced padding */
+    padding: 12px;
     position: fixed;
     z-index: 1;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    font-size: 15px; /* Slightly reduced font size */
+    font-size: 15px;
     opacity: 0;
     transition: opacity 0.5s;
-    box-sizing: border-box;
 }
 
-/* Table Styles */
-table {
-    width: 90%;
-    margin: 10px auto; /* Reduced margin */
-    border-collapse: collapse;
-    background-color: #fff;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    cursor: default;
-    border: 2px solid #8B0000; /* Slightly reduced border */
-}
-
-th, td {
-    border: 1px solid #ddd;
-    padding: 8px; /* Reduced padding */
-    text-align: left;
-}
-
-th {
-    background-color: #002244;
-    color: white;
-    text-align: center;
-    white-space: nowrap;
-    font-weight: bold;
-    font-size: 17px; /* Slightly reduced font size */
-}
-
-#table-container {
-    position: relative;
-    width: 80%;
-    display: flex;
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
     justify-content: center;
-    overflow: hidden;
-    background-color: #f8f8f8; /* Light background for contrast */
-    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.2), /* Inset shadow for depth */
-                0 3px 6px rgba(0, 0, 0, 0.2); /* Outer shadow for lift */
-    border-radius: 6px; /* Slightly reduced border radius */
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.5s ease;
 }
 
-/* Editable Cell Styles */
-table td[contenteditable="true"] {
-    background-color: grey;
-    cursor: text;
-    color: white;
+.modal.show {
+    opacity: 1;
 }
 
-table td[contenteditable="true"]:hover {
-    background-color: #555;
-    color: white;
-    transform: scale(1.02);
-    transition: all 0.3s ease;
+.modal-content {
+    background-color: white;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 650px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    border-radius: 10px;
+    transform: scale(0.9);
+    transition: transform 0.3s ease, background-color 0.3s ease;
 }
 
-.edited {
-    background-color: #003366 !important;
+.modal-content:hover {
+    background-color: whitesmoke;
 }
 
-/* Style for the carousel navigation buttons */
-.carousel-nav-button {
-    background-color: transparent; /* Transparent background */
-    border: none; /* No border */
-    color: white; /* White arrow color */
-    font-size: 13px; /* Size of the arrow */
-    position: absolute; /* Absolute positioning */
-    top: 50%; /* Center vertically */
-    transform: translateY(-50%); /* Center vertically */
-    cursor: pointer; /* Pointer cursor on hover */
-    z-index: 2; /* Ensure buttons are above the image */
-    opacity: 0.7; /* Slight transparency for the buttons */
-    transition: opacity 0.3s; /* Smooth transition for hover effect */
-    max-width: 45px;
-}
-
-.carousel-nav-button:hover {
-    opacity: .9; /* Fully opaque on hover */
-}
-
-.carousel-nav-button.prev {
-    left: 10px; /* Position on the left side of the image */
-}
-
-.carousel-nav-button.next {
-    right: 10px; /* Position on the right side of the image */
-}
-
-/* Ensure image container has relative positioning */
-.image-carousel {
-    position: relative; /* Relative positioning to contain absolutely positioned elements */
-}
-
-
-  
-
-/* Button Styles */
-button {
-    display: block;
-    width: 180px; /* Reduced width */
-    margin: 10px auto; /* Reduced margin */
-    padding: 8px; /* Reduced padding */
-    background-color: #003366;
-    color: white;
-    border: none;
-    border-radius: 4px; /* Slightly reduced border radius */
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
     cursor: pointer;
-    font-size: 14px; /* Slightly reduced font size */
-    transition: all 0.3s ease;
+    transition: color 0.3s ease, background-color 0.3s ease;
 }
 
-button:hover {
-    background-color: #002244;
-    color: white;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); /* Slightly reduced shadow */
-    transform: translateY(-4px);
+.close:hover, .close:focus {
+    color: black;
+    background-color: #ddd;
+    transform: rotate(90deg);
 }
 
-/* Sticky Submit Button */
-#submit-button {
-    position: sticky;
-    bottom: 10px; /* Reduced bottom space */
-    margin-bottom: 10px; /* Reduced margin */
-    background-color: #003366;
-    color: white;
-    padding: 8px 16px; /* Reduced padding */
-    border-radius: 4px; /* Slightly reduced border radius */
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-#submit-button:hover {
-    background-color: navy;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-/* Media Queries for Responsiveness */
 @media (max-width: 768px) {
-    .header {
-        flex-direction: column;
-        margin-top: 5px; /* Further reduced margin */
+    .logo {
+        height: 60px; /* Smaller logo size for mobile */
     }
 
-    .logo {
-        height: 70px; /* Slightly reduced height */
-        margin-bottom: 5px; /* Reduced margin */
+    h1 {
+        font-size: 20px;
+    }
+
+
+  /* Add styles to make divs scrollable */
+  .scrollable-div {
+    max-height: 1000px; /* Set a max-height for scrollable area */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: auto;
+}
+
+.styled-select select {
+    width: 100%;
+    font-size: 14px;
+    position: relative;
+    z-index: 1000; /* Ensure dropdown is above other elements */
+}
+
+/* Centering the Toast Notification */
+#toast {
+    visibility: hidden;
+    min-width: 60%; /* Adjust the width to 60% */
+    background-color: navy;
+    color: #fff;
+    text-align: center;
+    border-radius: 5px;
+    padding: 12px;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 14px; /* Adjust font size for mobile */
+    opacity: 0;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+}
+
+/* Search Container Styles */
+.search-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px auto; /* Center and add margin */
+}
+
+#search-input {
+    padding: 10px;
+    width: 80%;
+    max-width: 500px; /* Limit the width on larger screens */
+    border-radius: 4px;
+    font-size: 16px;
+    border: 2px solid #8B0000;
+}
+
+
+
+}
+
+/* Responsive Styles for Mobile */
+@media (max-width: 768px) {
+
+    
+    table {
+        width: 95%;
+    }
+
+    th, td {
+        padding: 8px;
+        font-size: 14px;
     }
 
     #search-input {
-        width: 90%;
+        padding: 8px;
+        width: 80%;
+    }
+    
+
+    /* Adjust image carousel in table index 7 */
+    td:nth-child(7) .image-carousel {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
         max-width: 100%;
+        margin: 0 auto;
+    }
+
+    td:nth-child(7) .image-carousel img {
+        max-width: 100px;
+        max-height: 100px;
+        object-fit: cover;
+        margin: 5px;
+        border-radius: 5px;
+    }
+
+    /* Carousel navigation buttons */
+    td:nth-child(7) .carousel-nav-button {
+        font-size: 20px;
+        width: 30px;
+        height: 40px;
+        display: inline-block;
+        line-height: 30px;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        text-align: center;
+        border-radius: 50%;
+        margin: 5px;
+        cursor: pointer;
+    }
+
+    /* Buttons */
+    td:nth-child(7) .delete-button,
+    td:nth-child(7) .add-photo-button {
+        width: 100%;
+        padding: 10px;
+     
+        font-size: 14px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #4caf50;
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .styled-select select {
+        width: 100%;
+        font-size: 14px;
+        position: relative;
+        z-index: 1000; /* Ensure dropdown is above other elements */
+    }
+
+      /* Add styles to make divs scrollable */
+      .scrollable-div {
+        max-height: 1000px; /* Set a max-height for scrollable area */
+        overflow-y: auto; /* Enable vertical scrolling */
+        overflow-x: auto;
+    }
+
+    td:nth-child(7) .delete-button:hover,
+    td:nth-child(7) .add-photo-button:hover {
+        background-color: #388e3c;
+    }
+}
+
+
+@media (max-width: 576px) {
+    .logo {
+        height: 50px; /* Smaller logo for extra small screens */
+    }
+
+      /* Add styles to make divs scrollable */
+      .scrollable-div {
+        max-height: 1000px; /* Set a max-height for scrollable area */
+        overflow-y: auto; /* Enable vertical scrolling */
+        overflow-x: auto;
+    }
+
+    #search-input {
+        width: 95%;
+        padding: 6px;
+    }
+
+    .styled-select select {
+        width: 100%;
+        font-size: 14px;
+        position: relative;
+        z-index: 1000; /* Ensure dropdown is above other elements */
+    }
+    
+    h1 {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 576px) {
+    th, td {
+        padding: 6px;
+        font-size: 12px;
+    }
+
+  /* Add styles to make divs scrollable */
+  .scrollable-div {
+    max-height: 1000px; /* Set a max-height for scrollable area */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: auto;
+}
+
+    .styled-select select {
+        width: 100%;
+        font-size: 14px;
+        position: relative;
+        z-index: 1000; /* Ensure dropdown is above other elements */
+    }
+
+    /* Further reduce image sizes in index 7 for small devices */
+    td:nth-child(7) .image-carousel img {
+        max-width: 80px;
+        max-height: 80px;
+    }
+
+    td:nth-child(7) .carousel-nav-button {
+        font-size: 18px;
+        width: 25px;
+        height: 25px;
+        line-height: 25px;
+    }
+
+    td:nth-child(7) .delete-button,
+    td:nth-child(7) .add-photo-button {
+        font-size: 12px;
+    }
+}
+
+/* Ensure that images and buttons don't overflow */
+td:nth-child(7) {
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+@media (max-width: 400px) {
+    .logo {
+        height: 40px;
+    }
+
+    h1 {
+        font-size: 16px;
+    }
+
+      /* Add styles to make divs scrollable */
+      .scrollable-div {
+        max-height: 1000px; /* Set a max-height for scrollable area */
+        overflow-y: auto; /* Enable vertical scrolling */
+        overflow-x: auto;
+    }
+
+    .styled-select select {
+        width: 100%;
+        font-size: 14px;
+        position: relative;
+        z-index: 1000; /* Ensure dropdown is above other elements */
+    }
+
+    #search-input {
+        width: 100%;
+        padding: 6px;
+        font-size: 14px;
+    }
+
+    table, th, td {
+        font-size: 10px;
+        padding: 4px;
+    }
+
+    button {
+        width: 120px;
+        font-size: 10px;
+    }
+}
+
+/* Landscape Orientation for Small Devices */
+@media (max-width: 576px) and (orientation: landscape) {
+    .logo {
+        height: 50px;
+    }
+
+    h1 {
+        font-size: 18px;
+    }
+
+    .styled-select select {
+        width: 100%;
+        font-size: 14px;
+        position: relative;
+        z-index: 1000; /* Ensure dropdown is above other elements */
+    }
+
+      /* Add styles to make divs scrollable */
+      .scrollable-div {
+        max-height: 1000px; /* Set a max-height for scrollable area */
+        overflow-y: auto; /* Enable vertical scrolling */
+        overflow-x: auto;
+    }
+
+    #search-input {
+        width: 100%;
+        padding: 6px;
+    }
+
+    table, th, td {
+        width: 95%;
+        font-size: 12px;
+        padding: 6px;
+    }
+
+    button {
+        width: 140px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 400px) and (orientation: landscape) {
+    .logo {
+        height: 35px;
+    }
+
+    h1 {
+        font-size: 14px;
+    }
+
+    .styled-select select {
+        width: 100%;
+        font-size: 14px;
+        position: relative;
+        z-index: 1000; /* Ensure dropdown is above other elements */
+    }
+
+    #search-input {
+        width: 100%;
+        padding: 5px;
+        font-size: 12px;
+    }
+
+    .search-container {
+        left: 50%;
+    }
+
+      /* Add styles to make divs scrollable */
+      .scrollable-div {
+        max-height: 1000px; /* Set a max-height for scrollable area */
+        overflow-y: auto; /* Enable vertical scrolling */
+        overflow-x: auto;
+    }
+
+    table, th, td {
+        font-size: 9px;
+        padding: 3px;
     }
 
     table {
         width: 95%;
     }
 
-    th, td {
-        padding: 8px; /* Reduced padding */
-        font-size: 14px;
-    }
-
     button {
-        width: 160px; /* Reduced width */
-        font-size: 13px; /* Reduced font size */
-    }
-}
-
-@media (max-width: 576px) {
-    .logo {
-        height: 50px; /* Reduced height */
-    }
-
-    h1 {
-        font-size: 20px; /* Slightly reduced font size */
-    }
-
-    #search-input {
-        width: 100%;
-        max-width: 100%;
-    }
-
-    table {
-        width: 100%;
-        font-size: 12px;
-    }
-
-    th, td {
-        padding: 6px; /* Reduced padding */
-        font-size: 12px;
-    }
-
-    button {
-        width: 140px; /* Further reduced width */
-        font-size: 12px; /* Further reduced font size */
-    }
-}
-
-@media (max-width: 400px) {
-    .logo {
-        height: 40px; /* Reduced height */
-    }
-
-    h1 {
-        font-size: 16px; /* Further reduced font size */
-    }
-
-    #search-input {
-        width: 100%;
-        padding: 6px; /* Reduced padding */
-        font-size: 14px;
-    }
-
-    table {
-        font-size: 10px;
-    }
-
-    th, td {
-        padding: 4px; /* Further reduced padding */
-    }
-
-    button {
-        width: 120px; /* Reduced width */
-        font-size: 10px; /* Reduced font size */
+        width: 110px;
+        font-size: 9px;
     }
 }

@@ -1004,7 +1004,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     });
             
                     // Append the select element to the cell
-                    cell.appendChild(select);
+                    cell.appendChild(select); 
             
                     // Detect changes and handle state updates
                     select.addEventListener('change', () => {
@@ -1119,31 +1119,44 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     cell.appendChild(carouselDiv);
                 }
     
-                // Handle checkboxes
-                else if (checkbox) {
-                    const checkboxElement = document.createElement('input');
-                    checkboxElement.type = 'checkbox';
-                    checkboxElement.checked = value;
-                    checkboxElement.classList.add('custom-checkbox');
-    
-                    if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
-                        const dropdownField = row.querySelector('select');
-                        if (dropdownField && dropdownField.value === "") {
-                            checkboxElement.disabled = true;
-                            checkboxElement.checked = false;
-                        }
-                    }
-    
-                    checkboxElement.addEventListener('change', function () {
-                        const newValue = checkboxElement.checked;
-                        updatedFields[record.id] = updatedFields[record.id] || {};
-                        updatedFields[record.id][field] = newValue;
-                        hasChanges = true;
-                        showSubmitButton(record.id);
-                    });
-    
-                    cell.appendChild(checkboxElement);
-                }
+           // Handle checkboxes
+else if (checkbox) {
+    const checkboxElement = document.createElement('input');
+    checkboxElement.type = 'checkbox';
+    checkboxElement.checked = value;
+    checkboxElement.classList.add('custom-checkbox');
+
+    // Handle disabling based on the dropdown's value for specific fields
+    if (field === 'Job Completed') {
+        const dropdownField = row.querySelector('select[data-field="sub"]'); // Target the 'sub' field dropdown
+        if (dropdownField && dropdownField.value === "") {
+            checkboxElement.disabled = true; // Disable if no subcontractor is selected
+            checkboxElement.checked = false;
+        }
+    }
+
+    // For the "Subcontractor Not Needed" checkbox
+    if (field === 'Subcontractor Not Needed') {
+        const subcontractorDropdown = row.querySelector('select[data-field="sub"]'); // Target the 'sub' field dropdown
+        if (subcontractorDropdown && subcontractorDropdown.value !== "Select a Subcontractor...") {
+            checkboxElement.disabled = true; // Disable if a subcontractor other than "Select a Subcontractor..." is selected
+            checkboxElement.checked = false; // Uncheck if a subcontractor is selected
+        } else {
+            checkboxElement.disabled = false; // Enable if "Select a Subcontractor..." is selected
+        }
+    }
+
+    checkboxElement.addEventListener('change', function () {
+        const newValue = checkboxElement.checked;
+        updatedFields[record.id] = updatedFields[record.id] || {};
+        updatedFields[record.id][field] = newValue;
+        hasChanges = true;
+        showSubmitButton(record.id);
+    });
+
+    cell.appendChild(checkboxElement);
+}
+
     
                 // Handle text and links
                 else if (link) {

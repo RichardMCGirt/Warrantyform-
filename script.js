@@ -942,68 +942,59 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 cell.style.wordWrap = 'break-word';
                 cell.style.maxWidth = '200px';
                 cell.style.position = 'relative';
-    
             
                 if (dropdown || field === 'sub') {
                     const select = document.createElement('select');
                     select.classList.add('styled-select');
-                
-                    // Get Vanir Branch value from column 1 (field 'b')
-                    const vanirBranchValue = fields['b'];  // Get the 'b' field value (Vanir Branch) for filtering
-                    console.log(`[Record ID: ${record.id}] Vanir Branch: ${vanirBranchValue}`);
-                
-                    // Filter subOptions based on Vanir Branch (only if the field is 'sub')
+            
+                    // Only filter subcontractor options based on Vanir Branch for the 'sub' field
                     let filteredOptions = [];
                     if (field === 'sub') {
+                        const vanirBranchValue = fields['b'];  // Get Vanir Branch value for filtering
+                        console.log(`[Record ID: ${record.id}] Vanir Branch: ${vanirBranchValue}`);
+                        
                         filteredOptions = subOptions.filter(sub => sub.vanirOffice === vanirBranchValue);
-                
-                        // Enhanced log: If no filtered options are found
+            
                         if (filteredOptions.length === 0) {
                             console.warn(`[Record ID: ${record.id}] No subcontractors found for Vanir Branch: "${vanirBranchValue}".`);
-                        } else {
-                            // Log filtered options in a structured way
-                            console.groupCollapsed(`[Record ID: ${record.id}] Filtered Subcontractors for Vanir Branch: "${vanirBranchValue}"`);
-                            console.table(filteredOptions.map(sub => ({ Name: sub.name, 'Vanir Branch': sub.vanirOffice })));
-                            console.groupEnd();
                         }
                     } else {
-                        filteredOptions = options;  // Use hardcoded options for other dropdowns
-                        console.log(`[Record ID: ${record.id}] Using hardcoded options for non-sub field:`, filteredOptions);
+                        // For non-'sub' fields, use the provided hardcoded options
+                        filteredOptions = options;
                     }
-
-                    
-
-    console.log(`Filtered Sub Options for Vanir Branch ${vanirBranchValue}:`, filteredOptions);
-
-    // Ensure the first option is always an empty value
-    const emptyOption = document.createElement('option');
-    emptyOption.value = '';
-    emptyOption.textContent = 'Select a Subcontractor...';
-    select.appendChild(emptyOption);
-
-    // Sort the filtered options alphabetically
-    filteredOptions.sort((a, b) => {
-        const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase(); // Ensure valid string comparison
-        const nameB = b.name ? b.name.toLowerCase() : b.toLowerCase();
-        return nameA.localeCompare(nameB);
-    });
-
-    // Add the filtered and sorted options to the dropdown
-  // Populate dropdown with filtered options
-filteredOptions.forEach(option => {
-    const optionElement = document.createElement('option');
-    optionElement.value = option.name;  // Set the option value
-    optionElement.textContent = option.name;  // Set the display text
-
-    if (option.name === value) {
-        optionElement.selected = true;  // Pre-select if it matches the current value
-    }
-
-    select.appendChild(optionElement);  // Add option to the select element
-});
-
-
-    cell.appendChild(select);
+            
+                    console.log(`Filtered Options for Field "${field}" (Vanir Branch: ${fields['b']}):`, filteredOptions);
+            
+                    // Ensure the first option is always a placeholder (empty)
+                    const emptyOption = document.createElement('option');
+                    emptyOption.value = '';
+                    emptyOption.textContent = 'Select an Option...';
+                    select.appendChild(emptyOption);
+            
+                    // Sort the filtered options alphabetically
+                    filteredOptions.sort((a, b) => {
+                        const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase();  // Ensure valid comparison for both cases
+                        const nameB = b.name ? b.name.toLowerCase() : b.toLowerCase();
+                        return nameA.localeCompare(nameB);
+                    });
+            
+                    // Add the filtered and sorted options to the dropdown
+                    filteredOptions.forEach(option => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option.name || option;  // Ensure compatibility with both hardcoded and dynamic options
+                        optionElement.textContent = option.name || option;
+            
+                        // Pre-select if it matches the current value
+                        if (option.name === value || option === value) {
+                            optionElement.selected = true;
+                        }
+            
+                        select.appendChild(optionElement);
+                    });
+            
+                    // Append the select element to the cell
+                    cell.appendChild(select);
+            
 
 
 

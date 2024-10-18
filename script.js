@@ -942,7 +942,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Completed Pictures', value: fields['Completed Pictures'] || [], image: true, imageField: 'Completed Pictures' },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
                 { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true }
-    
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
@@ -967,108 +966,76 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 cell.style.wordWrap = 'break-word';
                 cell.style.maxWidth = '200px';
                 cell.style.position = 'relative';
-            
-                // Handle dropdowns for 'sub' and other fields
-                if (dropdown || field === 'sub') {
-                    const select = document.createElement('select');
-                    select.classList.add('styled-select');
-                
-                    // Get the Vanir Branch value from column index 1 (assuming field 'b' holds the value)
-                    const vanirBranchValue = record.fields['b'];  // Adjust 'b' to the actual field name if necessary
-                    console.log(`Vanir Branch Value for record ID ${record.id}:`, vanirBranchValue);
-                
-                    // Use subOptions for 'Subcontractor Company Name', otherwise use hardcoded options
-                    let dropdownOptions = field === 'Subcontractor Company Name' ? subOptions : options;
-                    console.log(`Original Sub Options Count: ${dropdownOptions.length}`);  // Log the original count of subOptions
-                
-                    // Sort options alphabetically (case insensitive)
-                    dropdownOptions.sort((a, b) => {
-                        const nameA = a.name ? a.name.toLowerCase() : ''; // Ensure a valid string
-                        const nameB = b.name ? b.name.toLowerCase() : ''; // Ensure a valid string
-                        return nameA.localeCompare(nameB); // Compare the names
-                    });
-                    console.log('Sorted Sub Options:', dropdownOptions);
-                    // Check the structure of subOptions to ensure filtering on the correct field
-                    console.log('Structure of subOptions:', subOptions);
-            
-                    // Filter subOptions to only include those where Vanir Office matches Vanir Branch
-                    if (field === 'Subcontractor Company Name') {
-                        console.log(`Filtering subOptions for Vanir Branch value '${vanirBranchValue}'`);
-            
-                        dropdownOptions = dropdownOptions.filter(sub => {
-                            console.log(`Subcontractor Company: ${sub.name}, vanirOffice: ${sub.vanirOffice}`);
-                            return sub.vanirOffice === vanirBranchValue; // Check for matches
-                        });
-                        console.log(`Filtered Sub Options Count: ${dropdownOptions.length}`);  // Log the count of filtered options
-                    }
-            
+    
+            // Handle dropdowns for 'sub' and other fields
+if (dropdown || field === 'sub') {
+    const select = document.createElement('select');
+    select.classList.add('styled-select');
 
-            
-                    // Ensure the first option is always an empty value
-                    const emptyOption = document.createElement('option');
-                    emptyOption.value = '';
-                    emptyOption.textContent = 'Select a Subcontractor...';
-                    select.appendChild(emptyOption);
-                    console.log('Added empty option to dropdown.');
-            
-                    // Counter for added options
-                    let addedOptionsCount = 0;
-            
-                    // Add the filtered and sorted options to the dropdown
-                    dropdownOptions.forEach(option => {
-                        const optionElement = document.createElement('option');
-                        
-                        // Since option is a string, use it directly
-                        const displayText = option || 'Select a drop down ...';  // Use the string value or fallback to 'Unnamed Option'
-                        optionElement.value = displayText;  // Option value
-                        optionElement.textContent = displayText;  // Option text to display
+    // Use subOptions for 'Subcontractor Company Name', otherwise use hardcoded options
+    let dropdownOptions = field === 'Subcontractor Company Name' ? subOptions : options;
+    console.log(`Original Sub Options Count: ${dropdownOptions.length}`);
+
+    // Sort options alphabetically (case insensitive)
+    dropdownOptions.sort((a, b) => {
+        const nameA = a.name ? a.name.toLowerCase() : ''; // Ensure a valid string
+        const nameB = b.name ? b.name.toLowerCase() : ''; // Ensure a valid string
+        return nameA.localeCompare(nameB); // Compare the names alphabetically
+    });
+    console.log('Sorted Sub Options:', dropdownOptions);
+
+
+
+                // Ensure the first option is always an empty value
+                const emptyOption = document.createElement('option');
+                emptyOption.value = '';
+                emptyOption.textContent = 'Select a Subcontractor...';
+                select.appendChild(emptyOption);
+
+                // Add the filtered options with proper value display
+                dropdownOptions.forEach(option => {
+                    const optionElement = document.createElement('option');
                     
-                        // Select the matching value if it exists
-                        if (displayText === value) {
-                            optionElement.selected = true;
-                            console.log(`Selected option '${displayText}' as it matches the current value.`);
-                        }
-                    
-                        console.log('Appending option to dropdown:', displayText);
-                        select.appendChild(optionElement);
-                        addedOptionsCount++; // Increment the counter for each added option
-                  
-                    
-                    console.log(`Total options added to dropdown: ${addedOptionsCount}`);
-                    
-                        // Optionally style 'Billable/ Non Billable' dropdown
-                        if (field === 'Billable/ Non Billable') {
-                            if (option === 'Billable') {
-                                optionElement.style.backgroundColor = '#ffeb3b';
-                                optionElement.style.color = '#000';
-                            } else if (option === 'Non Billable') {
-                                optionElement.style.backgroundColor = '#03a9f4';
-                                optionElement.style.color = '#fff';
-                            }
-                        }
+                    // Use option.name if available, otherwise fall back to a default string
+                    const displayText = option.name || option || 'Unnamed Option';  
+                    optionElement.value = displayText;  
+                    optionElement.textContent = displayText;  
+
+                    // Select the matching value if it exists
+                    if (displayText === value) {
+                        optionElement.selected = true;
+                    }
+                    select.appendChild(optionElement);
+                });
+
+                     // Detect changes and update checkbox state
+                select.addEventListener('change', () => {
+                    const newValue = select.value;
+                    updatedFields[record.id] = updatedFields[record.id] || {};
+                    updatedFields[record.id][field] = newValue;
+                    hasChanges = true;
+
+                    showSubmitButton(record.id);
+
+                    const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
+                    if (fieldReviewCheckbox) {
+                        fieldReviewCheckbox.disabled = (newValue === "");
+                        fieldReviewCheckbox.checked = false;  
+                    }
+                });
     
-                        if (option === value) optionElement.selected = true;
-                        select.appendChild(optionElement);
-                    });
-    
-                    select.addEventListener('change', () => {
-                        const newValue = select.value;
-                        updatedFields[record.id] = updatedFields[record.id] || {};
-                        updatedFields[record.id][field] = newValue;
-                        hasChanges = true;
-                        showSubmitButton(record.id);
-    
-                        // Enable or disable checkbox based on the selected value
-                        const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
-                        if (fieldReviewCheckbox) {
-                            fieldReviewCheckbox.disabled = !newValue;  // Disable checkbox if no value selected
-                        }
-                    });
-    
-                    cell.appendChild(select);
+                      // Initially disable checkbox if placeholder is selected
+                const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
+                if (fieldReviewCheckbox && value === "") {
+                    fieldReviewCheckbox.disabled = true;
+                    fieldReviewCheckbox.checked = false;
                 }
+
+                cell.appendChild(select);
+            }
+
     
-                // Handle image carousel
+                // Handle images
                 else if (image) {
                     const images = Array.isArray(fields[field]) ? fields[field] : [];
                     const carouselDiv = document.createElement('div');
@@ -1114,7 +1081,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                             carouselDiv.appendChild(nextButton);
                         }
     
-                        // Add Delete Button for images
+                        // Delete button for images
                         const deleteButton = document.createElement('button');
                         deleteButton.innerHTML = '🗑️';
                         deleteButton.classList.add('delete-button');
@@ -1162,10 +1129,11 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     checkboxElement.classList.add('custom-checkbox');
     
                     if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
-                        checkboxElement.disabled = false;
-                    } else {
-                        const billableCell = row.querySelector('td[data-field="Billable/ Non Billable"] select');
-                        checkboxElement.disabled = !billableCell || !billableCell.value;
+                        const dropdownField = row.querySelector('select');
+                        if (dropdownField && dropdownField.value === "") {
+                            checkboxElement.disabled = true;
+                            checkboxElement.checked = false;
+                        }
                     }
     
                     checkboxElement.addEventListener('change', function () {
@@ -1219,6 +1187,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             tbody.appendChild(row);
         });
     }
+    
     
 
     async function deleteImageFromAirtable(recordId, imageId, imageField) {

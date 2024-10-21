@@ -909,11 +909,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     }
     
     
-    
-    
-    
-
-
     async function displayData(records, tableSelector, isSecondary = false) {
         const tbody = document.querySelector(`${tableSelector} tbody`);
         tbody.innerHTML = '';
@@ -981,58 +976,67 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             
                     console.log(`Filtered Options for Field "${field}" (Vanir Branch: ${fields['b']}):`, filteredOptions);
             
-        // Custom placeholder for each field
-        let placeholderText = 'Select an Option...'; // Default placeholder
-        if (field === 'sub') {
-            placeholderText = 'Select a Subcontractor...';
-        } else if (field === 'Billable/ Non Billable') {
-            placeholderText = 'Select Billable Status...';
-        } else if (field === 'Billable Reason (If Billable)') {
-            placeholderText = 'Select a Reason...';
-        }
-                   
-                         // Create and append a placeholder option
-                         const placeholderOption = document.createElement('option');
-                         placeholderOption.value = '';
-                         placeholderOption.textContent = placeholderText;
-                         select.appendChild(placeholderOption);
-                     
-                         // Check if there's a previously selected subcontractor in the 'Subcontractor' field
-                         const selectedSubcontractor = fields['Subcontractor'] || '';
-                     
-                         // Populate the dropdown with filtered options
-                         filteredOptions.forEach(option => {
-                             const optionElement = document.createElement('option');
-                             optionElement.value = option.name;
-                             optionElement.textContent = option.name;
-                     
-                             // Pre-select the previously chosen subcontractor if it matches the current option
-                             if (option.name === selectedSubcontractor) {
-                                 optionElement.selected = true;
-                             }
-                     
-                             select.appendChild(optionElement);
-                         });
-                 
-                         // Append the select element to the cell
-                         cell.appendChild(select); 
-                 
-                         // Detect changes and handle state updates
-                         select.addEventListener('change', () => {
-                             const newValue = select.value;
-                             updatedFields[record.id] = updatedFields[record.id] || {};
-                             updatedFields[record.id][field] = newValue;
-                             hasChanges = true;
-                 
-                             showSubmitButton(record.id);
-     
-            
-                        const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
-                        if (fieldReviewCheckbox) {
-                            fieldReviewCheckbox.disabled = (newValue === "");
-                            fieldReviewCheckbox.checked = false;
-                        }
-                    });
+      // Custom placeholder for each field
+let placeholderText = 'Select an Option...'; // Default placeholder
+if (field === 'sub') {
+    placeholderText = 'Select a Subcontractor...';
+} else if (field === 'Billable/ Non Billable') {
+    placeholderText = 'Select Billable Status...';
+} else if (field === 'Billable Reason (If Billable)') {
+    placeholderText = 'Select a Reason...';
+}
+
+// Create and append a placeholder option
+const placeholderOption = document.createElement('option');
+placeholderOption.value = '';
+placeholderOption.textContent = placeholderText;
+select.appendChild(placeholderOption);
+
+// Check if there's a previously selected subcontractor in the 'Subcontractor' field
+const selectedSubcontractor = fields['Subcontractor'] || '';
+
+// Sort the filtered options alphabetically
+filteredOptions.sort((a, b) => {
+    const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase();  // Ensure valid comparison for both cases
+    const nameB = b.name ? b.name.toLowerCase() : b.toLowerCase();
+    return nameA.localeCompare(nameB);
+});
+
+// Populate the dropdown with filtered options
+filteredOptions.forEach(option => {
+    const optionElement = document.createElement('option');
+    optionElement.value = option.name || option;  // Ensure compatibility with both hardcoded and dynamic options
+    optionElement.textContent = option.name || option;
+
+    // Pre-select the previously chosen subcontractor if it matches the current option
+    if (option.name === selectedSubcontractor || option === selectedSubcontractor) {
+        optionElement.selected = true;
+    }
+
+    select.appendChild(optionElement);
+});
+
+// Append the select element to the cell
+cell.appendChild(select);
+
+// Detect changes and handle state updates
+select.addEventListener('change', () => {
+    const newValue = select.value;
+    updatedFields[record.id] = updatedFields[record.id] || {};
+    updatedFields[record.id][field] = newValue;
+    hasChanges = true;
+
+    showSubmitButton(record.id);
+
+    // Enable or disable the checkbox based on selection
+    const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
+    if (fieldReviewCheckbox) {
+        fieldReviewCheckbox.disabled = (newValue === "");
+        fieldReviewCheckbox.checked = false;
+    }
+});
+
+
     
                       // Initially disable checkbox if placeholder is selected
                 const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
@@ -1210,7 +1214,6 @@ else if (checkbox) {
             tbody.appendChild(row);
         });
     }
-    
     
 
     async function deleteImageFromAirtable(recordId, imageId, imageField) {

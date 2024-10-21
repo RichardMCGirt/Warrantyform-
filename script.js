@@ -962,15 +962,15 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 if (dropdown || field === 'sub') {
                     const select = document.createElement('select');
                     select.classList.add('styled-select');
-                
-                    // Filter subcontractor options based on Vanir Branch for the 'sub' field
+            
+                    // Only filter subcontractor options based on Vanir Branch for the 'sub' field
                     let filteredOptions = [];
                     if (field === 'sub') {
                         const vanirBranchValue = fields['b'];  // Get Vanir Branch value for filtering
                         console.log(`[Record ID: ${record.id}] Vanir Branch: ${vanirBranchValue}`);
                         
                         filteredOptions = subOptions.filter(sub => sub.vanirOffice === vanirBranchValue);
-                
+            
                         if (filteredOptions.length === 0) {
                             console.warn(`[Record ID: ${record.id}] No subcontractors found for Vanir Branch: "${vanirBranchValue}".`);
                         }
@@ -978,39 +978,44 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                         // For non-'sub' fields, use the provided hardcoded options
                         filteredOptions = options;
                     }
-                
+            
                     console.log(`Filtered Options for Field "${field}" (Vanir Branch: ${fields['b']}):`, filteredOptions);
-                
-                    // Custom placeholder for each field
-                    let placeholderText = 'Select an Option...'; // Default placeholder
-                    if (field === 'sub') {
-                        placeholderText = 'Select a Subcontractor...';
-                    } else if (field === 'Billable/ Non Billable') {
-                        placeholderText = 'Select Billable Status...';
-                    } else if (field === 'Billable Reason (If Billable)') {
-                        placeholderText = 'Select a Reason...';
-                    }
-                
-                    // Create and append a placeholder option
-                    const placeholderOption = document.createElement('option');
-                    placeholderOption.value = '';
-                    placeholderOption.textContent = placeholderText;
-                    select.appendChild(placeholderOption);
-                
-                    // Check if there's a previously selected subcontractor in the 'Subcontractor' field
-                    const selectedSubcontractor = fields['Subcontractor'] || '';
-                
-                    // Populate the dropdown with filtered options
+            
+        // Custom placeholder for each field
+        let placeholderText = 'Select an Option...'; // Default placeholder
+        if (field === 'sub') {
+            placeholderText = 'Select a Subcontractor...';
+        } else if (field === 'Billable/ Non Billable') {
+            placeholderText = 'Select Billable Status...';
+        } else if (field === 'Billable Reason (If Billable)') {
+            placeholderText = 'Select a Reason...';
+        }
+                   
+        // Ensure the first option is always a placeholder (empty)
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = placeholderText;
+        select.appendChild(emptyOption);
+
+            
+                    // Sort the filtered options alphabetically
+                    filteredOptions.sort((a, b) => {
+                        const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase();  // Ensure valid comparison for both cases
+                        const nameB = b.name ? b.name.toLowerCase() : b.toLowerCase();
+                        return nameA.localeCompare(nameB);
+                    });
+            
+                    // Add the filtered and sorted options to the dropdown
                     filteredOptions.forEach(option => {
                         const optionElement = document.createElement('option');
-                        optionElement.value = option.name;
-                        optionElement.textContent = option.name;
-                
-                        // Pre-select the previously chosen subcontractor if it matches the current option
-                        if (option.name === selectedSubcontractor) {
+                        optionElement.value = option.name || option;  // Ensure compatibility with both hardcoded and dynamic options
+                        optionElement.textContent = option.name || option;
+            
+                        // Pre-select if it matches the current value
+                        if (option.name === value || option === value) {
                             optionElement.selected = true;
                         }
-                
+            
                         select.appendChild(optionElement);
                     });
             
@@ -1405,16 +1410,20 @@ let isSubmitting = false;
 
 // Function to handle changes and submit them
 async function submitChanges() {
-    if (!hasChanges || !activeRecordId) {
+    if (!hasChanges || !activeRecordId || isSubmitting) {
         showToast('No changes to submit.');
         hideSubmitButton();  // Hide the button if no changes detected
         return;
     }
 
+    // Prevent multiple submissions
+    isSubmitting = true;
+
     // Show confirmation to the user
     const userConfirmed = confirm("Are you sure you want to submit these changes?");
     if (!userConfirmed) {
         showToast('Submission canceled.');
+        isSubmitting = false; // Reset flag
         return;
     }
 
@@ -1423,12 +1432,11 @@ async function submitChanges() {
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
 
-        // Check if we are updating the Subcontractor field
+        // Get all fields to update for the active record
         const fieldsToUpdate = updatedFields[activeRecordId];
-        if (fieldsToUpdate['sub']) {
-            // Submit the subcontractor field value
-            await updateRecord(activeRecordId, { 'Subcontractor': fieldsToUpdate['sub'] });
-        }
+
+        // Submit all the updated fields
+        await updateRecord(activeRecordId, fieldsToUpdate);
 
         // Show a success message
         showToast('Changes submitted successfully!');
@@ -1439,7 +1447,7 @@ async function submitChanges() {
         activeRecordId = null;
         
         // Fetch and refresh data
-      //  await fetchAllData();
+        await fetchAllData();
     } catch (error) {
         console.error('Error during submission:', error);
         showToast('Error submitting changes.');
@@ -1448,17 +1456,18 @@ async function submitChanges() {
         mainContent.style.display = 'block';
         secondaryContent.style.display = 'block';
         hideSubmitButton();  // Hide the button after submission
+        isSubmitting = false; // Reset flag
     }
 }
 
-
-    // Event listener for dynamic submit button
+// Event listener for dynamic submit button
 submitButton.addEventListener('click', function () {
     // Ensure that submitChanges is called only once
     if (!isSubmitting) {
         submitChanges();
     }
 });
+
     
 
     document.addEventListener('DOMContentLoaded', function () {

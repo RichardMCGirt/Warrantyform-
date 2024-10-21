@@ -991,45 +991,41 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             placeholderText = 'Select a Reason...';
         }
                    
-        // Ensure the first option is always a placeholder (empty)
-        const emptyOption = document.createElement('option');
-        emptyOption.value = '';
-        emptyOption.textContent = placeholderText;
-        select.appendChild(emptyOption);
-
-            
-                    // Sort the filtered options alphabetically
-                    filteredOptions.sort((a, b) => {
-                        const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase();  // Ensure valid comparison for both cases
-                        const nameB = b.name ? b.name.toLowerCase() : b.toLowerCase();
-                        return nameA.localeCompare(nameB);
-                    });
-            
-                    // Add the filtered and sorted options to the dropdown
-                    filteredOptions.forEach(option => {
-                        const optionElement = document.createElement('option');
-                        optionElement.value = option.name || option;  // Ensure compatibility with both hardcoded and dynamic options
-                        optionElement.textContent = option.name || option;
-            
-                        // Pre-select if it matches the current value
-                        if (option.name === value || option === value) {
-                            optionElement.selected = true;
-                        }
-            
-                        select.appendChild(optionElement);
-                    });
-            
-                    // Append the select element to the cell
-                    cell.appendChild(select); 
-            
-                    // Detect changes and handle state updates
-                    select.addEventListener('change', () => {
-                        const newValue = select.value;
-                        updatedFields[record.id] = updatedFields[record.id] || {};
-                        updatedFields[record.id][field] = newValue;
-                        hasChanges = true;
-            
-                        showSubmitButton(record.id);
+                         // Create and append a placeholder option
+                         const placeholderOption = document.createElement('option');
+                         placeholderOption.value = '';
+                         placeholderOption.textContent = placeholderText;
+                         select.appendChild(placeholderOption);
+                     
+                         // Check if there's a previously selected subcontractor in the 'Subcontractor' field
+                         const selectedSubcontractor = fields['Subcontractor'] || '';
+                     
+                         // Populate the dropdown with filtered options
+                         filteredOptions.forEach(option => {
+                             const optionElement = document.createElement('option');
+                             optionElement.value = option.name;
+                             optionElement.textContent = option.name;
+                     
+                             // Pre-select the previously chosen subcontractor if it matches the current option
+                             if (option.name === selectedSubcontractor) {
+                                 optionElement.selected = true;
+                             }
+                     
+                             select.appendChild(optionElement);
+                         });
+                 
+                         // Append the select element to the cell
+                         cell.appendChild(select); 
+                 
+                         // Detect changes and handle state updates
+                         select.addEventListener('change', () => {
+                             const newValue = select.value;
+                             updatedFields[record.id] = updatedFields[record.id] || {};
+                             updatedFields[record.id][field] = newValue;
+                             hasChanges = true;
+                 
+                             showSubmitButton(record.id);
+     
             
                         const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
                         if (fieldReviewCheckbox) {
@@ -1408,22 +1404,18 @@ imageViewerModal.addEventListener('click', function(event) {
 // Flag to prevent multiple submissions
 let isSubmitting = false;
 
-// Function to handle changes and submit them
+/// Function to handle changes and submit them
 async function submitChanges() {
-    if (!hasChanges || !activeRecordId || isSubmitting) {
+    if (!hasChanges || !activeRecordId) {
         showToast('No changes to submit.');
         hideSubmitButton();  // Hide the button if no changes detected
         return;
     }
 
-    // Prevent multiple submissions
-    isSubmitting = true;
-
     // Show confirmation to the user
     const userConfirmed = confirm("Are you sure you want to submit these changes?");
     if (!userConfirmed) {
         showToast('Submission canceled.');
-        isSubmitting = false; // Reset flag
         return;
     }
 
@@ -1432,11 +1424,12 @@ async function submitChanges() {
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
 
-        // Get all fields to update for the active record
+        // Check if we are updating the Subcontractor field
         const fieldsToUpdate = updatedFields[activeRecordId];
-
-        // Submit all the updated fields
-        await updateRecord(activeRecordId, fieldsToUpdate);
+        if (fieldsToUpdate['sub']) {
+            // Submit the subcontractor field value
+            await updateRecord(activeRecordId, { 'Subcontractor': fieldsToUpdate['sub'] });
+        }
 
         // Show a success message
         showToast('Changes submitted successfully!');
@@ -1456,9 +1449,10 @@ async function submitChanges() {
         mainContent.style.display = 'block';
         secondaryContent.style.display = 'block';
         hideSubmitButton();  // Hide the button after submission
-        isSubmitting = false; // Reset flag
     }
 }
+
+
 
 // Event listener for dynamic submit button
 submitButton.addEventListener('click', function () {

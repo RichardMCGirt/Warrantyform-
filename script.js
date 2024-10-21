@@ -322,52 +322,51 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
     async function refreshDropboxToken() {
         console.log('Attempting to refresh Dropbox token...');
-        console.log(`Using App Key: ${dropboxAppKey}, App Secret: ${dropboxAppSecret}, Refresh Token: ${dropboxRefreshToken}`);
-
+        showToast('Refreshing Dropbox token...');  // Notify the user that the token is being refreshed
+    
         if (!dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
             console.error('Dropbox credentials are not available.');
+            showToast('Dropbox credentials are missing. Token refresh failed.');
             return;
         }
-
+    
         const tokenUrl = 'https://api.dropboxapi.com/oauth2/token';
-
+    
         const headers = new Headers();
         headers.append('Authorization', 'Basic ' + btoa(`${dropboxAppKey}:${dropboxAppSecret}`));
         headers.append('Content-Type', 'application/x-www-form-urlencoded');
-
+    
         const body = new URLSearchParams();
         body.append('grant_type', 'refresh_token');
         body.append('refresh_token', dropboxRefreshToken);
-
-        console.log('Sending request to Dropbox for token refresh...');
-        console.log(`Request Body: ${body.toString()}`);
-
+    
         try {
             const response = await fetch(tokenUrl, {
                 method: 'POST',
                 headers: headers,
                 body: body
             });
-
-            console.log(`Dropbox token refresh response status: ${response.status}`);
-
+    
             if (!response.ok) {
                 const errorResponse = await response.json();
                 console.error(`Error refreshing Dropbox token: ${response.status} ${response.statusText}`, errorResponse);
+                showToast('Error refreshing Dropbox token.');
                 return;
             }
-
+    
             const data = await response.json();
             dropboxAccessToken = data.access_token; // Update the access token with the new one
             console.log('Dropbox token refreshed successfully:', dropboxAccessToken);
-
+            showToast('Dropbox token refreshed successfully.');
+    
             // Update the new token in Airtable
             await updateDropboxTokenInAirtable(dropboxAccessToken);
-            console.log('Dropbox token refreshed and updated in Airtable.');
         } catch (error) {
             console.error('Error refreshing Dropbox token:', error);
+            showToast('Error refreshing Dropbox token.');
         }
     }
+    
 
     async function fetchRecordsFromAirtable() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
@@ -393,12 +392,13 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
     async function updateDropboxTokenInAirtable(token) {
         console.log('Updating Dropbox token in Airtable...');
-
+        showToast('Updating Dropbox token in Airtable...');  // Notify the user that the token is being updated
+    
         try {
-            const allRecords = await fetchRecordsFromAirtable(); // Make sure this fetches all necessary records
+            const allRecords = await fetchRecordsFromAirtable(); // Fetch all necessary records
             const updatePromises = allRecords.map(record => {
                 const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-                
+    
                 return fetch(url, {
                     method: 'PATCH',
                     headers: {
@@ -417,7 +417,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     })
                 });
             });
-
+    
             const responses = await Promise.all(updatePromises);
             responses.forEach((response, index) => {
                 if (!response.ok) {
@@ -426,11 +426,14 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     console.log(`Record ${allRecords[index].id} updated successfully.`);
                 }
             });
-
+    
+            showToast('Dropbox token updated in Airtable successfully.');
         } catch (error) {
             console.error('Error updating Dropbox token in Airtable:', error);
+            showToast('Error updating Dropbox token in Airtable.');
         }
     }
+    
 
     // Create file input dynamically
     const fileInput = document.createElement('input');
@@ -1407,7 +1410,7 @@ imageViewerModal.addEventListener('click', function(event) {
 // Flag to prevent multiple submissions
 let isSubmitting = false;
 
-/// Function to handle changes and submit them
+// Function to handle changes and submit them
 async function submitChanges() {
     if (!hasChanges || !activeRecordId) {
         showToast('No changes to submit.');
@@ -1427,11 +1430,24 @@ async function submitChanges() {
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
 
-        // Check if we are updating the Subcontractor field
+        // Get all fields to update for the active record
         const fieldsToUpdate = updatedFields[activeRecordId];
+        
+        // Check if we are updating the Subcontractor field
         if (fieldsToUpdate['sub']) {
-            // Submit the subcontractor field value
+            // Submit the subcontractor field value separately
             await updateRecord(activeRecordId, { 'Subcontractor': fieldsToUpdate['sub'] });
+        }
+        
+        // Submit all other updated fields
+        if (Object.keys(fieldsToUpdate).length > 0) {
+            // Remove the 'sub' field if it was already submitted
+            delete fieldsToUpdate['sub'];
+            
+            // Submit the remaining fields (e.g., checkboxes and other fields)
+            if (Object.keys(fieldsToUpdate).length > 0) {
+                await updateRecord(activeRecordId, fieldsToUpdate);
+            }
         }
 
         // Show a success message
@@ -1441,7 +1457,7 @@ async function submitChanges() {
         updatedFields = {};
         hasChanges = false;
         activeRecordId = null;
-        
+
         // Fetch and refresh data
         await fetchAllData();
     } catch (error) {
@@ -1454,6 +1470,7 @@ async function submitChanges() {
         hideSubmitButton();  // Hide the button after submission
     }
 }
+
 
 
 
@@ -1681,38 +1698,6 @@ document.body.appendChild(dynamicButtonsContainer);
     });
 
 
-
-    async function fetchRecordFields(recordId) {
-        let records = [];
-        let offset = null;
-        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-        
-        try {
-            do {
-                const fetchUrl = `${url}?${offset ? `offset=${offset}` : ''}`;
-                const response = await fetch(fetchUrl, {
-                    headers: {
-                        Authorization: `Bearer ${airtableApiKey}`
-                    }
-                });
-    
-                if (!response.ok) {
-                    throw new Error(`Error fetching records: ${response.status} ${response.statusText}`);
-                }
-    
-                const data = await response.json();
-                records = records.concat(data.records); // Accumulate records
-                offset = data.offset; // Airtable pagination: get the next offset
-    
-            } while (offset); // Continue if there's another page of records
-    
-            console.log('All records fetched:', records);
-            return records;
-        } catch (error) {
-            console.error('Error fetching records with offset:', error);
-            return [];
-        }
-    }
     
    // Function to update a record in Airtable
 async function updateRecord(recordId, fields) {

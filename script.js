@@ -1264,7 +1264,7 @@ else if (checkbox) {
                     imageElement.remove();
     
                     // Refresh the data to reflect the changes
-                    await fetchAllData();
+                  //  await fetchAllData();
                 }
             } catch (error) {
                 console.error('Error updating record in Airtable:', error);

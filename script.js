@@ -1407,8 +1407,8 @@ imageViewerModal.addEventListener('click', function(event) {
         hasChanges = false; // Reset changes flag
     }
     
-// Flag to prevent multiple submissions
-let isSubmitting = false;
+/// Flag to prevent multiple confirmations
+let confirmationShown = false;
 
 // Function to handle changes and submit them
 async function submitChanges() {
@@ -1418,11 +1418,15 @@ async function submitChanges() {
         return;
     }
 
-    // Show confirmation to the user
-    const userConfirmed = confirm("Are you sure you want to submit these changes?");
-    if (!userConfirmed) {
-        showToast('Submission canceled.');
-        return;
+    // Only show the confirmation once
+    if (!confirmationShown) {
+        const userConfirmed = confirm("Are you sure you want to submit these changes?");
+        if (!userConfirmed) {
+            showToast('Submission canceled.');
+            confirmationShown = false;  // Reset flag in case of cancellation
+            return;
+        }
+        confirmationShown = true;  // Set the flag to avoid re-confirmation
     }
 
     try {
@@ -1438,7 +1442,7 @@ async function submitChanges() {
             // Submit the subcontractor field value separately
             await updateRecord(activeRecordId, { 'Subcontractor': fieldsToUpdate['sub'] });
         }
-        
+
         // Submit all other updated fields
         if (Object.keys(fieldsToUpdate).length > 0) {
             // Remove the 'sub' field if it was already submitted
@@ -1457,12 +1461,14 @@ async function submitChanges() {
         updatedFields = {};
         hasChanges = false;
         activeRecordId = null;
+        confirmationShown = false;  // Reset flag after successful submission
 
         // Fetch and refresh data
         await fetchAllData();
     } catch (error) {
         console.error('Error during submission:', error);
         showToast('Error submitting changes.');
+        confirmationShown = false;  // Reset flag in case of error
     } finally {
         // Show content after submission
         mainContent.style.display = 'block';
@@ -1471,13 +1477,10 @@ async function submitChanges() {
     }
 }
 
-
-
-
 // Event listener for dynamic submit button
 submitButton.addEventListener('click', function () {
-    // Ensure that submitChanges is called only once
-    if (!isSubmitting) {
+    // Ensure that submitChanges is called only once and no additional confirmations are shown
+    if (!isSubmitting && !confirmationShown) {
         submitChanges();
     }
 });

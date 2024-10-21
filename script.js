@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     let debounceTimeout = null; // Declare debounce timer in the global scope
 
 
-    
+    fetchAirtableFields();
     // Fetch Dropbox credentials from Airtable
  fetchDropboxCredentials();
 
@@ -851,6 +851,22 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     // Fetch data and call syncTableWidths after DOM content is ready
     fetchAllData();
 
+    async function fetchAirtableFields() {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?maxRecords=1`;
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
+            });
+    
+            const data = await response.json();
+            console.log('Available fields in the first record:', data.records[0].fields);
+        } catch (error) {
+            console.error('Error fetching fields from Airtable:', error);
+        }
+    }
+   
+    
+
     async function fetchAirtableSubOptionsFromDifferentTable() {
         let records = [];
         let offset = null;
@@ -946,15 +962,15 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 if (dropdown || field === 'sub') {
                     const select = document.createElement('select');
                     select.classList.add('styled-select');
-            
-                    // Only filter subcontractor options based on Vanir Branch for the 'sub' field
+                
+                    // Filter subcontractor options based on Vanir Branch for the 'sub' field
                     let filteredOptions = [];
                     if (field === 'sub') {
                         const vanirBranchValue = fields['b'];  // Get Vanir Branch value for filtering
                         console.log(`[Record ID: ${record.id}] Vanir Branch: ${vanirBranchValue}`);
                         
                         filteredOptions = subOptions.filter(sub => sub.vanirOffice === vanirBranchValue);
-            
+                
                         if (filteredOptions.length === 0) {
                             console.warn(`[Record ID: ${record.id}] No subcontractors found for Vanir Branch: "${vanirBranchValue}".`);
                         }
@@ -962,44 +978,39 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                         // For non-'sub' fields, use the provided hardcoded options
                         filteredOptions = options;
                     }
-            
+                
                     console.log(`Filtered Options for Field "${field}" (Vanir Branch: ${fields['b']}):`, filteredOptions);
-            
-        // Custom placeholder for each field
-        let placeholderText = 'Select an Option...'; // Default placeholder
-        if (field === 'sub') {
-            placeholderText = 'Select a Subcontractor...';
-        } else if (field === 'Billable/ Non Billable') {
-            placeholderText = 'Select Billable Status...';
-        } else if (field === 'Billable Reason (If Billable)') {
-            placeholderText = 'Select a Reason...';
-        }
-                   
-        // Ensure the first option is always a placeholder (empty)
-        const emptyOption = document.createElement('option');
-        emptyOption.value = '';
-        emptyOption.textContent = placeholderText;
-        select.appendChild(emptyOption);
-
-            
-                    // Sort the filtered options alphabetically
-                    filteredOptions.sort((a, b) => {
-                        const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase();  // Ensure valid comparison for both cases
-                        const nameB = b.name ? b.name.toLowerCase() : b.toLowerCase();
-                        return nameA.localeCompare(nameB);
-                    });
-            
-                    // Add the filtered and sorted options to the dropdown
+                
+                    // Custom placeholder for each field
+                    let placeholderText = 'Select an Option...'; // Default placeholder
+                    if (field === 'sub') {
+                        placeholderText = 'Select a Subcontractor...';
+                    } else if (field === 'Billable/ Non Billable') {
+                        placeholderText = 'Select Billable Status...';
+                    } else if (field === 'Billable Reason (If Billable)') {
+                        placeholderText = 'Select a Reason...';
+                    }
+                
+                    // Create and append a placeholder option
+                    const placeholderOption = document.createElement('option');
+                    placeholderOption.value = '';
+                    placeholderOption.textContent = placeholderText;
+                    select.appendChild(placeholderOption);
+                
+                    // Check if there's a previously selected subcontractor in the 'Subcontractor' field
+                    const selectedSubcontractor = fields['Subcontractor'] || '';
+                
+                    // Populate the dropdown with filtered options
                     filteredOptions.forEach(option => {
                         const optionElement = document.createElement('option');
-                        optionElement.value = option.name || option;  // Ensure compatibility with both hardcoded and dynamic options
-                        optionElement.textContent = option.name || option;
-            
-                        // Pre-select if it matches the current value
-                        if (option.name === value || option === value) {
+                        optionElement.value = option.name;
+                        optionElement.textContent = option.name;
+                
+                        // Pre-select the previously chosen subcontractor if it matches the current option
+                        if (option.name === selectedSubcontractor) {
                             optionElement.selected = true;
                         }
-            
+                
                         select.appendChild(optionElement);
                     });
             
@@ -1392,54 +1403,54 @@ imageViewerModal.addEventListener('click', function(event) {
 // Flag to prevent multiple submissions
 let isSubmitting = false;
 
-// Function to handle submission with single confirmation
+// Function to handle changes and submit them
 async function submitChanges() {
-    if (isSubmitting) {
-        return;  // Prevent further submissions while one is in progress
-    }
-
     if (!hasChanges || !activeRecordId) {
         showToast('No changes to submit.');
         hideSubmitButton();  // Hide the button if no changes detected
         return;
     }
 
-    // Set flag to indicate that submission is in progress
-    isSubmitting = true;
-
-    // Show confirmation once before proceeding
+    // Show confirmation to the user
     const userConfirmed = confirm("Are you sure you want to submit these changes?");
     if (!userConfirmed) {
         showToast('Submission canceled.');
-        isSubmitting = false;  // Reset flag if user cancels
-        return;  // Exit if user doesn't confirm
+        return;
     }
 
-    // Proceed with the submission
     try {
+        // Hide content while submitting
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
 
-        // Submit the changes for the active record
-        await updateRecord(activeRecordId, updatedFields[activeRecordId]);
+        // Check if we are updating the Subcontractor field
+        const fieldsToUpdate = updatedFields[activeRecordId];
+        if (fieldsToUpdate['sub']) {
+            // Submit the subcontractor field value
+            await updateRecord(activeRecordId, { 'Subcontractor': fieldsToUpdate['sub'] });
+        }
 
-        // Reset the state after submission
+        // Show a success message
+        showToast('Changes submitted successfully!');
+        
+        // Reset state after submission
         updatedFields = {};
         hasChanges = false;
         activeRecordId = null;
-
-        showToast('Changes submitted successfully!');
+        
+        // Fetch and refresh data
+      //  await fetchAllData();
     } catch (error) {
         console.error('Error during submission:', error);
         showToast('Error submitting changes.');
     } finally {
-        isSubmitting = false;  // Reset the flag after completion
-        hideSubmitButton();
+        // Show content after submission
         mainContent.style.display = 'block';
         secondaryContent.style.display = 'block';
-        fetchAllData();  // Optionally refresh the data after submission
+        hideSubmitButton();  // Hide the button after submission
     }
 }
+
 
     // Event listener for dynamic submit button
 submitButton.addEventListener('click', function () {
@@ -1665,29 +1676,66 @@ document.body.appendChild(dynamicButtonsContainer);
 
 
 
-    async function updateRecord(recordId, fields) {
-        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
-        const body = JSON.stringify({ fields });
-
+    async function fetchRecordFields(recordId) {
+        let records = [];
+        let offset = null;
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+        
         try {
-            const response = await fetch(url, {
-                method: 'PATCH',
-                headers: {
-                    Authorization: `Bearer ${airtableApiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: body
-            });
-
-            if (!response.ok) {
-                console.error(`Error updating record: ${response.status} ${response.statusText}`);
-            } else {
-                console.log('Record updated successfully:', await response.json());
-            }
+            do {
+                const fetchUrl = `${url}?${offset ? `offset=${offset}` : ''}`;
+                const response = await fetch(fetchUrl, {
+                    headers: {
+                        Authorization: `Bearer ${airtableApiKey}`
+                    }
+                });
+    
+                if (!response.ok) {
+                    throw new Error(`Error fetching records: ${response.status} ${response.statusText}`);
+                }
+    
+                const data = await response.json();
+                records = records.concat(data.records); // Accumulate records
+                offset = data.offset; // Airtable pagination: get the next offset
+    
+            } while (offset); // Continue if there's another page of records
+    
+            console.log('All records fetched:', records);
+            return records;
         } catch (error) {
-            console.error('Error updating record in Airtable:', error);
+            console.error('Error fetching records with offset:', error);
+            return [];
         }
     }
+    
+   // Function to update a record in Airtable
+async function updateRecord(recordId, fields) {
+    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
+    const body = JSON.stringify({ fields });
+
+    try {
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                Authorization: `Bearer ${airtableApiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: body
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error(`Error updating record: ${response.status} ${response.statusText}`);
+            console.error(`Error Details:`, errorData);
+        } else {
+            const successData = await response.json();
+            console.log('Record updated successfully:', successData);
+        }
+    } catch (error) {
+        console.error('Error occurred while updating record in Airtable:', error);
+    }
+}
+    
 
     document.getElementById('search-input').addEventListener('input', function () {
         const searchValue = this.value.toLowerCase();

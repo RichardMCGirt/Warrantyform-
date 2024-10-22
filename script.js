@@ -1297,7 +1297,7 @@ else if (checkbox) {
                     imageElement.remove();
     
                     // Refresh the data to reflect the changes
-                  //  await fetchAllData();
+                    await fetchAllData();
                 }
             } catch (error) {
                 console.error('Error updating record in Airtable:', error);
@@ -1437,75 +1437,75 @@ imageViewerModal.addEventListener('click', function(event) {
         hasChanges = false; // Reset changes flag
     }
     
-/// Flag to prevent multiple confirmations
-let confirmationShown = false;
+    let confirmationShown = false; // Flag to prevent multiple confirmations
 
-// Function to handle changes and submit them
-async function submitChanges() {
-    if (!hasChanges || !activeRecordId) {
-        showToast('No changes to submit.');
-        hideSubmitButton();  // Hide the button if no changes detected
-        return;
-    }
-
-    // Only show the confirmation once
-    if (!confirmationShown) {
-        const userConfirmed = confirm("Are you sure you want to submit these changes?");
-        if (!userConfirmed) {
-            showToast('Submission canceled.');
-            confirmationShown = false;  // Reset flag in case of cancellation
+    // Function to handle changes and submit them
+    async function submitChanges() {
+        if (!hasChanges || !activeRecordId) {
+            showToast('No changes to submit.');
+            hideSubmitButton();  // Hide the button if no changes detected
             return;
         }
-        confirmationShown = true;  // Set the flag to avoid re-confirmation
-    }
-
-    try {
-        // Hide content while submitting
-        mainContent.style.display = 'none';
-        secondaryContent.style.display = 'none';
-
-        // Get all fields to update for the active record
-        const fieldsToUpdate = updatedFields[activeRecordId];
-        
-        // Check if we are updating the Subcontractor field
-        if (fieldsToUpdate['sub']) {
-            // Submit the subcontractor field value separately
-            await updateRecord(activeRecordId, { 'Subcontractor': fieldsToUpdate['sub'] });
-        }
-
-        // Submit all other updated fields
-        if (Object.keys(fieldsToUpdate).length > 0) {
-            // Remove the 'sub' field if it was already submitted
-            delete fieldsToUpdate['sub'];
-            
-            // Submit the remaining fields (e.g., checkboxes and other fields)
-            if (Object.keys(fieldsToUpdate).length > 0) {
-                await updateRecord(activeRecordId, fieldsToUpdate);
+    
+        // Only show the confirmation once
+        if (!confirmationShown) {
+            const userConfirmed = confirm("Are you sure you want to submit these changes?");
+            if (!userConfirmed) {
+                showToast('Submission canceled.');
+                confirmationShown = false;  // Reset flag in case of cancellation
+                return;
             }
+            confirmationShown = true;  // Set the flag to avoid re-confirmation
         }
-
-        // Show a success message
-        showToast('Changes submitted successfully!');
-        
-        // Reset state after submission
-        updatedFields = {};
-        hasChanges = false;
-        activeRecordId = null;
-        confirmationShown = false;  // Reset flag after successful submission
-
-        // Fetch and refresh data
-        await fetchAllData();
-    } catch (error) {
-        console.error('Error during submission:', error);
-        showToast('Error submitting changes.');
-        confirmationShown = false;  // Reset flag in case of error
-    } finally {
-        // Show content after submission
-        mainContent.style.display = 'block';
-        secondaryContent.style.display = 'block';
-        hideSubmitButton();  // Hide the button after submission
+    
+        try {
+            // Hide content while submitting
+            mainContent.style.display = 'none';
+            secondaryContent.style.display = 'none';
+    
+            // Get all fields to update for the active record
+            const fieldsToUpdate = updatedFields[activeRecordId];
+            
+            // Check if we are updating the Subcontractor field
+            if (fieldsToUpdate['sub']) {
+                // Submit the subcontractor field value separately
+                await updateRecord(activeRecordId, { 'Subcontractor': fieldsToUpdate['sub'] });
+            }
+    
+            // Submit all other updated fields
+            if (Object.keys(fieldsToUpdate).length > 0) {
+                // Remove the 'sub' field if it was already submitted
+                delete fieldsToUpdate['sub'];
+                
+                // Submit the remaining fields (e.g., checkboxes and other fields)
+                if (Object.keys(fieldsToUpdate).length > 0) {
+                    await updateRecord(activeRecordId, fieldsToUpdate);
+                }
+            }
+    
+            // Show a success message
+            showToast('Changes submitted successfully!');
+            
+            // Reset state after submission
+            updatedFields = {};
+            hasChanges = false;
+            activeRecordId = null;
+            confirmationShown = false;  // Reset flag after successful submission
+    
+            // Fetch and refresh data
+            await fetchAllData();
+        } catch (error) {
+            console.error('Error during submission:', error);
+            showToast('Error submitting changes.');
+            confirmationShown = false;  // Reset flag in case of error
+        } finally {
+            // Show content after submission
+            mainContent.style.display = 'block';
+            secondaryContent.style.display = 'block';
+            hideSubmitButton();  // Hide the button after submission
+        }
     }
-}
+    
 
 // Event listener for dynamic submit button
 submitButton.addEventListener('click', function () {

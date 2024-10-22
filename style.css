@@ -124,8 +124,7 @@ tbody tr:nth-child(even) {
 
 /* Editable Cell Styles */
 td[contenteditable="true"] {
-    background-color: grey;
-    color: white;
+   
     cursor: text;
 }
 
@@ -205,6 +204,8 @@ button:hover {
         opacity: 0;
     }
 }
+
+
 
 /* Image Viewer Modal */
 .image-viewer-modal {

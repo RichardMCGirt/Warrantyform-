@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     let dropboxRefreshToken;
     let debounceTimeout = null; // Declare debounce timer in the global scope
 
+  
 
     fetchAirtableFields();
     // Fetch Dropbox credentials from Airtable
@@ -465,32 +466,43 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
     async function sendImagesToAirtableForRecord(files, recordId, targetField) {
         if (!Array.isArray(files)) files = [files];
-
+        
         const uploadedUrls = [];
+        console.log(`Starting upload process for record ID: ${recordId}, target field: ${targetField}.`);
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, targetField);
-
+        
+        console.log(`Fetched current images from Airtable for record ID ${recordId}:`, currentImages);
+        
         for (const file of files) {
+            console.log(`Uploading file ${file.name} to Dropbox...`);
+        
             let dropboxUrl = await uploadFileToDropbox(file);
+            
             if (!dropboxUrl) {
-                // Refresh token if upload fails due to token expiration
+                console.warn(`Failed to upload ${file.name} due to token expiration. Attempting to refresh token...`);
                 await refreshDropboxToken();
                 dropboxUrl = await uploadFileToDropbox(file);
             }
-
+        
             if (dropboxUrl) {
                 const formattedLink = dropboxUrl.replace('?dl=0', '?raw=1');
+                console.log(`Successfully uploaded file ${file.name}. Dropbox URL (formatted): ${formattedLink}`);
                 uploadedUrls.push({ url: formattedLink });
             } else {
-                console.error('Error uploading file to Dropbox:', file.name);
+                console.error(`Error uploading file ${file.name} to Dropbox after token refresh.`);
             }
         }
-
+        
         const allImages = currentImages.concat(uploadedUrls);
-
+        
+        console.log(`Total images to update in Airtable for record ID ${recordId}:`, allImages);
+        
         if (allImages.length > 0) {
             const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
             const body = JSON.stringify({ fields: { [targetField]: allImages } });
-
+        
+            console.log(`Sending PATCH request to Airtable for record ID ${recordId}, updating field ${targetField}...`);
+            
             try {
                 const response = await fetch(url, {
                     method: 'PATCH',
@@ -500,20 +512,36 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     },
                     body: body
                 });
-
+        
                 if (!response.ok) {
                     const errorResponse = await response.json();
-                    console.error(`Error updating record: ${response.status} ${response.statusText}`, errorResponse);
+                    console.error(`Airtable update failed. HTTP status: ${response.status} ${response.statusText}`, errorResponse);
                 } else {
-                    console.log('Successfully updated record in Airtable:', await response.json());
+                    const successResponse = await response.json();
+                    console.log('Successfully updated record in Airtable:', successResponse);
                 }
             } catch (error) {
-                console.error('Error updating Airtable:', error);
+                console.error(`Error during Airtable API request:`, error);
             }
         } else {
             console.error('No files were uploaded to Dropbox, skipping Airtable update.');
         }
     }
+    
+    async function fetchAirtableFields() {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?maxRecords=1`;
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
+            });
+        
+            const data = await response.json();
+            console.log('Available fields in the first record:', data.records[0].fields);
+        } catch (error) {
+            console.error('Error fetching fields from Airtable:', error);
+        }
+    }
+    
 
     async function fetchCurrentImagesFromAirtable(recordId, targetField) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
@@ -594,9 +622,9 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             console.error('Dropbox Access Token is not available.');
             return null;
         }
-
+    
         const dropboxCreateSharedLinkUrl = 'https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings';
-
+    
         try {
             const response = await fetch(dropboxCreateSharedLinkUrl, {
                 method: 'POST',
@@ -611,17 +639,18 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     }
                 })
             });
-
+    
             if (!response.ok) {
                 if (response.status === 409) {
                     // A shared link already exists, fetch the existing link
+                    console.warn('Shared link already exists, fetching existing link...');
                     return await getExistingDropboxLink(filePath);
                 } else {
                     console.error(`Error creating shared link: ${response.status} ${response.statusText}`);
                     return null;
                 }
             }
-
+    
             const data = await response.json();
             return convertToDirectLink(data.url);
         } catch (error) {
@@ -629,6 +658,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             return null;
         }
     }
+    
 
     async function getExistingDropboxLink(filePath) {
         if (!dropboxAccessToken) {
@@ -929,7 +959,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
                 { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },       
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
-                { field: 'Completed Pictures', value: fields['Completed Pictures'] || [], image: true, imageField: 'Completed Pictures' },
+                { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true, imageField: 'Completed  Pictures' },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
                 { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true }
             ] : [

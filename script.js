@@ -1117,10 +1117,11 @@ filteredOptions.forEach(option => {
     optionElement.value = option.name || option;  // Ensure compatibility with both hardcoded and dynamic options
     optionElement.textContent = option.name || option;
 
-    // Pre-select the previously chosen subcontractor if it matches the current option
-    if (option.name === selectedSubcontractor || option === selectedSubcontractor) {
-        optionElement.selected = true;
-    }
+               // Pre-select the option if it matches the current value from Airtable
+               if (option.name === value || option === value) {
+                optionElement.selected = true;  // Mark this option as selected
+            }
+
 
     select.appendChild(optionElement);
 });

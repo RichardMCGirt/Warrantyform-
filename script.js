@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     let dropboxRefreshToken;
     let debounceTimeout = null; // Declare debounce timer in the global scope
 
-  
+  fetchvendors();
 
     fetchAirtableFields();
     // Fetch Dropbox credentials from Airtable
@@ -320,6 +320,51 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             console.error('Error occurred during fetchDropboxCredentials:', error);
         }
     }
+
+    async function fetchvendors() {
+        const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID3}/${window.env.AIRTABLE_TABLE_NAME3}`;
+        
+        console.log(`Starting to fetch vendors from: ${url}`);
+    
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
+                }
+            });
+    
+            console.log(`Response status: ${response.status}`);
+    
+            if (!response.ok) {
+                console.error(`Error fetching records: ${response.status} ${response.statusText}`);
+                return [];
+            }
+    
+            const data = await response.json();
+            console.log('Data fetched from Airtable:', data);
+    
+            // Add log to inspect available fields
+            data.records.forEach(record => {
+                console.log('Record fields:', record.fields);
+            });
+    
+            // Check if 'Name' is the correct field name
+            const vendors = data.records
+                .filter(record => record.fields['Name'])  // Filter only records that have 'Name'
+                .map(record => record.fields['Name']);    // Extract the vendor names
+    
+            console.log('Filtered vendor names:', vendors);
+    
+            return vendors;  // Return the list of vendor names
+        } catch (error) {
+            console.error('Error fetching vendor records:', error);
+            return [];
+        }
+    }
+    
+    
+    
+    
 
     async function refreshDropboxToken() {
         console.log('Attempting to refresh Dropbox token...');
@@ -736,7 +781,8 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-    
+    let vendorOptions = []; // Declare vendorOptions properly
+
     let subOptions = []; // Declare subOptions globally
 
     async function fetchAllData() {
@@ -760,6 +806,14 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         try {
             let allRecords = [];
             let offset = null;
+    
+            // Fetch vendor options for 'Material Vendor' dropdown
+            try {
+                vendorOptions = await fetchvendors(); // Fetch vendor data and assign it to vendorOptions
+            } catch (error) {
+                console.error('Error fetching vendor options:', error);
+                vendorOptions = []; // Continue with empty array if error occurs
+            }
     
             // Fetch sub options (assuming it's fetched from another Airtable table or source)
             try {
@@ -797,10 +851,8 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 return (a.fields['b'] || '').localeCompare(b.fields['b'] || '');
             });
     
-       
-    
-            // Display the primary and secondary records in your tables
-            await displayData(primaryRecords, '#airtable-data', false, subOptions);
+            // Display the primary and secondary records in your tables with vendor options
+            await displayData(primaryRecords, '#airtable-data', false, vendorOptions);
             await displayData(secondaryRecords, '#feild-data', true, subOptions);
     
             // Reveal content after loading
@@ -828,6 +880,8 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             syncTableWidths();
         }
     }
+    
+    
 
         
     function checkForChanges(recordId) {
@@ -971,8 +1025,12 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
-                { field: 'Material Vendor', value: fields['Material Vendor'] || 'N/A', editable: true },
-
+                {
+                    field: 'Name',
+                    value: fields['Material Vendor'] || '',
+                    dropdown: true,
+                    options: vendorOptions  
+                },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
                 { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
@@ -1019,6 +1077,8 @@ if (field === 'sub') {
     placeholderText = 'Select Billable Status...';
 } else if (field === 'Billable Reason (If Billable)') {
     placeholderText = 'Select a Reason...';
+} else if (field === 'Material Vendor') {
+    placeholderText = 'Select a Vendor...';
 }
 
 // Create and append a placeholder option

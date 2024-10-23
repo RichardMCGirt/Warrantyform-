@@ -1070,15 +1070,19 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     console.log(`Filtered Options for Field "${field}" (Vanir Branch: ${fields['b']}):`, filteredOptions);
             
       // Custom placeholder for each field
-let placeholderText = 'Select an Option...'; // Default placeholder
+let placeholderText = 'Select a Vendor...'; // Default placeholder
 if (field === 'sub') {
-    placeholderText = 'Select a Subcontractor...';
+    placeholderText = 'Select a Subcontractor ...';
 } else if (field === 'Billable/ Non Billable') {
-    placeholderText = 'Select Billable Status...';
+    placeholderText = 'Select Billable Status ...';
 } else if (field === 'Billable Reason (If Billable)') {
-    placeholderText = 'Select a Reason...';
+    placeholderText = 'Select a Reason ...';
 } else if (field === 'Material Vendor') {
-    placeholderText = 'Select a Vendor...';
+    placeholderText = 'Select a Vendor ...';
+} else if (field === 'Material Vendor') {
+    placeholderText = 'Select a Vendor ...';{
+        
+    }
 }
 
 // Create and append a placeholder option

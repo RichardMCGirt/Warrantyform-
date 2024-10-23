@@ -750,23 +750,24 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
     async function fetchData(offset = null) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?${offset ? `offset=${offset}` : ''}`;
-
+    
         try {
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
-
+    
             if (!response.ok) {
                 console.error(`Error fetching data: ${response.status} ${response.statusText}`);
-                return { records: [] };
+                return { records: [] }; // Return an empty array on error
             }
-
+    
             return await response.json();
         } catch (error) {
             console.error('Error fetching data from Airtable:', error);
-            return { records: [] };
+            return { records: [] }; // Return an empty array if an error occurs
         }
     }
+    
 
     function syncTableWidths() {
         const mainTable = document.querySelector('#airtable-data');
@@ -825,8 +826,15 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     
             do {
                 const data = await fetchData(offset);
-                if (data.records.length === 0 && !offset) break;
-                allRecords = allRecords.concat(data.records);
+                
+                // Ensure data.records exists and is an array
+                if (data && Array.isArray(data.records)) {
+                    allRecords = allRecords.concat(data.records);
+                } else {
+                    console.error('Error: Invalid data structure or no records found.');
+                    break; // Exit loop if no valid data is fetched
+                }
+                
                 offset = data.offset;
             } while (offset);
     
@@ -878,6 +886,8 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             }, 10);
     
             syncTableWidths();
+   
+      
         }
     }
     
@@ -1026,7 +1036,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
                 {
-                    field: 'Name',
+                    field: 'Material Vendor',
                     value: fields['Material Vendor'] || '',
                     dropdown: true,
                     options: vendorOptions  
@@ -1573,14 +1583,39 @@ imageViewerModal.addEventListener('click', function(event) {
     }
     
 
+// Variables to track submission state
+let isSubmitting = false;
+
 // Event listener for dynamic submit button
 submitButton.addEventListener('click', function () {
-    // Ensure that submitChanges is called only once and no additional confirmations are shown
+    console.log('Submit button clicked.');
+
+    // Check if a submission is already in progress or confirmation has already been shown
     if (!isSubmitting && !confirmationShown) {
-        submitChanges();
+        console.log('No active submission and no confirmation shown yet.');
+        
+        // Set isSubmitting to true to prevent duplicate submissions
+        isSubmitting = true;
+        console.log('Submission in progress: ', isSubmitting);
+        
+        // Call the submitChanges function
+        try {
+            console.log('Calling submitChanges...');
+            submitChanges();
+            console.log('submitChanges function called successfully.');
+        } catch (error) {
+            console.error('Error during submitChanges execution: ', error);
+        }
+    } else {
+        // Log the condition preventing submission
+        if (isSubmitting) {
+            console.log('Submission already in progress, skipping duplicate submission.');
+        }
+        if (confirmationShown) {
+            console.log('Confirmation already shown, skipping additional confirmation.');
+        }
     }
 });
-
     
 
     document.addEventListener('DOMContentLoaded', function () {

@@ -971,6 +971,8 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
+                { field: 'Material Vendor', value: fields['Material Vendor'] || 'N/A', editable: true },
+
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
                 { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },

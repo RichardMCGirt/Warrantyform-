@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     let dropboxAppKey;
     let dropboxAppSecret;
     let dropboxRefreshToken;
-    let debounceTimeout = null; // Declare debounce timer in the global scope
 
   fetchvendors();
 
@@ -22,7 +21,6 @@ document.addEventListener('DOMContentLoaded', async function () {
             console.log('Checking if Dropbox token is still valid...');
         
             if (!dropboxAccessToken) {
-                console.error('Dropbox access token is not available.');
                 return;
             }
         
@@ -40,28 +38,25 @@ document.addEventListener('DOMContentLoaded', async function () {
                 const contentType = response.headers.get('content-type');
         
                 if (contentType && contentType.includes('application/json')) {
-                    responseData = await response.json();  // Capture the response data
+                    responseData = await response.json();  
                 } else {
-                    responseData = await response.text();  // If not JSON, capture as plain text
+                    responseData = await response.text(); 
                 }
         
                 if (response.ok) {
                     console.log('Dropbox token is still valid.');
                 } else if (response.status === 401) {
                     console.error('Dropbox token is expired or invalid.');
-                    await refreshDropboxToken();  // Call your token refresh function
+                    await refreshDropboxToken();  
                 } else {
                     console.error(`Error while checking Dropbox token: ${response.status} ${response.statusText}`);
-                    console.log('Response data:', responseData);  // Log detailed error message
+                    console.log('Response data:', responseData);  
                 }
             } catch (error) {
                 console.error('Error occurred while checking Dropbox token validity:', error);
             }
         }
-        
-        
-        
-
+                    
     const loadingLogo = document.querySelector('.loading-logo');
     const mainContent = document.getElementById('main-content');
     const secondaryContent = document.getElementById('secoundary-content');
@@ -210,8 +205,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     });
 });
 
-
-
     // Event listener for dynamic submit button
     submitButton.addEventListener('click', function (event) {
         clearTimeout(clickTimeout); // Clear any pending timeout
@@ -226,23 +219,20 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         // Only submit if no dragging occurred and the mouse wasn't held down for too long
         submitChanges();
     });
-    
 
-    
-
-    // Function to show the submit button and keep it in the last position when a change is made
-    function showSubmitButton(recordId) {
-        if (hasChanges) {  // Only show the button if there are changes
-            if (submitButton.style.display === 'none') {
-                const lastTop = localStorage.getItem('submitButtonTop') || '50%';
-                const lastLeft = localStorage.getItem('submitButtonLeft') || '50%';
-                submitButton.style.top = lastTop;
-                submitButton.style.left = lastLeft;
-            }
-            submitButton.style.display = 'block';
-            activeRecordId = recordId;
-        }
+         
+ // Function to show submit button if there are changes
+ function showSubmitButton(recordId) {
+    if (hasChanges) {
+        const lastTop = localStorage.getItem('submitButtonTop') || '50%';
+        const lastLeft = localStorage.getItem('submitButtonLeft') || '50%';
+        submitButton.style.top = lastTop;
+        submitButton.style.left = lastLeft;
+        submitButton.style.display = 'block';
+        activeRecordId = recordId;
+        console.log('Submit button shown for changes in record:', recordId);
     }
+}
     
     // Event listeners to show the submit button when input is typed or value is changed
     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
@@ -263,7 +253,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
 
-            console.log(`Response received from Airtable with status: ${response.status}`);
 
             if (!response.ok) {
                 throw new Error(`Error fetching Dropbox credentials: ${response.status} ${response.statusText}`);
@@ -278,38 +267,25 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             dropboxRefreshToken = undefined;
 
             for (const record of data.records) {
-                console.log('Processing record:', JSON.stringify(record, null, 2));
             
                 if (record.fields) {
                     if (record.fields['Dropbox Token']) {
                         dropboxAccessToken = record.fields['Dropbox Token'];
-                        console.log('Dropbox Token found:', dropboxAccessToken);
                     }
                     if (record.fields['Dropbox App Key']) {
                         dropboxAppKey = record.fields['Dropbox App Key'];
-                        console.log('Dropbox App Key found:', dropboxAppKey);
                     }
                     if (record.fields['Dropbox App Secret']) {
                         dropboxAppSecret = record.fields['Dropbox App Secret'];
-                        console.log('Dropbox App Secret found:', dropboxAppSecret);
                     }
                     // Corrected lines below
                     if (record.fields['Dropbox Refresh Token']) {  // Correct this to match your field name
                         dropboxRefreshToken = record.fields['Dropbox Refresh Token'];  // Use the correct field name
-                        console.log('Dropbox Refresh Token found:', dropboxRefreshToken);
                     }
                 } else {
                     console.log('No fields found in this record:', record);
                 }
-            }
-            
-            
-
-            // Log the final state of credentials
-            console.log('Final Dropbox Access Token:', dropboxAccessToken);
-            console.log('Final Dropbox App Key:', dropboxAppKey);
-            console.log('Final Dropbox App Secret:', dropboxAppSecret);
-            console.log('Final Dropbox Refresh Token:', dropboxRefreshToken);
+            }      
 
             if (!dropboxAccessToken || !dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
                 console.error('One or more Dropbox credentials are missing after fetching.');
@@ -333,7 +309,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 }
             });
     
-            console.log(`Response status: ${response.status}`);
     
             if (!response.ok) {
                 console.error(`Error fetching records: ${response.status} ${response.statusText}`);
@@ -341,7 +316,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             }
     
             const data = await response.json();
-            console.log('Data fetched from Airtable:', data);
     
             // Add log to inspect available fields
             data.records.forEach(record => {
@@ -360,10 +334,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-    
-    
-    
-
     async function refreshDropboxToken() {
         console.log('Attempting to refresh Dropbox token...');
         showToast('Refreshing Dropbox token...');  // Notify the user that the token is being refreshed
@@ -599,9 +569,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             console.warn('No files were uploaded to Dropbox, so Airtable update will be skipped.');
         }
     }
-    
 
-    
     async function fetchAirtableFields() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?maxRecords=1`;
         try {
@@ -616,7 +584,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-
     async function fetchCurrentImagesFromAirtable(recordId, targetField) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
         try {
@@ -738,7 +705,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-
     async function getExistingDropboxLink(filePath) {
         if (!dropboxAccessToken) {
             console.error('Dropbox Access Token is not available.');
@@ -823,6 +789,10 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     async function fetchAllData() {
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
+
+        originalValues = { /* Populate this with fetched data */ };
+        console.log('Original values loaded:', originalValues);
+    
     
         let loadProgress = 0;
         const loadInterval = setInterval(() => {
@@ -858,17 +828,23 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 subOptions = []; // Continue with an empty subOptions array
             }
     
+            // Fetch all records and store original values
             do {
                 const data = await fetchData(offset);
-                
+    
                 // Ensure data.records exists and is an array
                 if (data && Array.isArray(data.records)) {
                     allRecords = allRecords.concat(data.records);
+    
+                    // Store original values for each record
+                    data.records.forEach(record => {
+                        originalValues[record.id] = { ...record.fields };
+                    });
                 } else {
                     console.error('Error: Invalid data structure or no records found.');
                     break; // Exit loop if no valid data is fetched
                 }
-                
+    
                 offset = data.offset;
             } while (offset);
     
@@ -920,55 +896,78 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             }, 10);
     
             syncTableWidths();
-   
-      
         }
     }
     
     
-
-        
     function checkForChanges(recordId) {
+        console.log(`Checking for changes in record ID: ${recordId}`);
         const currentValues = updatedFields[recordId] || {};
+        console.log("Current values:", currentValues);
     
-        // Check if there are any changes compared to the original values
         const fieldsHaveChanged = Object.keys(currentValues).some(field => {
             const currentValue = currentValues[field];
             const originalValue = originalValues[recordId] ? originalValues[recordId][field] : undefined;
-    
-            return currentValue !== originalValue; // True if the current value differs from the original
+            console.log(`Comparing field "${field}": current value = ${currentValue}, original value = ${originalValue}`);
+            return currentValue !== originalValue;
         });
     
-        hasChanges = fieldsHaveChanged; // Update hasChanges flag based on the comparison
-        if (!hasChanges) {
-            hideSubmitButton();  // Hide the button if no changes detected
+        hasChanges = fieldsHaveChanged;
+        console.log(`Changes detected: ${hasChanges}`);
+    
+        if (hasChanges) {
+            console.log(`Showing submit button for record ID: ${recordId}`);
+            showSubmitButton(recordId);
+        } else {
+            console.log(`Hiding submit button for record ID: ${recordId}`);
+            hideSubmitButton();
         }
     }
     
-
+    function handleInputChange(event) {
+        const recordId = this.closest('tr').dataset.id;
+        const field = this.dataset.field;
+        console.log(`Handling input change for record ID: ${recordId}, field: ${field}`);
     
-    // Event listeners to detect changes
+        updatedFields[recordId] = updatedFields[recordId] || {};
+        updatedFields[recordId][field] = this.value || this.textContent;
+        console.log(`Updated fields for record ID ${recordId}:`, updatedFields[recordId]);
+    
+        checkForChanges(recordId);
+    }
+    
     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
         element.addEventListener('input', function () {
             const recordId = this.closest('tr').dataset.id;
-            checkForChanges(recordId); // Check if changes exist
+            console.log(`Input event detected for record ID: ${recordId}`);
+            handleInputChange.call(this);
+            checkForChanges(recordId);
         });
     
         element.addEventListener('change', function () {
             const recordId = this.closest('tr').dataset.id;
-            checkForChanges(recordId); // Check if changes exist
+            console.log(`Change event detected for record ID: ${recordId}`);
+            handleInputChange.call(this);
+            checkForChanges(recordId);
         });
     
         element.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
-                submitChanges(); // Call submitChanges on Enter key press
+                const recordId = element.closest('tr').dataset.id;
+                console.log(`Enter key pressed for record ID: ${recordId}`);
+                handleInputChange.call(element, event);
+                checkForChanges(recordId);
+                if (hasChanges) {
+                    console.log(`Submitting changes for record ID: ${recordId}`);
+                    submitChanges();
+                }
             }
         });
     });
     
-         
-
+    
+    
     // Resize observer to adjust the secondary table width when the main table resizes
     const mainTable = document.querySelector('#airtable-data');
     const resizeObserver = new ResizeObserver(() => {
@@ -990,14 +989,11 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             });
     
             const data = await response.json();
-            console.log('Available fields in the first record:', data.records[0].fields);
         } catch (error) {
             console.error('Error fetching fields from Airtable:', error);
         }
     }
    
-    
-
     async function fetchAirtableSubOptionsFromDifferentTable() {
         let records = [];
         let offset = null;
@@ -1016,26 +1012,19 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             }
     
             const data = await response.json();
-            records = records.concat(data.records);  // Append new records
-            offset = data.offset;  // Airtable pagination: set offset for next batch
+            records = records.concat(data.records);  
+            offset = data.offset;  
         } while (offset);
     
-        // Add logging for detailed inspection of records
-    
-        // Extract subcontractor options
         const subOptions = Array.from(new Set(records.map(record => {
-            // Log the exact structure of each record's fields to troubleshoot the branch issue
     
             return {
                 name: record.fields['Subcontractor Company Name'] || 'Unnamed Subcontractor',
-                vanirOffice: record.fields['Vanir Branch'] || 'Unknown Branch'  // Log and handle missing branches
-            };
+                vanirOffice: record.fields['Vanir Branch'] || 'Unknown Branch'            };
         }).filter(Boolean)));
-    
-    
-        return subOptions;  // Return the subcontractor options array
+        
+        return subOptions;  
     }
-    
     
     async function displayData(records, tableSelector, isSecondary = false) {
         const tbody = document.querySelector(`${tableSelector} tbody`);
@@ -1092,22 +1081,19 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     const select = document.createElement('select');
                     select.classList.add('styled-select');
                 
-                    // Only filter subcontractor options based on Vanir Branch for the 'sub' field
                     let filteredOptions = [];
                     if (field === 'Subcontractor') {
-                        const vanirBranchValue = fields['b'];  // Get Vanir Branch value for filtering
+                        const vanirBranchValue = fields['b'];  
                         
                         filteredOptions = subOptions.filter(sub => sub.vanirOffice === vanirBranchValue);
                 
                         if (filteredOptions.length === 0) {
                         }
                     } else {
-                        // For non-'sub' fields, use the provided hardcoded options
                         filteredOptions = options;
                     }
             
             
-      // Custom placeholder for each field
 let placeholderText = 'Select a Vendor...'; // Default placeholder
 if (field === 'Subcontractor') {
     placeholderText = 'Select a Subcontractor ...';
@@ -1119,28 +1105,20 @@ if (field === 'Subcontractor') {
     placeholderText = 'Select a Vendor ...';
 } else if (field === 'Material Vendor') {
     placeholderText = 'Select a Vendor ...';{
-        
     }
 }
 
-// Create and append a placeholder option
 const placeholderOption = document.createElement('option');
 placeholderOption.value = '';
 placeholderOption.textContent = placeholderText;
 select.appendChild(placeholderOption);
 
-// Check if there's a previously selected subcontractor in the 'Subcontractor' field
-const selectedSubcontractor = fields['Subcontractor'] || '';
-
-// Sort the filtered options alphabetically
 filteredOptions.sort((a, b) => {
     const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase();  // Ensure valid comparison for both cases
     const nameB = b.name ? b.name.toLowerCase() : b.toLowerCase();
     return nameA.localeCompare(nameB);
 });
 
-// Populate the dropdown with filtered options
-// Populate the dropdown with filtered options
 filteredOptions.forEach(option => {
     const optionElement = document.createElement('option');
     const optionValue = option.name || option; // Ensure compatibility with both hardcoded and dynamic options
@@ -1148,7 +1126,6 @@ filteredOptions.forEach(option => {
     optionElement.value = optionValue;
     optionElement.textContent = optionValue;
 
-    // Check if the option matches the previously selected subcontractor
     if (optionValue === value || optionValue === fields['Subcontractor']) {
         optionElement.selected = true;  // Mark this option as selected
     }
@@ -1156,11 +1133,9 @@ filteredOptions.forEach(option => {
     select.appendChild(optionElement);
 });
 
-// Append the select element to the cell
 cell.appendChild(select);
 
 
-// Detect changes and handle state updates
 select.addEventListener('change', () => {
     const newValue = select.value;
     updatedFields[record.id] = updatedFields[record.id] || {};
@@ -1176,11 +1151,7 @@ select.addEventListener('change', () => {
         fieldReviewCheckbox.checked = false;
     }
 });
-
-
-    
-                      // Initially disable checkbox if placeholder is selected
-                const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
+                    const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
                 if (fieldReviewCheckbox && value === "") {
                     fieldReviewCheckbox.disabled = true;
                     fieldReviewCheckbox.checked = false;
@@ -1188,9 +1159,6 @@ select.addEventListener('change', () => {
 
                 cell.appendChild(select);
             }
-
-    
-                // Handle images
                 else if (image) {
                     const images = Array.isArray(fields[field]) ? fields[field] : [];
                     const carouselDiv = document.createElement('div');
@@ -1236,7 +1204,6 @@ select.addEventListener('change', () => {
                             carouselDiv.appendChild(nextButton);
                         }
     
-                        // Delete button for images
                         const deleteButton = document.createElement('button');
                         deleteButton.innerHTML = '🗑️';
                         deleteButton.classList.add('delete-button');
@@ -1275,31 +1242,26 @@ select.addEventListener('change', () => {
                     carouselDiv.appendChild(addPhotoButton);
                     cell.appendChild(carouselDiv);
                 }
-    
-           // Handle checkboxes
-else if (checkbox) {
+    else if (checkbox) {
     const checkboxElement = document.createElement('input');
     checkboxElement.type = 'checkbox';
     checkboxElement.checked = value;
     checkboxElement.classList.add('custom-checkbox');
 
-    // Handle disabling based on the dropdown's value for specific fields
     if (field === 'Job Completed') {
-        const dropdownField = row.querySelector('select[data-field="sub"]'); // Target the 'sub' field dropdown
+        const dropdownField = row.querySelector('select[data-field="sub"]'); 
         if (dropdownField && dropdownField.value === "") {
-            checkboxElement.disabled = true; // Disable if no subcontractor is selected
+            checkboxElement.disabled = true; 
             checkboxElement.checked = false;
         }
     }
-
-    // For the "Subcontractor Not Needed" checkbox
     if (field === 'Subcontractor Not Needed') {
-        const subcontractorDropdown = row.querySelector('select[data-field="Subcontractor"]'); // Target the 'sub' field dropdown
+        const subcontractorDropdown = row.querySelector('select[data-field="Subcontractor"]');
         if (subcontractorDropdown && subcontractorDropdown.value !== "Select a Subcontractor...") {
-            checkboxElement.disabled = true; // Disable if a subcontractor other than "Select a Subcontractor..." is selected
-            checkboxElement.checked = false; // Uncheck if a subcontractor is selected
+            checkboxElement.disabled = true; 
+            checkboxElement.checked = false; 
         } else {
-            checkboxElement.disabled = false; // Enable if "Select a Subcontractor..." is selected
+            checkboxElement.disabled = false; 
         }
     }
 
@@ -1313,9 +1275,6 @@ else if (checkbox) {
 
     cell.appendChild(checkboxElement);
 }
-
-    
-                // Handle text and links
                 else if (link) {
                     const matchingCalendar = calendarLinks.find(calendar => calendar.name === value);
                     if (matchingCalendar) {
@@ -1332,7 +1291,6 @@ else if (checkbox) {
                     cell.textContent = value;
                 }
     
-                // Handle editable text cells
                 if (editable && !dropdown && !image) {
                     cell.setAttribute('contenteditable', 'true');
                     cell.classList.add('editable-cell');
@@ -1361,13 +1319,10 @@ else if (checkbox) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, imageField);
     
-        // Remove the image with the specific ID from the array
         const updatedImages = currentImages.filter(image => image.id !== imageId);
     
-        // If no images are left, send an empty array to Airtable
         const body = JSON.stringify({ fields: { [imageField]: updatedImages.length > 0 ? updatedImages : [] } });
     
-        // Add animation for the image deletion
         const imageElement = document.querySelector(`img[src="${currentImages.find(img => img.id === imageId)?.url}"]`);
         const trashCan = document.querySelector('.trash-can');
     
@@ -1376,11 +1331,9 @@ else if (checkbox) {
             return;
         }
     
-        // Get bounding rectangles for the image and trash can
         const imageRect = imageElement.getBoundingClientRect();
         const trashCanRect = trashCan.getBoundingClientRect();
     
-        // Animate the image to the trash can
         imageElement.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
         imageElement.style.transform = `translate(${trashCanRect.left - imageRect.left}px, ${trashCanRect.top - imageRect.top}px) scale(0)`;
     
@@ -1401,31 +1354,16 @@ else if (checkbox) {
                 } else {
                     console.log('Image successfully deleted from Airtable:', await response.json());
     
-                    // Remove the image element after successful deletion
                     imageElement.remove();
     
-                    // Refresh the data to reflect the changes
                     await fetchAllData();
                 }
             } catch (error) {
                 console.error('Error updating record in Airtable:', error);
             }
-        }, 800); // Delay to match the animation duration
+        }, 1000); 
     }
-    
-    
 
-    function animateImageToTrash(imgElement, trashCan, callback) {
-        const imageRect = imgElement.getBoundingClientRect();
-        const trashRect = trashCan.getBoundingClientRect();
-
-        imgElement.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
-        imgElement.style.transform = `translate(${trashRect.left - imageRect.left}px, ${trashRect.top - imageRect.top}px) scale(0)`;
-
-        imgElement.addEventListener('transitionend', () => {
-            callback(); // Execute the callback function after animation
-        });
-    }
     function openImageViewer(images, startIndex) {
         let imageViewerModal = document.getElementById('image-viewer-modal');
         if (!imageViewerModal) {
@@ -1436,13 +1374,13 @@ else if (checkbox) {
     
             const modalImage = document.createElement('img');
             modalImage.classList.add('modal-image');
-            modalImage.id = 'modal-image'; // Add an ID for easier reference
+            modalImage.id = 'modal-image'; 
             imageViewerModal.appendChild(modalImage);
     
             const closeModalButton = document.createElement('button');
             closeModalButton.textContent = 'X';
             closeModalButton.classList.add('close-modal-button');
-            closeModalButton.onclick = () => closeModal(); // Close modal when 'X' is clicked
+            closeModalButton.onclick = () => closeModal(); 
             imageViewerModal.appendChild(closeModalButton);
     
             const prevButton = document.createElement('button');
@@ -1475,28 +1413,24 @@ else if (checkbox) {
             }
         }
     
-     // Get the modal and image elements
 const modalImage = document.getElementById('modalImage');
 
-// Function to close the modal
 function closeModal() {
     imageViewerModal.style.display = 'none';
     enablePageScrolling();
-    document.removeEventListener('keydown', handleKeyNavigation); // Remove the keydown listener
+    document.removeEventListener('keydown', handleKeyNavigation); 
 }
 
-// Function to close modal when clicking outside the image
 imageViewerModal.addEventListener('click', function(event) {
-    if (event.target === imageViewerModal) { // Check if clicked outside the image
+    if (event.target === imageViewerModal) { 
         closeModal();
     }
 });
        
     
         updateModalImage();
-        imageViewerModal.style.display = 'flex'; // Ensure the modal is shown
+        imageViewerModal.style.display = 'flex'; 
     
-        // Add keyboard navigation support
         function handleKeyNavigation(event) {
             if (event.key === 'ArrowLeft') {
                 currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
@@ -1505,11 +1439,10 @@ imageViewerModal.addEventListener('click', function(event) {
                 currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
                 updateModalImage();
             } else if (event.key === 'Escape') {
-                closeModal(); // Close modal when 'Esc' is pressed
+                closeModal(); 
             }
         }
     
-        // Listen for keydown events to navigate with arrow keys and close with Esc
         document.addEventListener('keydown', handleKeyNavigation);
     }   
        
@@ -1536,101 +1469,94 @@ imageViewerModal.addEventListener('click', function(event) {
             addPhotoButton.disabled = disable;
         }
     }
-    function hideSubmitButton() {
-        const submitButton = document.getElementById('dynamic-submit-button');
-        if (submitButton) {
-            submitButton.style.display = 'none'; // Hide the submit button
-        }
+     // Function to hide the submit button
+     function hideSubmitButton() {
+        submitButton.style.display = 'none';
+        hasChanges = false;
         activeRecordId = null;
-        hasChanges = false; // Reset changes flag
+        console.log('Submit button hidden. No changes detected.');
     }
     
-    let confirmationShown = false; // Flag to prevent multiple confirmations
+    let confirmationShown = false; 
 
-    // Function to handle changes and submit them
-    async function submitChanges() {
-        if (!hasChanges || !activeRecordId) {
-            showToast('No changes to submit.');
-            hideSubmitButton();  // Hide the button if no changes detected
+    // Function to submit changes
+async function submitChanges() {
+    // Check for any unsaved changes and valid active record
+    if (!hasChanges || !activeRecordId) {
+        showToast('No changes to submit.');
+        hideSubmitButton();
+        return;
+    }
+
+    // Confirm submission if not already confirmed
+    if (!confirmationShown) {
+        const userConfirmed = confirm("Are you sure you want to submit these changes?");
+        if (!userConfirmed) {
+            showToast('Submission canceled.');
+            confirmationShown = false;
             return;
         }
-    
-        // Only show the confirmation once
-        if (!confirmationShown) {
-            const userConfirmed = confirm("Are you sure you want to submit these changes?");
-            if (!userConfirmed) {
-                showToast('Submission canceled.');
-                confirmationShown = false;  // Reset flag in case of cancellation
-                return;
-            }
-            confirmationShown = true;  // Set the flag to avoid re-confirmation
-        }
-    
-        try {
-            // Hide content while submitting
-            mainContent.style.display = 'none';
-            secondaryContent.style.display = 'none';
-    
-            // Get all fields to update for the active record
-            const fieldsToUpdate = updatedFields[activeRecordId];
-            
-            // Check if we are updating the Subcontractor field
-            if (fieldsToUpdate['sub']) {
-                // Submit the subcontractor field value separately
-                await updateRecord(activeRecordId, { 'Subcontractor': fieldsToUpdate['sub'] });
-            }
-    
-            // Submit all other updated fields
-            if (Object.keys(fieldsToUpdate).length > 0) {
-                // Remove the 'sub' field if it was already submitted
-                delete fieldsToUpdate['sub'];
-                
-                // Submit the remaining fields (e.g., checkboxes and other fields)
-                if (Object.keys(fieldsToUpdate).length > 0) {
-                    await updateRecord(activeRecordId, fieldsToUpdate);
-                }
-            }
-    
-            // Show a success message
-            showToast('Changes submitted successfully!');
-            
-            // Reset state after submission
-            updatedFields = {};
-            hasChanges = false;
-            activeRecordId = null;
-            confirmationShown = false;  // Reset flag after successful submission
-    
-            // Fetch and refresh data
-            await fetchAllData();
-        } catch (error) {
-            console.error('Error during submission:', error);
-            showToast('Error submitting changes.');
-            confirmationShown = false;  // Reset flag in case of error
-        } finally {
-            // Show content after submission
-            mainContent.style.display = 'block';
-            secondaryContent.style.display = 'block';
-            hideSubmitButton();  // Hide the button after submission
-        }
+        confirmationShown = true;
     }
+
+    try {
+        console.log('Submitting changes...'); // Log the start of submission
+        mainContent.style.display = 'none';
+        secondaryContent.style.display = 'none';
+
+        // Get fields to update for the active record
+        const fieldsToUpdate = updatedFields[activeRecordId];
+
+        // Handle specific updates, such as the 'sub' field, if present
+        if (fieldsToUpdate['sub']) {
+            await updateRecord(activeRecordId, { 'Subcontractor': fieldsToUpdate['sub'] });
+        }
+
+        // Remove the 'sub' field from updates and apply any remaining changes
+        if (Object.keys(fieldsToUpdate).length > 0) {
+            delete fieldsToUpdate['sub'];
+            if (Object.keys(fieldsToUpdate).length > 0) {
+                await updateRecord(activeRecordId, fieldsToUpdate);
+            }
+        }
+
+        showToast('Changes submitted successfully!');
+        console.log('Changes submitted successfully for record:', activeRecordId);
+
+        // Reset tracking variables after successful submission
+        updatedFields = {};
+        hasChanges = false;
+        activeRecordId = null;
+        confirmationShown = false;
+        hideSubmitButton();
+
+        // Fetch updated data after submission
+        await fetchAllData();
+    } catch (error) {
+        console.error('Error during submission:', error);
+        showToast('Error submitting changes.');
+        confirmationShown = false;
+    } finally {
+        // Re-display content and reset UI elements
+        mainContent.style.display = 'block';
+        secondaryContent.style.display = 'block';
+        hideSubmitButton();
+    }
+}
+
     
 
-// Variables to track submission state
 let isSubmitting = false;
 
-// Event listener for dynamic submit button
 submitButton.addEventListener('click', function () {
     console.log('Submit button clicked.');
 
-    // Check if a submission is already in progress or confirmation has already been shown
     if (!isSubmitting && !confirmationShown) {
         console.log('No active submission and no confirmation shown yet.');
         
-        // Set isSubmitting to true to prevent duplicate submissions
         isSubmitting = true;
         console.log('Submission in progress: ', isSubmitting);
         
-        // Call the submitChanges function
         try {
             console.log('Calling submitChanges...');
             submitChanges();
@@ -1639,7 +1565,6 @@ submitButton.addEventListener('click', function () {
             console.error('Error during submitChanges execution: ', error);
         }
     } else {
-        // Log the condition preventing submission
         if (isSubmitting) {
             console.log('Submission already in progress, skipping duplicate submission.');
         }
@@ -1667,56 +1592,80 @@ submitButton.addEventListener('click', function () {
             });
         }
     
-   // Global variables
-let originalValues = {};  // Store the original values
-let updatedFields = {};   // Track changes made by the user
-let hasChanges = false;   // Track if there are any unsaved changes
-let activeRecordId = null;  // Track the current active record
-
+let originalValues = {};  
+let updatedFields = {};  
+let hasChanges = false;  
         
-// Function to check if the current values are different from the original values
-function checkForChanges(recordId) {
-    const currentValues = updatedFields[recordId] || {};
+    // Function to check for changes compared to original values
+    function checkForChanges(recordId) {
+        const currentValues = updatedFields[recordId] || {};
+        
+        const fieldsHaveChanged = Object.keys(currentValues).some(field => {
+            const currentValue = currentValues[field];
+            const originalValue = originalValues[recordId] ? originalValues[recordId][field] : undefined;
+            console.log(`Comparing field "${field}": current value = ${currentValue}, original value = ${originalValue}`);
+            return currentValue !== originalValue;
+        });
 
-    // Check if any fields have changed compared to the original values
-    const fieldsHaveChanged = Object.keys(currentValues).some(field => {
-        const currentValue = currentValues[field];
-        const originalValue = originalValues[recordId] ? originalValues[recordId][field] : undefined;
+        // If there are no changes, clear updatedFields for the record
+        if (!fieldsHaveChanged) {
+            delete updatedFields[recordId];
+        }
 
-        return currentValue !== originalValue; // True if the current value differs from the original
+        // Update hasChanges based on updatedFields status
+        hasChanges = Object.keys(updatedFields).length > 0;
+
+        if (hasChanges) {
+            showSubmitButton(recordId);
+        } else {
+            hideSubmitButton();
+        }
+    }
+
+
+ // Attach event listeners to track changes
+ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+    element.addEventListener('input', function () {
+        const recordId = this.closest('tr').dataset.id;
+        console.log(`Input event detected for record ID: ${recordId}`);
+        handleInputChange.call(this);
     });
 
-    // Update hasChanges flag based on whether fields have changed
-    hasChanges = fieldsHaveChanged;
+    element.addEventListener('change', function () {
+        const recordId = this.closest('tr').dataset.id;
+        console.log(`Change event detected for record ID: ${recordId}`);
+        handleInputChange.call(this);
+    });
 
-    if (!hasChanges) {
-        hideSubmitButton();  // Hide the button if no changes detected
-    } else {
-        showSubmitButton(recordId);  // Show the button if there are changes
-    }
-}
+    element.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            const recordId = element.closest('tr').dataset.id;
+            console.log(`Enter key pressed for record ID: ${recordId}`);
+            handleInputChange.call(element, event);
+            if (hasChanges) {
+                submitChanges();
+            }
+        }
+    });
+});
         
-// Function to handle input or change events
-function handleInputChange(event) {
+ // Function to handle input change and update values
+ function handleInputChange(event) {
     const recordId = this.closest('tr').dataset.id;
     const field = this.dataset.field;
-
-    // Update the changed value in the updatedFields object
     updatedFields[recordId] = updatedFields[recordId] || {};
     updatedFields[recordId][field] = this.value || this.textContent;
-
-    checkForChanges(recordId);  // Check if there are changes after the update
+    console.log(`Updated fields for record ID ${recordId}:`, updatedFields[recordId]);
+    checkForChanges(recordId);
 }
 
-// Attach event listeners to input fields
 document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
-    element.addEventListener('input', handleInputChange);  // For real-time input changes
-    element.addEventListener('change', handleInputChange);  // For dropdowns and checkboxes
+    element.addEventListener('input', handleInputChange); 
+    element.addEventListener('change', handleInputChange); 
 });
      
-        
-        // Function to show the submit button
-        function showSubmitButton(recordId) {
+                function showSubmitButton(recordId) {
             if (hasChanges) {
                 const lastTop = localStorage.getItem('submitButtonTop') || '50%';
                 const lastLeft = localStorage.getItem('submitButtonLeft') || '50%';
@@ -1726,14 +1675,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 activeRecordId = recordId;
             }
         }
-           
-       // Reset updatedFields and hide submit button if the user undoes all changes
-function resetChanges(recordId) {
-    delete updatedFields[recordId];
-    checkForChanges(recordId);
-}      
-
-  // Adjust button size and position dynamically
+        
   function adjustButtonPosition() {
     const submitButton = document.getElementById('dynamic-submit-button');
     if (window.innerWidth < 576) {
@@ -1745,127 +1687,100 @@ function resetChanges(recordId) {
     }
 }
 
-// Add resize event listener
 window.addEventListener('resize', () => {
     adjustImageSize();
     adjustButtonPosition();
 });
 
-// Call functions on initial load
 adjustImageSize();
 adjustButtonPosition();
-});
-    
-    
+}); 
 
 document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
-    element.addEventListener('input', () => {
-        if (hasChanges) {
-            showSubmitButton(activeRecordId);
-        } else {
-            hideSubmitButton();
-        }
+    element.addEventListener('input', function () {
+        const recordId = this.closest('tr').dataset.id;
+        console.log(`Input event detected for record ID: ${recordId}`);
+        handleInputChange.call(this);
     });
 
-    element.addEventListener('change', () => {
-        if (hasChanges) {
-            showSubmitButton(activeRecordId);
-        } else {
-            hideSubmitButton();
-        }
+    element.addEventListener('change', function () {
+        const recordId = this.closest('tr').dataset.id;
+        console.log(`Change event detected for record ID: ${recordId}`);
+        handleInputChange.call(this);
     });
 
     element.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
-            event.preventDefault(); // Prevent default Enter behavior
+            event.preventDefault();
+            const recordId = element.closest('tr').dataset.id;
+            console.log(`Enter key pressed for record ID: ${recordId}`);
+            handleInputChange.call(element, event);
             if (hasChanges) {
-                showSubmitButton(activeRecordId);
-            } else {
-                hideSubmitButton();
+                submitChanges();
             }
-            submitChanges(); // Call submitChanges on Enter key press
         }
     });
 });
 
 document.addEventListener('DOMContentLoaded', async function () {
-    let debounceTimeout = null; // Declare debounce timer
+    let debounceTimeout = null; 
 
-    // Function to handle delayed submit
     function handleDelayedSubmit(recordId) {
-        clearTimeout(debounceTimeout); // Clear previous timeout if exists
+        clearTimeout(debounceTimeout);
         debounceTimeout = setTimeout(() => {
             if (hasChanges) {
-                submitChanges();  // Submit changes after the 3-second delay
+                submitChanges();  
             }
-        }, 3000); // Delay of 3 seconds (3000 milliseconds)
+        }, 5000);
     }
 
-    // Modify the input event listener for text inputs to delay submission
     document.querySelectorAll('input[type="text"], td[contenteditable="true"]').forEach(element => {
-        if (element.id !== 'search-input') {  // Exclude the search input box
+        if (element.id !== 'search-input') {  
             element.addEventListener('input', function () {
                 const recordId = this.closest('tr').dataset.id;
-                checkForChanges(recordId);  // Check for any changes
+                checkForChanges(recordId);  
                 if (hasChanges) {
-                    showSubmitButton(recordId);  // Show the submit button
-                    handleDelayedSubmit(recordId);  // Call the delayed submit handler
+                    showSubmitButton(recordId);  
+                    handleDelayedSubmit(recordId);  
                 } else {
-                    hideSubmitButton();  // Hide the button if no changes
+                    hideSubmitButton();  
                 }
             });
         }
     });
 
-    // Existing change event listener for select, checkboxes, etc.
     document.querySelectorAll('input[type="checkbox"], select, td[contenteditable="true"]').forEach(element => {
         element.addEventListener('input', function () {
-            const closestRow = this.closest('tr'); // Save closest row to a variable
-            if (closestRow) {  // Check if the closest <tr> exists
+            const closestRow = this.closest('tr'); 
+            if (closestRow) { 
                 const recordId = closestRow.dataset.id;
-                checkForChanges(recordId);  // Check for any changes
+                checkForChanges(recordId);  
             } else {
                 console.warn('No parent <tr> found for the element', this);
             }
         });
     });
     
-
-    // Existing enter key listener for immediate submission on pressing enter
     document.querySelectorAll('td[contenteditable="true"], input[type="text"]').forEach(element => {
         element.addEventListener('keypress', (event) => {
             if (event.key === 'Enter' && element.id !== 'search-input') {
                 event.preventDefault();
-                submitChanges();  // Submit immediately on enter key press
+                submitChanges();  
             }
         });
     });
-
-    // Fetch all data or other existing logic here
     fetchAllData();
 });
 
-
-
-// Assuming dynamic buttons are added to a container
 const dynamicButtonsContainer = document.createElement('div');
-dynamicButtonsContainer.classList.add('dynamic-buttons-container'); // Add the class to the container
-
-// Add the dynamically created submit button to this container
+dynamicButtonsContainer.classList.add('dynamic-buttons-container'); 
 dynamicButtonsContainer.appendChild(submitButton);
-
-// Add the container to the body or wherever it should be displayed
 document.body.appendChild(dynamicButtonsContainer);
 
-
-    // Event listener for dynamic submit button
     submitButton.addEventListener('click', function () {
         submitChanges();
     });
 
-
-    
-   // Function to update a record in Airtable
 async function updateRecord(recordId, fields) {
     const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
     const body = JSON.stringify({ fields });
@@ -1893,11 +1808,9 @@ async function updateRecord(recordId, fields) {
     }
 }
     
-
     document.getElementById('search-input').addEventListener('input', function () {
         const searchValue = this.value.toLowerCase();
 
-        // Search in both tables
         ['#airtable-data', '#feild-data'].forEach(tableSelector => {
             const rows = document.querySelectorAll(`${tableSelector} tbody tr`);
             rows.forEach(row => {

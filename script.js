@@ -1044,7 +1044,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
                 { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
-                { field: 'sub', value: fields['sub'] || '', dropdown: true, options: subOptions },
+                { field: 'Subcontractor', value: fields['Subcontractor'] || '', dropdown: true, options: subOptions },
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
             ];
     
@@ -1060,15 +1060,15 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 if (dropdown || field === 'sub') {
                     const select = document.createElement('select');
                     select.classList.add('styled-select');
-            
+                
                     // Only filter subcontractor options based on Vanir Branch for the 'sub' field
                     let filteredOptions = [];
-                    if (field === 'sub') {
+                    if (field === 'Subcontractor') {
                         const vanirBranchValue = fields['b'];  // Get Vanir Branch value for filtering
                         console.log(`[Record ID: ${record.id}] Vanir Branch: ${vanirBranchValue}`);
                         
                         filteredOptions = subOptions.filter(sub => sub.vanirOffice === vanirBranchValue);
-            
+                
                         if (filteredOptions.length === 0) {
                             console.warn(`[Record ID: ${record.id}] No subcontractors found for Vanir Branch: "${vanirBranchValue}".`);
                         }
@@ -1081,7 +1081,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             
       // Custom placeholder for each field
 let placeholderText = 'Select a Vendor...'; // Default placeholder
-if (field === 'sub') {
+if (field === 'Subcontractor') {
     placeholderText = 'Select a Subcontractor ...';
 } else if (field === 'Billable/ Non Billable') {
     placeholderText = 'Select Billable Status ...';
@@ -1112,22 +1112,27 @@ filteredOptions.sort((a, b) => {
 });
 
 // Populate the dropdown with filtered options
+// Populate the dropdown with filtered options
 filteredOptions.forEach(option => {
     const optionElement = document.createElement('option');
-    optionElement.value = option.name || option;  // Ensure compatibility with both hardcoded and dynamic options
-    optionElement.textContent = option.name || option;
+    const optionValue = option.name || option; // Ensure compatibility with both hardcoded and dynamic options
 
-               // Pre-select the option if it matches the current value from Airtable
-               if (option.name === value || option === value) {
-                optionElement.selected = true;  // Mark this option as selected
-            }
+    optionElement.value = optionValue;
+    optionElement.textContent = optionValue;
 
+    // Check if the option matches the previously selected subcontractor
+    if (optionValue === value || optionValue === fields['Subcontractor']) {
+        optionElement.selected = true;  // Mark this option as selected
+    }
 
     select.appendChild(optionElement);
 });
 
 // Append the select element to the cell
 cell.appendChild(select);
+console.log(`Existing Subcontractor in Airtable: ${fields['Subcontractor']}`);
+console.log('Filtered Subcontractor Options:', filteredOptions);
+
 
 // Detect changes and handle state updates
 select.addEventListener('change', () => {
@@ -1263,7 +1268,7 @@ else if (checkbox) {
 
     // For the "Subcontractor Not Needed" checkbox
     if (field === 'Subcontractor Not Needed') {
-        const subcontractorDropdown = row.querySelector('select[data-field="sub"]'); // Target the 'sub' field dropdown
+        const subcontractorDropdown = row.querySelector('select[data-field="Subcontractor"]'); // Target the 'sub' field dropdown
         if (subcontractorDropdown && subcontractorDropdown.value !== "Select a Subcontractor...") {
             checkboxElement.disabled = true; // Disable if a subcontractor other than "Select a Subcontractor..." is selected
             checkboxElement.checked = false; // Uncheck if a subcontractor is selected

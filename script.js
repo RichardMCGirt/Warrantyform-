@@ -345,7 +345,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     
             // Add log to inspect available fields
             data.records.forEach(record => {
-                console.log('Record fields:', record.fields);
             });
     
             // Check if 'Name' is the correct field name
@@ -353,7 +352,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 .filter(record => record.fields['Name'])  // Filter only records that have 'Name'
                 .map(record => record.fields['Name']);    // Extract the vendor names
     
-            console.log('Filtered vendor names:', vendors);
     
             return vendors;  // Return the list of vendor names
         } catch (error) {
@@ -514,40 +512,67 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         
         const uploadedUrls = [];
         console.log(`Starting upload process for record ID: ${recordId}, target field: ${targetField}.`);
-        const currentImages = await fetchCurrentImagesFromAirtable(recordId, targetField);
         
+        const currentImages = await fetchCurrentImagesFromAirtable(recordId, targetField);
         console.log(`Fetched current images from Airtable for record ID ${recordId}:`, currentImages);
         
         for (const file of files) {
-            console.log(`Uploading file ${file.name} to Dropbox...`);
-        
-            let dropboxUrl = await uploadFileToDropbox(file);
+            console.log(`Attempting to upload file "${file.name}" to Dropbox...`);
             
-            if (!dropboxUrl) {
-                console.warn(`Failed to upload ${file.name} due to token expiration. Attempting to refresh token...`);
-                await refreshDropboxToken();
-                dropboxUrl = await uploadFileToDropbox(file);
-            }
-        
-            if (dropboxUrl) {
-                const formattedLink = dropboxUrl.replace('?dl=0', '?raw=1');
-                console.log(`Successfully uploaded file ${file.name}. Dropbox URL (formatted): ${formattedLink}`);
-                uploadedUrls.push({ url: formattedLink });
-            } else {
-                console.error(`Error uploading file ${file.name} to Dropbox after token refresh.`);
+            try {
+                let dropboxUrl = await uploadFileToDropbox(file);
+    
+                if (!dropboxUrl) {
+                    console.warn(`Upload failed for "${file.name}". Dropbox token may be expired. Attempting token refresh...`);
+                    await refreshDropboxToken();
+    
+                    console.log(`Retrying upload for file "${file.name}" after refreshing Dropbox token...`);
+                    dropboxUrl = await uploadFileToDropbox(file);
+                }
+    
+                if (dropboxUrl) {
+                    const formattedLink = dropboxUrl.replace('?dl=0', '?raw=1');
+                    console.log(`Upload successful for "${file.name}". Dropbox URL (formatted): ${formattedLink}`);
+                    uploadedUrls.push({ url: formattedLink });
+                } else {
+                    console.error(`Upload failed for "${file.name}" even after refreshing the Dropbox token.`);
+                }
+    
+            } catch (error) {
+                console.error(`Error during file upload to Dropbox for file "${file.name}":`, error);
+    
+                if (error.response) {
+                    // Error received from Dropbox with status and response details
+                    console.error('Dropbox API response error details:');
+                    console.log(`Status Code: ${error.response.status}`);
+                    console.log(`Status Text: ${error.response.statusText}`);
+                    const errorData = await error.response.json();
+                    console.log('Error Data:', JSON.stringify(errorData, null, 2));
+                } else if (error.request) {
+                    // Error related to the network or request, but no response from Dropbox
+                    console.error('No response received from Dropbox. Network or request error:');
+                    console.log('Request Details:', error.request);
+                } else {
+                    // Error occurred in setting up the request or due to unknown issues
+                    console.error('Unknown error during Dropbox file upload:');
+                    console.log('Error Message:', error.message);
+                    console.log('Error Stack:', error.stack);
+                }
+    
+                return null;
             }
         }
-        
+    
+        // Log the final list of URLs to be updated in Airtable
         const allImages = currentImages.concat(uploadedUrls);
-        
-        console.log(`Total images to update in Airtable for record ID ${recordId}:`, allImages);
-        
+        console.log(`Total images (including existing and new) to update in Airtable for record ID ${recordId}:`, allImages);
+    
         if (allImages.length > 0) {
             const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
             const body = JSON.stringify({ fields: { [targetField]: allImages } });
-        
-            console.log(`Sending PATCH request to Airtable for record ID ${recordId}, updating field ${targetField}...`);
-            
+    
+            console.log(`Sending PATCH request to Airtable for record ID ${recordId}, updating field "${targetField}"...`);
+    
             try {
                 const response = await fetch(url, {
                     method: 'PATCH',
@@ -557,21 +582,25 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     },
                     body: body
                 });
-        
+    
+                console.log(`Airtable PATCH request response status: ${response.status}`);
+    
                 if (!response.ok) {
                     const errorResponse = await response.json();
-                    console.error(`Airtable update failed. HTTP status: ${response.status} ${response.statusText}`, errorResponse);
+                    console.error(`Failed to update Airtable record. Status: ${response.status} - ${response.statusText}`, errorResponse);
                 } else {
                     const successResponse = await response.json();
-                    console.log('Successfully updated record in Airtable:', successResponse);
+                    console.log('Successfully updated Airtable record:', successResponse);
                 }
             } catch (error) {
-                console.error(`Error during Airtable API request:`, error);
+                console.error(`Error during Airtable API PATCH request for record ID ${recordId}:`, error);
             }
         } else {
-            console.error('No files were uploaded to Dropbox, skipping Airtable update.');
+            console.warn('No files were uploaded to Dropbox, so Airtable update will be skipped.');
         }
     }
+    
+
     
     async function fetchAirtableFields() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?maxRecords=1`;
@@ -609,15 +638,17 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     }
 
     async function uploadFileToDropbox(file) {
+        console.log('Starting file upload to Dropbox...');
+        
         if (!dropboxAccessToken) {
             console.error('Dropbox Access Token is not available.');
             return null;
         }
-
+    
         const dropboxUploadUrl = 'https://content.dropboxapi.com/2/files/upload';
         const path = `/${file.name}`;
-        console.log(`Uploading file to Dropbox: ${file.name}`);
-
+        console.log(`Uploading file to Dropbox: ${file.name} at path: ${path}`);
+    
         try {
             const response = await fetch(dropboxUploadUrl, {
                 method: 'POST',
@@ -633,34 +664,37 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 },
                 body: file
             });
-
+    
             console.log(`Dropbox file upload response status: ${response.status}`);
-
+            
             if (!response.ok) {
                 const errorResponse = await response.json();
                 console.error('Error uploading file to Dropbox:', errorResponse);
-
-                // Check for expired access token error
+    
                 if (errorResponse.error && errorResponse.error['.tag'] === 'expired_access_token') {
-                    console.log('Access token expired. Refreshing token...');
+                    console.log('Access token expired. Attempting to refresh token...');
                     await refreshDropboxToken();
-
-                    // Retry the upload after refreshing the token
+    
+                    console.log('Retrying file upload after refreshing access token...');
                     return await uploadFileToDropbox(file);
                 }
-
+    
                 return null;
             }
-
+    
             const data = await response.json();
             console.log('File uploaded to Dropbox successfully:', data);
-
-            return await getDropboxSharedLink(data.path_lower);
+            console.log(`File path in Dropbox: ${data.path_lower}`);
+    
+            const sharedLink = await getDropboxSharedLink(data.path_lower);
+            console.log(`Shared link for uploaded file: ${sharedLink}`);
+            return sharedLink;
         } catch (error) {
-            console.error('Error uploading file to Dropbox:', error);
+            console.error('Error during file upload to Dropbox:', error);
             return null;
         }
     }
+    
 
     async function getDropboxSharedLink(filePath) {
         if (!dropboxAccessToken) {
@@ -987,12 +1021,10 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         } while (offset);
     
         // Add logging for detailed inspection of records
-        console.log('Fetched subcontractor records:', records);
     
         // Extract subcontractor options
         const subOptions = Array.from(new Set(records.map(record => {
             // Log the exact structure of each record's fields to troubleshoot the branch issue
-            console.log('Inspecting record fields:', record.fields);
     
             return {
                 name: record.fields['Subcontractor Company Name'] || 'Unnamed Subcontractor',
@@ -1000,7 +1032,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             };
         }).filter(Boolean)));
     
-        console.log('Final subcontractor options with branches:', subOptions);  // Log the final options
     
         return subOptions;  // Return the subcontractor options array
     }
@@ -1065,19 +1096,16 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     let filteredOptions = [];
                     if (field === 'Subcontractor') {
                         const vanirBranchValue = fields['b'];  // Get Vanir Branch value for filtering
-                        console.log(`[Record ID: ${record.id}] Vanir Branch: ${vanirBranchValue}`);
                         
                         filteredOptions = subOptions.filter(sub => sub.vanirOffice === vanirBranchValue);
                 
                         if (filteredOptions.length === 0) {
-                            console.warn(`[Record ID: ${record.id}] No subcontractors found for Vanir Branch: "${vanirBranchValue}".`);
                         }
                     } else {
                         // For non-'sub' fields, use the provided hardcoded options
                         filteredOptions = options;
                     }
             
-                    console.log(`Filtered Options for Field "${field}" (Vanir Branch: ${fields['b']}):`, filteredOptions);
             
       // Custom placeholder for each field
 let placeholderText = 'Select a Vendor...'; // Default placeholder
@@ -1130,8 +1158,6 @@ filteredOptions.forEach(option => {
 
 // Append the select element to the cell
 cell.appendChild(select);
-console.log(`Existing Subcontractor in Airtable: ${fields['Subcontractor']}`);
-console.log('Filtered Subcontractor Options:', filteredOptions);
 
 
 // Detect changes and handle state updates

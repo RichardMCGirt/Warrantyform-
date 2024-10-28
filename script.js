@@ -8,8 +8,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     let dropboxRefreshToken;
     let debounceTimeout = null; // Declare debounce timer in the global scope
 
+  fetchvendors();
 
-    
+    fetchAirtableFields();
     // Fetch Dropbox credentials from Airtable
  fetchDropboxCredentials();
 
@@ -269,7 +270,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             }
 
             const data = await response.json();
-            console.log('Fetched Dropbox credentials data:', JSON.stringify(data, null, 2)); // Detailed log of the fetched data
 
             // Reset Dropbox credentials before setting them
             dropboxAccessToken = undefined;
@@ -321,54 +321,98 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
 
+    async function fetchvendors() {
+        const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID3}/${window.env.AIRTABLE_TABLE_NAME3}`;
+        
+        console.log(`Starting to fetch vendors from: ${url}`);
+    
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
+                }
+            });
+    
+            console.log(`Response status: ${response.status}`);
+    
+            if (!response.ok) {
+                console.error(`Error fetching records: ${response.status} ${response.statusText}`);
+                return [];
+            }
+    
+            const data = await response.json();
+            console.log('Data fetched from Airtable:', data);
+    
+            // Add log to inspect available fields
+            data.records.forEach(record => {
+                console.log('Record fields:', record.fields);
+            });
+    
+            // Check if 'Name' is the correct field name
+            const vendors = data.records
+                .filter(record => record.fields['Name'])  // Filter only records that have 'Name'
+                .map(record => record.fields['Name']);    // Extract the vendor names
+    
+            console.log('Filtered vendor names:', vendors);
+    
+            return vendors;  // Return the list of vendor names
+        } catch (error) {
+            console.error('Error fetching vendor records:', error);
+            return [];
+        }
+    }
+    
+    
+    
+    
+
     async function refreshDropboxToken() {
         console.log('Attempting to refresh Dropbox token...');
-        console.log(`Using App Key: ${dropboxAppKey}, App Secret: ${dropboxAppSecret}, Refresh Token: ${dropboxRefreshToken}`);
-
+        showToast('Refreshing Dropbox token...');  // Notify the user that the token is being refreshed
+    
         if (!dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
             console.error('Dropbox credentials are not available.');
+            showToast('Dropbox credentials are missing. Token refresh failed.');
             return;
         }
-
+    
         const tokenUrl = 'https://api.dropboxapi.com/oauth2/token';
-
+    
         const headers = new Headers();
         headers.append('Authorization', 'Basic ' + btoa(`${dropboxAppKey}:${dropboxAppSecret}`));
         headers.append('Content-Type', 'application/x-www-form-urlencoded');
-
+    
         const body = new URLSearchParams();
         body.append('grant_type', 'refresh_token');
         body.append('refresh_token', dropboxRefreshToken);
-
-        console.log('Sending request to Dropbox for token refresh...');
-        console.log(`Request Body: ${body.toString()}`);
-
+    
         try {
             const response = await fetch(tokenUrl, {
                 method: 'POST',
                 headers: headers,
                 body: body
             });
-
-            console.log(`Dropbox token refresh response status: ${response.status}`);
-
+    
             if (!response.ok) {
                 const errorResponse = await response.json();
                 console.error(`Error refreshing Dropbox token: ${response.status} ${response.statusText}`, errorResponse);
+                showToast('Error refreshing Dropbox token.');
                 return;
             }
-
+    
             const data = await response.json();
             dropboxAccessToken = data.access_token; // Update the access token with the new one
             console.log('Dropbox token refreshed successfully:', dropboxAccessToken);
-
+            showToast('Dropbox token refreshed successfully.');
+    
             // Update the new token in Airtable
             await updateDropboxTokenInAirtable(dropboxAccessToken);
-            console.log('Dropbox token refreshed and updated in Airtable.');
         } catch (error) {
             console.error('Error refreshing Dropbox token:', error);
+            showToast('Error refreshing Dropbox token.');
         }
     }
+    
 
     async function fetchRecordsFromAirtable() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
@@ -394,12 +438,13 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
     async function updateDropboxTokenInAirtable(token) {
         console.log('Updating Dropbox token in Airtable...');
-
+        showToast('Updating Dropbox token in Airtable...');  // Notify the user that the token is being updated
+    
         try {
-            const allRecords = await fetchRecordsFromAirtable(); // Make sure this fetches all necessary records
+            const allRecords = await fetchRecordsFromAirtable(); // Fetch all necessary records
             const updatePromises = allRecords.map(record => {
                 const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-                
+    
                 return fetch(url, {
                     method: 'PATCH',
                     headers: {
@@ -418,7 +463,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     })
                 });
             });
-
+    
             const responses = await Promise.all(updatePromises);
             responses.forEach((response, index) => {
                 if (!response.ok) {
@@ -427,11 +472,14 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     console.log(`Record ${allRecords[index].id} updated successfully.`);
                 }
             });
-
+    
+            showToast('Dropbox token updated in Airtable successfully.');
         } catch (error) {
             console.error('Error updating Dropbox token in Airtable:', error);
+            showToast('Error updating Dropbox token in Airtable.');
         }
     }
+    
 
     // Create file input dynamically
     const fileInput = document.createElement('input');
@@ -463,32 +511,43 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
     async function sendImagesToAirtableForRecord(files, recordId, targetField) {
         if (!Array.isArray(files)) files = [files];
-
+        
         const uploadedUrls = [];
+        console.log(`Starting upload process for record ID: ${recordId}, target field: ${targetField}.`);
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, targetField);
-
+        
+        console.log(`Fetched current images from Airtable for record ID ${recordId}:`, currentImages);
+        
         for (const file of files) {
+            console.log(`Uploading file ${file.name} to Dropbox...`);
+        
             let dropboxUrl = await uploadFileToDropbox(file);
+            
             if (!dropboxUrl) {
-                // Refresh token if upload fails due to token expiration
+                console.warn(`Failed to upload ${file.name} due to token expiration. Attempting to refresh token...`);
                 await refreshDropboxToken();
                 dropboxUrl = await uploadFileToDropbox(file);
             }
-
+        
             if (dropboxUrl) {
                 const formattedLink = dropboxUrl.replace('?dl=0', '?raw=1');
+                console.log(`Successfully uploaded file ${file.name}. Dropbox URL (formatted): ${formattedLink}`);
                 uploadedUrls.push({ url: formattedLink });
             } else {
-                console.error('Error uploading file to Dropbox:', file.name);
+                console.error(`Error uploading file ${file.name} to Dropbox after token refresh.`);
             }
         }
-
+        
         const allImages = currentImages.concat(uploadedUrls);
-
+        
+        console.log(`Total images to update in Airtable for record ID ${recordId}:`, allImages);
+        
         if (allImages.length > 0) {
             const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
             const body = JSON.stringify({ fields: { [targetField]: allImages } });
-
+        
+            console.log(`Sending PATCH request to Airtable for record ID ${recordId}, updating field ${targetField}...`);
+            
             try {
                 const response = await fetch(url, {
                     method: 'PATCH',
@@ -498,20 +557,36 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     },
                     body: body
                 });
-
+        
                 if (!response.ok) {
                     const errorResponse = await response.json();
-                    console.error(`Error updating record: ${response.status} ${response.statusText}`, errorResponse);
+                    console.error(`Airtable update failed. HTTP status: ${response.status} ${response.statusText}`, errorResponse);
                 } else {
-                    console.log('Successfully updated record in Airtable:', await response.json());
+                    const successResponse = await response.json();
+                    console.log('Successfully updated record in Airtable:', successResponse);
                 }
             } catch (error) {
-                console.error('Error updating Airtable:', error);
+                console.error(`Error during Airtable API request:`, error);
             }
         } else {
             console.error('No files were uploaded to Dropbox, skipping Airtable update.');
         }
     }
+    
+    async function fetchAirtableFields() {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?maxRecords=1`;
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
+            });
+        
+            const data = await response.json();
+            console.log('Available fields in the first record:', data.records[0].fields);
+        } catch (error) {
+            console.error('Error fetching fields from Airtable:', error);
+        }
+    }
+    
 
     async function fetchCurrentImagesFromAirtable(recordId, targetField) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
@@ -592,9 +667,9 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             console.error('Dropbox Access Token is not available.');
             return null;
         }
-
+    
         const dropboxCreateSharedLinkUrl = 'https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings';
-
+    
         try {
             const response = await fetch(dropboxCreateSharedLinkUrl, {
                 method: 'POST',
@@ -609,17 +684,18 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     }
                 })
             });
-
+    
             if (!response.ok) {
                 if (response.status === 409) {
                     // A shared link already exists, fetch the existing link
+                    console.warn('Shared link already exists, fetching existing link...');
                     return await getExistingDropboxLink(filePath);
                 } else {
                     console.error(`Error creating shared link: ${response.status} ${response.statusText}`);
                     return null;
                 }
             }
-
+    
             const data = await response.json();
             return convertToDirectLink(data.url);
         } catch (error) {
@@ -627,6 +703,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             return null;
         }
     }
+    
 
     async function getExistingDropboxLink(filePath) {
         if (!dropboxAccessToken) {
@@ -673,23 +750,24 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
     async function fetchData(offset = null) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?${offset ? `offset=${offset}` : ''}`;
-
+    
         try {
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
-
+    
             if (!response.ok) {
                 console.error(`Error fetching data: ${response.status} ${response.statusText}`);
-                return { records: [] };
+                return { records: [] }; // Return an empty array on error
             }
-
+    
             return await response.json();
         } catch (error) {
             console.error('Error fetching data from Airtable:', error);
-            return { records: [] };
+            return { records: [] }; // Return an empty array if an error occurs
         }
     }
+    
 
     function syncTableWidths() {
         const mainTable = document.querySelector('#airtable-data');
@@ -704,7 +782,8 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-    
+    let vendorOptions = []; // Declare vendorOptions properly
+
     let subOptions = []; // Declare subOptions globally
 
     async function fetchAllData() {
@@ -729,6 +808,14 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             let allRecords = [];
             let offset = null;
     
+            // Fetch vendor options for 'Material Vendor' dropdown
+            try {
+                vendorOptions = await fetchvendors(); // Fetch vendor data and assign it to vendorOptions
+            } catch (error) {
+                console.error('Error fetching vendor options:', error);
+                vendorOptions = []; // Continue with empty array if error occurs
+            }
+    
             // Fetch sub options (assuming it's fetched from another Airtable table or source)
             try {
                 subOptions = await fetchAirtableSubOptionsFromDifferentTable() || [];
@@ -739,8 +826,15 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     
             do {
                 const data = await fetchData(offset);
-                if (data.records.length === 0 && !offset) break;
-                allRecords = allRecords.concat(data.records);
+                
+                // Ensure data.records exists and is an array
+                if (data && Array.isArray(data.records)) {
+                    allRecords = allRecords.concat(data.records);
+                } else {
+                    console.error('Error: Invalid data structure or no records found.');
+                    break; // Exit loop if no valid data is fetched
+                }
+                
                 offset = data.offset;
             } while (offset);
     
@@ -765,9 +859,8 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 return (a.fields['b'] || '').localeCompare(b.fields['b'] || '');
             });
     
-          
-            // Display the primary and secondary records in your tables
-            await displayData(primaryRecords, '#airtable-data', false, subOptions);
+            // Display the primary and secondary records in your tables with vendor options
+            await displayData(primaryRecords, '#airtable-data', false, vendorOptions);
             await displayData(secondaryRecords, '#feild-data', true, subOptions);
     
             // Reveal content after loading
@@ -793,34 +886,14 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             }, 10);
     
             syncTableWidths();
+   
+      
         }
     }
+    
+    
 
-    function populateDropdown(record, filteredOptions) {
-        // Find the target element in the DOM where you want to append the dropdown
-        const targetElement = document.querySelector(`#record-${record.id}`);
-    
-        // Check if the target element exists before appending
-        if (targetElement) {
-            const select = document.createElement('select');
-            select.classList.add('styled-select');
-    
-            // Populate the dropdown with the filtered options
-            filteredOptions.forEach(option => {
-                const optionElement = document.createElement('option');
-                const displayText = option.name || '';
-                optionElement.value = displayText;
-                optionElement.textContent = displayText;
-                select.appendChild(optionElement);
-            });
-    
-            // Append the dropdown to the target element
-            targetElement.appendChild(select);
-        } else {
-            console.error(`Target element for record ID ${record.id} not found.`);
-        }
-    }
-    
+        
     function checkForChanges(recordId) {
         const currentValues = updatedFields[recordId] || {};
     
@@ -875,43 +948,64 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     // Fetch data and call syncTableWidths after DOM content is ready
     fetchAllData();
 
+    async function fetchAirtableFields() {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?maxRecords=1`;
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
+            });
+    
+            const data = await response.json();
+            console.log('Available fields in the first record:', data.records[0].fields);
+        } catch (error) {
+            console.error('Error fetching fields from Airtable:', error);
+        }
+    }
+   
+    
+
     async function fetchAirtableSubOptionsFromDifferentTable() {
         let records = [];
         let offset = null;
-        const subTableId = 'tbl6EeKPsNuEvt5y';  // Replace with the table ID you're using for the 'sub' field
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME2}`;
-    
+        
         do {
-            const response = await fetch(`${url}?fields[]=Subcontractor Company Name${offset ? `&offset=${offset}` : ''}`, {
+            const response = await fetch(`${url}?fields[]=Subcontractor%20Company%20Name&fields[]=Vanir%20Branch${offset ? `&offset=${offset}` : ''}`, {
                 headers: {
                     Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
                 }
             });
     
             if (!response.ok) {
-                console.error(`Error fetching sub options: ${response.status} ${response.statusText}`);
+                console.error(`Error fetching subcontractor options: ${response.status} ${response.statusText}`);
                 break;
             }
     
             const data = await response.json();
             records = records.concat(data.records);  // Append new records
             offset = data.offset;  // Airtable pagination: set offset for next batch
+        } while (offset);
     
-        } while (offset);  // Loop until there are no more records
+        // Add logging for detailed inspection of records
+        console.log('Fetched subcontractor records:', records);
     
-        // Extract unique 'sub' field values and return as an array
-        const subOptions = Array.from(new Set(records.map(record => record.fields['Subcontractor Company Name']).filter(Boolean)));
-        return subOptions;
+        // Extract subcontractor options
+        const subOptions = Array.from(new Set(records.map(record => {
+            // Log the exact structure of each record's fields to troubleshoot the branch issue
+            console.log('Inspecting record fields:', record.fields);
+    
+            return {
+                name: record.fields['Subcontractor Company Name'] || 'Unnamed Subcontractor',
+                vanirOffice: record.fields['Vanir Branch'] || 'Unknown Branch'  // Log and handle missing branches
+            };
+        }).filter(Boolean)));
+    
+        console.log('Final subcontractor options with branches:', subOptions);  // Log the final options
+    
+        return subOptions;  // Return the subcontractor options array
     }
     
-    function getDropdownOptions(field, options) {
-        return options.map((option, index) => ({
-          value: option,
-          label: option,
-          selected: index === 0, // Default the first option as selected
-        }));
-      }
-
+    
     async function displayData(records, tableSelector, isSecondary = false) {
         const tbody = document.querySelector(`${tableSelector} tbody`);
         tbody.innerHTML = '';
@@ -929,10 +1023,9 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
                 { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },       
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
-                { field: 'Completed Pictures', value: fields['Completed Pictures'] || [], image: true, imageField: 'Completed Pictures' },
+                { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true, imageField: 'Completed  Pictures' },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
                 { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true }
-    
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
@@ -942,8 +1035,14 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
-                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['select either Billable or nonBillable','Billable', 'Non Billable'] },
-                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['select a reason','Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
+                {
+                    field: 'Material Vendor',
+                    value: fields['Material Vendor'] || '',
+                    dropdown: true,
+                    options: vendorOptions  
+                },
+                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
+                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
                 { field: 'sub', value: fields['sub'] || '', dropdown: true, options: subOptions },
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
@@ -958,89 +1057,109 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 cell.style.maxWidth = '200px';
                 cell.style.position = 'relative';
             
-                // Handle dropdowns for 'sub' and other fields
                 if (dropdown || field === 'sub') {
                     const select = document.createElement('select');
                     select.classList.add('styled-select');
-                
-                    // Get the Vanir Branch value from column index 1 (assuming field 'b' holds the value)
-                    const vanirBranchValue = record.fields['b'];  // Adjust 'b' to the actual field name if necessary
-                    console.log(`Vanir Branch Value for record ID ${record.id}:`, vanirBranchValue);
-                
-                    // Use subOptions for 'Subcontractor Company Name', otherwise use hardcoded options
-                    let dropdownOptions = field === 'Subcontractor Company Name' ? subOptions : options;
-                    console.log(`Original Sub Options Count: ${dropdownOptions.length}`);  // Log the original count of subOptions
-             // Only add the empty option if the field is 'sub'
-    if (field === 'sub') {
-        const emptyOption = document.createElement('option');
-        emptyOption.value = '';
-        emptyOption.textContent = 'Select a Subcontractor...';
-        select.appendChild(emptyOption);
-        console.log('Added empty option to dropdown for Subcontractor.');
+            
+                    // Only filter subcontractor options based on Vanir Branch for the 'sub' field
+                    let filteredOptions = [];
+                    if (field === 'sub') {
+                        const vanirBranchValue = fields['b'];  // Get Vanir Branch value for filtering
+                        console.log(`[Record ID: ${record.id}] Vanir Branch: ${vanirBranchValue}`);
+                        
+                        filteredOptions = subOptions.filter(sub => sub.vanirOffice === vanirBranchValue);
+            
+                        if (filteredOptions.length === 0) {
+                            console.warn(`[Record ID: ${record.id}] No subcontractors found for Vanir Branch: "${vanirBranchValue}".`);
+                        }
+                    } else {
+                        // For non-'sub' fields, use the provided hardcoded options
+                        filteredOptions = options;
+                    }
+            
+                    console.log(`Filtered Options for Field "${field}" (Vanir Branch: ${fields['b']}):`, filteredOptions);
+            
+      // Custom placeholder for each field
+let placeholderText = 'Select a Vendor...'; // Default placeholder
+if (field === 'sub') {
+    placeholderText = 'Select a Subcontractor ...';
+} else if (field === 'Billable/ Non Billable') {
+    placeholderText = 'Select Billable Status ...';
+} else if (field === 'Billable Reason (If Billable)') {
+    placeholderText = 'Select a Reason ...';
+} else if (field === 'Material Vendor') {
+    placeholderText = 'Select a Vendor ...';
+} else if (field === 'Material Vendor') {
+    placeholderText = 'Select a Vendor ...';{
+        
     }
+}
+
+// Create and append a placeholder option
+const placeholderOption = document.createElement('option');
+placeholderOption.value = '';
+placeholderOption.textContent = placeholderText;
+select.appendChild(placeholderOption);
+
+// Check if there's a previously selected subcontractor in the 'Subcontractor' field
+const selectedSubcontractor = fields['Subcontractor'] || '';
+
+// Sort the filtered options alphabetically
+filteredOptions.sort((a, b) => {
+    const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase();  // Ensure valid comparison for both cases
+    const nameB = b.name ? b.name.toLowerCase() : b.toLowerCase();
+    return nameA.localeCompare(nameB);
+});
+
+// Populate the dropdown with filtered options
+filteredOptions.forEach(option => {
+    const optionElement = document.createElement('option');
+    optionElement.value = option.name || option;  // Ensure compatibility with both hardcoded and dynamic options
+    optionElement.textContent = option.name || option;
+
+               // Pre-select the option if it matches the current value from Airtable
+               if (option.name === value || option === value) {
+                optionElement.selected = true;  // Mark this option as selected
+            }
 
 
-// Sort the options alphabetically (ignoring case)
-dropdownOptions.sort((a, b) => {
-    const cleanString = str => 
-        (typeof str === 'string' ? str : str.name || '')
-        .replace(/[\(\[\]]/g, '')  // Remove ( and [ characters
-        .toLowerCase();
+    select.appendChild(optionElement);
+});
 
-    const optionA = cleanString(a);
-    const optionB = cleanString(b);
+// Append the select element to the cell
+cell.appendChild(select);
 
-    return optionA.localeCompare(optionB);
+// Detect changes and handle state updates
+select.addEventListener('change', () => {
+    const newValue = select.value;
+    updatedFields[record.id] = updatedFields[record.id] || {};
+    updatedFields[record.id][field] = newValue;
+    hasChanges = true;
+
+    showSubmitButton(record.id);
+
+    // Enable or disable the checkbox based on selection
+    const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
+    if (fieldReviewCheckbox) {
+        fieldReviewCheckbox.disabled = (newValue === "");
+        fieldReviewCheckbox.checked = false;
+    }
 });
 
 
-// Add the filtered and sorted options to the dropdown
-dropdownOptions.forEach(option => {
-    const optionElement = document.createElement('option');
     
-    // If the option is a string, use it directly, otherwise use its 'name' property
-    const displayText = (typeof option === 'string') ? option : (option.name || 'Unnamed Option');
-    optionElement.value = displayText;  // Option value
-    optionElement.textContent = displayText;  // Option text to display
-    
-    // Set the selected option if it matches the value
-    if (displayText === value) {
-        optionElement.selected = true;
-    }
-    
-    // Optional styling for Billable/Non-Billable dropdown
-    if (field === 'Billable/ Non Billable') {
-        if (option === 'Billable') {
-            optionElement.style.backgroundColor = '#ffeb3b';
-            optionElement.style.color = '#000';
-        } else if (option === 'Non Billable') {
-            optionElement.style.backgroundColor = '#03a9f4';
-            optionElement.style.color = '#fff';
-        }
-    }
-
-    // Append the sorted option to the select element
-    select.appendChild(optionElement);
-                    });
-    
-                    select.addEventListener('change', () => {
-                        const newValue = select.value;
-                        updatedFields[record.id] = updatedFields[record.id] || {};
-                        updatedFields[record.id][field] = newValue;
-                        hasChanges = true;
-                        showSubmitButton(record.id);
-                    
-                        // Enable/disable checkbox based on valid selection
-                        const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
-                        if (fieldReviewCheckbox) {
-                            fieldReviewCheckbox.disabled = (newValue === '' || newValue === 'Select a Subcontractor...'); // Adjust based on empty or placeholder option
-                        }
-                    });
-    
-                    cell.appendChild(select);
+                      // Initially disable checkbox if placeholder is selected
+                const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
+                if (fieldReviewCheckbox && value === "") {
+                    fieldReviewCheckbox.disabled = true;
+                    fieldReviewCheckbox.checked = false;
                 }
+
+                cell.appendChild(select);
+            }
+
     
-                // Handle image carousel
+                // Handle images
                 else if (image) {
                     const images = Array.isArray(fields[field]) ? fields[field] : [];
                     const carouselDiv = document.createElement('div');
@@ -1086,7 +1205,7 @@ dropdownOptions.forEach(option => {
                             carouselDiv.appendChild(nextButton);
                         }
     
-                        // Add Delete Button for images
+                        // Delete button for images
                         const deleteButton = document.createElement('button');
                         deleteButton.innerHTML = '🗑️';
                         deleteButton.classList.add('delete-button');
@@ -1126,30 +1245,44 @@ dropdownOptions.forEach(option => {
                     cell.appendChild(carouselDiv);
                 }
     
-                // Handle checkboxes
-                else if (checkbox) {
-                    const checkboxElement = document.createElement('input');
-                    checkboxElement.type = 'checkbox';
-                    checkboxElement.checked = value;
-                    checkboxElement.classList.add('custom-checkbox');
-    
-                    if (field === 'Job Completed' || field === 'Subcontractor Not Needed') {
-                        checkboxElement.disabled = false;
-                    } else {
-                        const billableCell = row.querySelector('td[data-field="Billable/ Non Billable"] select');
-                        checkboxElement.disabled = !billableCell || !billableCell.value;
-                    }
-    
-                    checkboxElement.addEventListener('change', function () {
-                        const newValue = checkboxElement.checked;
-                        updatedFields[record.id] = updatedFields[record.id] || {};
-                        updatedFields[record.id][field] = newValue;
-                        hasChanges = true;
-                        showSubmitButton(record.id);
-                    });
-    
-                    cell.appendChild(checkboxElement);
-                }
+           // Handle checkboxes
+else if (checkbox) {
+    const checkboxElement = document.createElement('input');
+    checkboxElement.type = 'checkbox';
+    checkboxElement.checked = value;
+    checkboxElement.classList.add('custom-checkbox');
+
+    // Handle disabling based on the dropdown's value for specific fields
+    if (field === 'Job Completed') {
+        const dropdownField = row.querySelector('select[data-field="sub"]'); // Target the 'sub' field dropdown
+        if (dropdownField && dropdownField.value === "") {
+            checkboxElement.disabled = true; // Disable if no subcontractor is selected
+            checkboxElement.checked = false;
+        }
+    }
+
+    // For the "Subcontractor Not Needed" checkbox
+    if (field === 'Subcontractor Not Needed') {
+        const subcontractorDropdown = row.querySelector('select[data-field="sub"]'); // Target the 'sub' field dropdown
+        if (subcontractorDropdown && subcontractorDropdown.value !== "Select a Subcontractor...") {
+            checkboxElement.disabled = true; // Disable if a subcontractor other than "Select a Subcontractor..." is selected
+            checkboxElement.checked = false; // Uncheck if a subcontractor is selected
+        } else {
+            checkboxElement.disabled = false; // Enable if "Select a Subcontractor..." is selected
+        }
+    }
+
+    checkboxElement.addEventListener('change', function () {
+        const newValue = checkboxElement.checked;
+        updatedFields[record.id] = updatedFields[record.id] || {};
+        updatedFields[record.id][field] = newValue;
+        hasChanges = true;
+        showSubmitButton(record.id);
+    });
+
+    cell.appendChild(checkboxElement);
+}
+
     
                 // Handle text and links
                 else if (link) {
@@ -1327,9 +1460,7 @@ imageViewerModal.addEventListener('click', function(event) {
         closeModal();
     }
 });
-
-    
-     
+       
     
         updateModalImage();
         imageViewerModal.style.display = 'flex'; // Ensure the modal is shown
@@ -1349,10 +1480,7 @@ imageViewerModal.addEventListener('click', function(event) {
     
         // Listen for keydown events to navigate with arrow keys and close with Esc
         document.addEventListener('keydown', handleKeyNavigation);
-    }
-    
-    
-    
+    }   
        
     function enablePageScrolling() {
         document.body.style.overflow = '';
@@ -1386,65 +1514,107 @@ imageViewerModal.addEventListener('click', function(event) {
         hasChanges = false; // Reset changes flag
     }
     
+    let confirmationShown = false; // Flag to prevent multiple confirmations
+
+    // Function to handle changes and submit them
+    async function submitChanges() {
+        if (!hasChanges || !activeRecordId) {
+            showToast('No changes to submit.');
+            hideSubmitButton();  // Hide the button if no changes detected
+            return;
+        }
+    
+        // Only show the confirmation once
+        if (!confirmationShown) {
+            const userConfirmed = confirm("Are you sure you want to submit these changes?");
+            if (!userConfirmed) {
+                showToast('Submission canceled.');
+                confirmationShown = false;  // Reset flag in case of cancellation
+                return;
+            }
+            confirmationShown = true;  // Set the flag to avoid re-confirmation
+        }
+    
+        try {
+            // Hide content while submitting
+            mainContent.style.display = 'none';
+            secondaryContent.style.display = 'none';
+    
+            // Get all fields to update for the active record
+            const fieldsToUpdate = updatedFields[activeRecordId];
+            
+            // Check if we are updating the Subcontractor field
+            if (fieldsToUpdate['sub']) {
+                // Submit the subcontractor field value separately
+                await updateRecord(activeRecordId, { 'Subcontractor': fieldsToUpdate['sub'] });
+            }
+    
+            // Submit all other updated fields
+            if (Object.keys(fieldsToUpdate).length > 0) {
+                // Remove the 'sub' field if it was already submitted
+                delete fieldsToUpdate['sub'];
+                
+                // Submit the remaining fields (e.g., checkboxes and other fields)
+                if (Object.keys(fieldsToUpdate).length > 0) {
+                    await updateRecord(activeRecordId, fieldsToUpdate);
+                }
+            }
+    
+            // Show a success message
+            showToast('Changes submitted successfully!');
+            
+            // Reset state after submission
+            updatedFields = {};
+            hasChanges = false;
+            activeRecordId = null;
+            confirmationShown = false;  // Reset flag after successful submission
+    
+            // Fetch and refresh data
+            await fetchAllData();
+        } catch (error) {
+            console.error('Error during submission:', error);
+            showToast('Error submitting changes.');
+            confirmationShown = false;  // Reset flag in case of error
+        } finally {
+            // Show content after submission
+            mainContent.style.display = 'block';
+            secondaryContent.style.display = 'block';
+            hideSubmitButton();  // Hide the button after submission
+        }
+    }
     
 
-// Flag to prevent multiple submissions
+// Variables to track submission state
 let isSubmitting = false;
 
-// Function to handle submission with single confirmation
-async function submitChanges() {
-    if (isSubmitting) {
-        return;  // Prevent further submissions while one is in progress
-    }
-
-    if (!hasChanges || !activeRecordId) {
-        showToast('No changes to submit.');
-        hideSubmitButton();  // Hide the button if no changes detected
-        return;
-    }
-
-    // Set flag to indicate that submission is in progress
-    isSubmitting = true;
-
-    // Show confirmation once before proceeding
-    const userConfirmed = confirm("Are you sure you want to submit these changes?");
-    if (!userConfirmed) {
-        showToast('Submission canceled.');
-        isSubmitting = false;  // Reset flag if user cancels
-        return;  // Exit if user doesn't confirm
-    }
-
-    // Proceed with the submission
-    try {
-        mainContent.style.display = 'none';
-        secondaryContent.style.display = 'none';
-
-        // Submit the changes for the active record
-        await updateRecord(activeRecordId, updatedFields[activeRecordId]);
-
-        // Reset the state after submission
-        updatedFields = {};
-        hasChanges = false;
-        activeRecordId = null;
-
-        showToast('Changes submitted successfully!');
-    } catch (error) {
-        console.error('Error during submission:', error);
-        showToast('Error submitting changes.');
-    } finally {
-        isSubmitting = false;  // Reset the flag after completion
-        hideSubmitButton();
-        mainContent.style.display = 'block';
-        secondaryContent.style.display = 'block';
-        fetchAllData();  // Optionally refresh the data after submission
-    }
-}
-
-    // Event listener for dynamic submit button
+// Event listener for dynamic submit button
 submitButton.addEventListener('click', function () {
-    // Ensure that submitChanges is called only once
-    if (!isSubmitting) {
-        submitChanges();
+    console.log('Submit button clicked.');
+
+    // Check if a submission is already in progress or confirmation has already been shown
+    if (!isSubmitting && !confirmationShown) {
+        console.log('No active submission and no confirmation shown yet.');
+        
+        // Set isSubmitting to true to prevent duplicate submissions
+        isSubmitting = true;
+        console.log('Submission in progress: ', isSubmitting);
+        
+        // Call the submitChanges function
+        try {
+            console.log('Calling submitChanges...');
+            submitChanges();
+            console.log('submitChanges function called successfully.');
+        } catch (error) {
+            console.error('Error during submitChanges execution: ', error);
+        }
+    } else {
+        // Log the condition preventing submission
+        if (isSubmitting) {
+            console.log('Submission already in progress, skipping duplicate submission.');
+        }
+        if (confirmationShown) {
+            console.log('Confirmation already shown, skipping additional confirmation.');
+        }
     }
 });
     
@@ -1471,7 +1641,6 @@ let originalValues = {};  // Store the original values
 let updatedFields = {};   // Track changes made by the user
 let hasChanges = false;   // Track if there are any unsaved changes
 let activeRecordId = null;  // Track the current active record
-
 
         
 // Function to check if the current values are different from the original values
@@ -1526,8 +1695,12 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 activeRecordId = recordId;
             }
         }
-        
-
+           
+       // Reset updatedFields and hide submit button if the user undoes all changes
+function resetChanges(recordId) {
+    delete updatedFields[recordId];
+    checkForChanges(recordId);
+}      
 
   // Adjust button size and position dynamically
   function adjustButtonPosition() {
@@ -1659,94 +1832,36 @@ document.body.appendChild(dynamicButtonsContainer);
         submitChanges();
     });
 
-  
 
+    
+   // Function to update a record in Airtable
+async function updateRecord(recordId, fields) {
+    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
+    const body = JSON.stringify({ fields });
 
-// Handle dropdowns for 'sub' and other fields
-if (dropdown || field === 'sub') {
-    const select = document.createElement('select');
-    select.classList.add('styled-select');
+    try {
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                Authorization: `Bearer ${airtableApiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: body
+        });
 
-    // Get the Vanir Branch value from the record (assuming 'b' holds the value for Vanir Branch)
-    const vanirBranchValue = record.fields['b'];  // Adjust 'b' to the actual field name if necessary
-    console.log(`Vanir Branch Value for record ID ${record.id}:`, vanirBranchValue);
-
-    // Use subOptions for 'Subcontractor Company Name', otherwise use hardcoded options
-    let dropdownOptions = field === 'Subcontractor Company Name' ? subOptions : options;
-    console.log(`Original Sub Options Count: ${dropdownOptions.length}`);  // Log the original count of subOptions
-
-    // **Trigger the filtering function here**
-    if (field === 'Subcontractor Company Name') {
-        dropdownOptions = filterSubcontractorsByBranch(dropdownOptions, vanirBranchValue);  // Triggering the function
-        console.log(`Filtered Sub Options Count: ${dropdownOptions.length}`);  // Log the count of filtered options
-    }
-
-    // Sort options alphabetically (case insensitive)
-    console.log('Sorting filtered Sub Options alphabetically...');
-    dropdownOptions.sort((a, b) => {
-        const nameA = a.name ? a.name.toLowerCase() : ''; // Ensure a valid string
-        const nameB = b.name ? b.name.toLowerCase() : ''; // Ensure a valid string
-        return nameA.localeCompare(nameB); // Compare the names
-    });
-    console.log('Sorted Sub Options:', dropdownOptions);
-
-    // Ensure the first option is always an empty value
-    const emptyOption = document.createElement('option');
-    emptyOption.value = '';
-    emptyOption.textContent = 'Select a Subcontractor...';
-    select.appendChild(emptyOption);
-    console.log('Added empty option to dropdown.');
-
-    // Counter for added options
-    let addedOptionsCount = 0;
-
-    // Add the filtered and sorted options to the dropdown
-    dropdownOptions.forEach(option => {
-        const optionElement = document.createElement('option');
-
-        // Since option is a string, use it directly
-        const displayText = option.name || 'Unnamed Option';  // Use the string value or fallback to 'Unnamed Option'
-        optionElement.value = displayText;  // Option value
-        optionElement.textContent = displayText;  // Option text to display
-
-        // Select the matching value if it exists
-        if (displayText === value) {
-            optionElement.selected = true;
-            console.log(`Selected option '${displayText}' as it matches the current value.`);
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error(`Error updating record: ${response.status} ${response.statusText}`);
+            console.error(`Error Details:`, errorData);
+        } else {
+            const successData = await response.json();
+            console.log('Record updated successfully:', successData);
         }
-
-        console.log('Appending option to dropdown:', displayText);
-        select.appendChild(optionElement);
-        addedOptionsCount++; // Increment the counter for each added option
-    });
-
-    console.log(`Total options added to dropdown: ${addedOptionsCount}`);
+    } catch (error) {
+        console.error('Error occurred while updating record in Airtable:', error);
+    }
 }
-
-
-    async function updateRecord(recordId, fields) {
-        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
-        const body = JSON.stringify({ fields });
-
-        try {
-            const response = await fetch(url, {
-                method: 'PATCH',
-                headers: {
-                    Authorization: `Bearer ${airtableApiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: body
-            });
-
-            if (!response.ok) {
-                console.error(`Error updating record: ${response.status} ${response.statusText}`);
-            } else {
-                console.log('Record updated successfully:', await response.json());
-            }
-        } catch (error) {
-            console.error('Error updating record in Airtable:', error);
-        }
-    }
+    
 
     document.getElementById('search-input').addEventListener('input', function () {
         const searchValue = this.value.toLowerCase();

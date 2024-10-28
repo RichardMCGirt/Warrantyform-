@@ -568,7 +568,6 @@ button:hover {
         margin-top: 10px;
         border: none;
         border-radius: 5px;
-        background-color: #4caf50;
         color: white;
         cursor: pointer;
         transition: background-color 0.3s ease;
@@ -588,10 +587,7 @@ button:hover {
         overflow-x: auto;
     }
 
-    td:nth-child(7) .delete-button:hover,
-    td:nth-child(7) .add-photo-button:hover {
-        background-color: #388e3c;
-    }
+
 }
 
 

@@ -1057,7 +1057,12 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
-                {field: 'Material Vendor', value: fields['Material Vendor'] || '', dropdown: true,options: vendorOptions },
+                {
+                    field: 'Material Vendor',
+                    value: fields['Material Vendor'] || '',
+                    dropdown: true,
+                    options: vendorOptions  
+                },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
                 { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
@@ -1132,48 +1137,68 @@ filteredOptions.forEach(option => {
 
 cell.appendChild(select);
 
-// Create a div for displaying subcontractor's phone number
-const phoneNumberDiv = document.createElement('div');
-phoneNumberDiv.classList.add('subcontractor-phone-number');
-phoneNumberDiv.style.marginBottom = '10px'; // Add some spacing below the dropdown
+ // Add change event listener for disabling checkbox
+ select.addEventListener('change', () => {
+    const selectedValue = select.value;
+    const subcontractorNotNeededCheckbox = cell.closest('tr').querySelector('input[data-field="Subcontractor Not Needed"]');
 
-// Append the dropdown first, then the phone number div directly below it
+    if (subcontractorNotNeededCheckbox) {
+        subcontractorNotNeededCheckbox.disabled = selectedValue !== '';  // Disable if any option other than placeholder
+        subcontractorNotNeededCheckbox.checked = false; // Reset checkbox
+        console.log('Updated checkbox disabled state:', subcontractorNotNeededCheckbox.disabled);
+    } else {
+        console.warn("Checkbox 'Subcontractor Not Needed' not found in the row.");
+    }
+});
 
 cell.appendChild(select);
 
-cell.appendChild(phoneNumberDiv); // This ensures the phone number is below the dropdown
 
+  // Create phone number div for Subcontractor
+  const phoneNumberDiv = document.createElement('div');
+  phoneNumberDiv.classList.add('subcontractor-phone-number');
+  phoneNumberDiv.style.marginBottom = '10px';
+  cell.appendChild(phoneNumberDiv);
 
-// Set initial phone number if a subcontractor is already selected
-if (value) {
-    const subcontractorRecord = options.find(opt => opt.name === value);
+  if (value) {
+      const subcontractorRecord = options.find(opt => opt.name === value);
+      if (subcontractorRecord && subcontractorRecord.phone) {
+          phoneNumberDiv.innerHTML = `<a href="tel:${subcontractorRecord.phone}" style="cursor: pointer; text-decoration: none; color: inherit;">Phone: ${subcontractorRecord.phone}</a>`;
+          phoneNumberDiv.style.display = 'block';
+      } else {
+          phoneNumberDiv.style.display = 'none';
+      }
+  } else {
+      phoneNumberDiv.style.display = 'none';
+  }
+
+  select.addEventListener('change', () => {
+    const selectedSubcontractor = select.value;
+
+    // Update the phone number display based on selected subcontractor
+    const subcontractorRecord = options.find(opt => opt.name === selectedSubcontractor);
     if (subcontractorRecord && subcontractorRecord.phone) {
         phoneNumberDiv.innerHTML = `<a href="tel:${subcontractorRecord.phone}" style="cursor: pointer; text-decoration: none; color: inherit;">Phone: ${subcontractorRecord.phone}</a>`;
-        phoneNumberDiv.style.display = 'block'; // Show the phone number
+        phoneNumberDiv.style.display = 'block';
     } else {
-        phoneNumberDiv.style.display = 'none'; // Hide if no phone number
+        phoneNumberDiv.style.display = 'none';
     }
-} else {
-    phoneNumberDiv.style.display = 'none'; // Hide if no selection
-}
 
-
-
-// Update phone number when a subcontractor is selected
-select.addEventListener('change', () => {
-    const selectedSubcontractor = select.value;
-    if (selectedSubcontractor) {
-        const subcontractorRecord = options.find(opt => opt.name === selectedSubcontractor);
-        if (subcontractorRecord && subcontractorRecord.phone) {
-            phoneNumberDiv.innerHTML = `<a href="tel:${subcontractorRecord.phone}" style="cursor: pointer; text-decoration: none; color: inherit;">Phone: ${subcontractorRecord.phone}</a>`;
-            phoneNumberDiv.style.display = 'block'; // Show the phone number
-        } else {
-            phoneNumberDiv.style.display = 'none'; // Hide if no phone number
-        }
+    // Locate the 'Subcontractor Not Needed' checkbox directly using its field name
+    const subcontractorNotNeededCheckbox = cell.closest('tr').querySelector('input[data-field="Subcontractor Not Needed"]');
+    
+    if (subcontractorNotNeededCheckbox) {
+        // Disable the checkbox if any option other than the placeholder is chosen
+        const isPlaceholderSelected = (selectedSubcontractor === '');
+        subcontractorNotNeededCheckbox.disabled = !isPlaceholderSelected;
+        subcontractorNotNeededCheckbox.checked = false; // Reset checkbox if it's disabled
+        console.log('Checkbox status updated:', !isPlaceholderSelected);
     } else {
-        phoneNumberDiv.style.display = 'none'; // Clear and hide if no selection
+        console.warn("Checkbox 'Subcontractor Not Needed' not found in the row.");
     }
 });
+
+
 
 // Track selection changes for updating Airtable records
 select.addEventListener('change', () => {
@@ -1349,12 +1374,14 @@ select.addEventListener('change', () => {
     
                 row.appendChild(cell);
             });
-            setupBillableDropdownListeners(row);
 
             tbody.appendChild(row);
         });
     }
 
+
+
+ 
 
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;

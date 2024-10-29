@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Check Dropbox token validity on page startup
     checkDropboxTokenValidity();
 
+    
+
         // Function to check if Dropbox token is still valid
         async function checkDropboxTokenValidity() {
             console.log('Checking if Dropbox token is still valid...');
@@ -1000,7 +1002,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME2}`;
         
         do {
-            const response = await fetch(`${url}?fields[]=Subcontractor%20Company%20Name&fields[]=Vanir%20Branch${offset ? `&offset=${offset}` : ''}`, {
+            const response = await fetch(`${url}?fields[]=Subcontractor%20Company%20Name&fields[]=Vanir%20Branch&fields[]=Subcontractor%20Phone%20Number${offset ? `&offset=${offset}` : ''}`, {
                 headers: {
                     Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
                 }
@@ -1016,15 +1018,15 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             offset = data.offset;  
         } while (offset);
     
-        const subOptions = Array.from(new Set(records.map(record => {
-    
-            return {
-                name: record.fields['Subcontractor Company Name'] || 'Unnamed Subcontractor',
-                vanirOffice: record.fields['Vanir Branch'] || 'Unknown Branch'            };
-        }).filter(Boolean)));
+        const subOptions = Array.from(new Set(records.map(record => ({
+            name: record.fields['Subcontractor Company Name'] || 'Unnamed Subcontractor',
+            vanirOffice: record.fields['Vanir Branch'] || 'Unknown Branch',
+            phone: record.fields['Subcontractor Phone Number'] || 'N/A'  // Include the phone number
+        })).filter(Boolean)));
         
         return subOptions;  
     }
+    
     
     async function displayData(records, tableSelector, isSecondary = false) {
         const tbody = document.querySelector(`${tableSelector} tbody`);
@@ -1055,12 +1057,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
-                {
-                    field: 'Material Vendor',
-                    value: fields['Material Vendor'] || '',
-                    dropdown: true,
-                    options: vendorOptions  
-                },
+                {field: 'Material Vendor', value: fields['Material Vendor'] || '', dropdown: true,options: vendorOptions },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
                 { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
@@ -1135,7 +1132,50 @@ filteredOptions.forEach(option => {
 
 cell.appendChild(select);
 
+// Create a div for displaying subcontractor's phone number
+const phoneNumberDiv = document.createElement('div');
+phoneNumberDiv.classList.add('subcontractor-phone-number');
+phoneNumberDiv.style.marginBottom = '10px'; // Add some spacing below the dropdown
 
+// Append the dropdown first, then the phone number div directly below it
+
+cell.appendChild(select);
+
+cell.appendChild(phoneNumberDiv); // This ensures the phone number is below the dropdown
+
+
+// Set initial phone number if a subcontractor is already selected
+if (value) {
+    const subcontractorRecord = options.find(opt => opt.name === value);
+    if (subcontractorRecord && subcontractorRecord.phone) {
+        phoneNumberDiv.innerHTML = `<a href="tel:${subcontractorRecord.phone}" style="cursor: pointer; text-decoration: none; color: inherit;">Phone: ${subcontractorRecord.phone}</a>`;
+        phoneNumberDiv.style.display = 'block'; // Show the phone number
+    } else {
+        phoneNumberDiv.style.display = 'none'; // Hide if no phone number
+    }
+} else {
+    phoneNumberDiv.style.display = 'none'; // Hide if no selection
+}
+
+
+
+// Update phone number when a subcontractor is selected
+select.addEventListener('change', () => {
+    const selectedSubcontractor = select.value;
+    if (selectedSubcontractor) {
+        const subcontractorRecord = options.find(opt => opt.name === selectedSubcontractor);
+        if (subcontractorRecord && subcontractorRecord.phone) {
+            phoneNumberDiv.innerHTML = `<a href="tel:${subcontractorRecord.phone}" style="cursor: pointer; text-decoration: none; color: inherit;">Phone: ${subcontractorRecord.phone}</a>`;
+            phoneNumberDiv.style.display = 'block'; // Show the phone number
+        } else {
+            phoneNumberDiv.style.display = 'none'; // Hide if no phone number
+        }
+    } else {
+        phoneNumberDiv.style.display = 'none'; // Clear and hide if no selection
+    }
+});
+
+// Track selection changes for updating Airtable records
 select.addEventListener('change', () => {
     const newValue = select.value;
     updatedFields[record.id] = updatedFields[record.id] || {};
@@ -1143,7 +1183,7 @@ select.addEventListener('change', () => {
     hasChanges = true;
 
     showSubmitButton(record.id);
-
+  
     // Enable or disable the checkbox based on selection
     const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
     if (fieldReviewCheckbox) {
@@ -1309,11 +1349,12 @@ select.addEventListener('change', () => {
     
                 row.appendChild(cell);
             });
-    
+            setupBillableDropdownListeners(row);
+
             tbody.appendChild(row);
         });
     }
-    
+
 
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
@@ -1363,7 +1404,7 @@ select.addEventListener('change', () => {
             }
         }, 1000); 
     }
-
+    
     function openImageViewer(images, startIndex) {
         let imageViewerModal = document.getElementById('image-viewer-modal');
         if (!imageViewerModal) {

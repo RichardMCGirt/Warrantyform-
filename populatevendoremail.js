@@ -17,7 +17,7 @@ async function fetchNonEmptyMaterialVendorRecords() {
 
     do {
         console.log(`Fetching Warranties records with offset: ${offset || "none"}`);
-        const response = await fetch(`${url}?filterByFormula=NOT({Material Vendor} = '')${offset ? `&offset=${offset}` : ''}`, options);
+        const response = await fetch(`${url}${offset ? `?offset=${offset}` : ''}`, options);
         const data = await response.json();
 
         if (data.records) {
@@ -30,7 +30,7 @@ async function fetchNonEmptyMaterialVendorRecords() {
         offset = data.offset; // Set the next offset if available
     } while (offset);
 
-    console.log(`Total non-empty Material Vendor records fetched: ${records.length}`);
+    console.log(`Total records fetched from Warranties table: ${records.length}`);
     return records;
 }
 

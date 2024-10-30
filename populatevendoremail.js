@@ -5,8 +5,8 @@ const warrantiesTableId = 'tbl6EeKPsNuEvt5yJ';
 const vendorsBaseId = 'appeNSp44fJ8QYeY5';
 const vendorsTableId = 'tblLEYdDi0hfD9fT3';
 
-// Function to fetch non-empty "Material Vendor" records from the Warranties table
-async function fetchNonEmptyMaterialVendorRecords() {
+// Function to fetch all records from the Warranties table
+async function fetchAllWarrantyRecords() {
     const url = `https://api.airtable.com/v0/${warrantiesBaseId}/${warrantiesTableId}`;
     const options = {
         headers: { Authorization: `Bearer ${apiKey}` }
@@ -69,10 +69,10 @@ async function fetchVendorsWithEmails() {
     return vendors;
 }
 
-// Function to update the Warranties table with matched email information
+// Function to update the Warranties table with matched email information, overwriting or clearing emails if "Material Vendor" has changed
 async function updateWarrantyEmails() {
     console.log("Starting to update Warranties with vendor email data...");
-    const warranties = await fetchNonEmptyMaterialVendorRecords();
+    const warranties = await fetchAllWarrantyRecords();
     const vendors = await fetchVendorsWithEmails();
 
     const vendorMap = vendors.reduce((map, vendor) => {
@@ -84,18 +84,41 @@ async function updateWarrantyEmails() {
         const vendorName = warranty.fields['Material Vendor'];
         const matchedVendor = vendorMap[vendorName];
 
+        let fieldsToUpdate = {};
+
         if (matchedVendor) {
-            const url = `https://api.airtable.com/v0/${warrantiesBaseId}/${warrantiesTableId}/${warranty.id}`;
-            const fieldsToUpdate = {
-                'Vendor Email': matchedVendor.email || '',
-                'Vendor Secondary Email': matchedVendor.secondaryEmail || '',
-                'Vendor Return Email': matchedVendor.returnEmail || '',
-                'Vendor Secondary Return Email': matchedVendor.secondaryReturnEmail || ''
+            // Update email fields if they differ from the matched vendor’s data
+            if (warranty.fields['Vendor Email'] !== matchedVendor.email) {
+                fieldsToUpdate['Vendor Email'] = matchedVendor.email || '';
+                console.log(`Updating 'Vendor Email' for warranty record ${warranty.id}`);
+            }
+            if (warranty.fields['Vendor Secondary Email'] !== matchedVendor.secondaryEmail) {
+                fieldsToUpdate['Vendor Secondary Email'] = matchedVendor.secondaryEmail || '';
+                console.log(`Updating 'Vendor Secondary Email' for warranty record ${warranty.id}`);
+            }
+            if (warranty.fields['Vendor Return Email'] !== matchedVendor.returnEmail) {
+                fieldsToUpdate['Vendor Return Email'] = matchedVendor.returnEmail || '';
+                console.log(`Updating 'Vendor Return Email' for warranty record ${warranty.id}`);
+            }
+            if (warranty.fields['Vendor Secondary Return Email'] !== matchedVendor.secondaryReturnEmail) {
+                fieldsToUpdate['Vendor Secondary Return Email'] = matchedVendor.secondaryReturnEmail || '';
+                console.log(`Updating 'Vendor Secondary Return Email' for warranty record ${warranty.id}`);
+            }
+        } else {
+            // If "Material Vendor" is not found, clear email fields
+            fieldsToUpdate = {
+                'Vendor Email': '',
+                'Vendor Secondary Email': '',
+                'Vendor Return Email': '',
+                'Vendor Secondary Return Email': ''
             };
+            console.warn(`No match found for Material Vendor: ${vendorName}. Clearing email fields for warranty record ${warranty.id}.`);
+        }
 
-            console.log(`Updating warranty record ${warranty.id} with fields:`, fieldsToUpdate);
-
+        // Proceed with the update only if there are fields to update
+        if (Object.keys(fieldsToUpdate).length > 0) {
             try {
+                const url = `https://api.airtable.com/v0/${warrantiesBaseId}/${warrantiesTableId}/${warranty.id}`;
                 const response = await fetch(url, {
                     method: 'PATCH',
                     headers: {
@@ -108,18 +131,18 @@ async function updateWarrantyEmails() {
                 if (!response.ok) {
                     console.error(`Error updating warranty ${warranty.id}: ${response.statusText}`);
                 } else {
-                    console.log(`Successfully updated warranty ${warranty.id} with vendor emails.`);
+                    console.log(`Successfully updated warranty ${warranty.id} with vendor emails or cleared fields.`);
                 }
             } catch (error) {
                 console.error(`Error updating warranty ${warranty.id}:`, error);
             }
         } else {
-            console.warn(`No match found for Material Vendor: ${vendorName}`);
+            console.log(`No updates needed for warranty record ${warranty.id}`);
         }
     });
 
     await Promise.all(updatePromises);
-    console.log("All warranties updated with vendor emails.");
+    console.log("All warranties updated with vendor emails, where necessary.");
 }
 
 // Execute the update function

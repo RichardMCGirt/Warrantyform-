@@ -7,14 +7,17 @@ document.addEventListener('DOMContentLoaded', async function () {
     let dropboxAppSecret;
     let dropboxRefreshToken;
 
-  fetchvendors();
-
-    fetchAirtableFields();
-    // Fetch Dropbox credentials from Airtable
- fetchDropboxCredentials();
-
-    // Check Dropbox token validity on page startup
-    checkDropboxTokenValidity();
+// Run fetch functions concurrently
+Promise.all([
+    fetchvendors(),
+    fetchAirtableFields(),
+    fetchDropboxCredentials(),
+    checkDropboxTokenValidity()
+]).then(() => {
+    console.log("All fetch operations completed.");
+}).catch(error => {
+    console.error("An error occurred during one of the fetch operations:", error);
+});
 
         // Function to check if Dropbox token is still valid
         async function checkDropboxTokenValidity() {

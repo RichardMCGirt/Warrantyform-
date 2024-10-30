@@ -16,8 +16,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Check Dropbox token validity on page startup
     checkDropboxTokenValidity();
 
-    
-
         // Function to check if Dropbox token is still valid
         async function checkDropboxTokenValidity() {
             console.log('Checking if Dropbox token is still valid...');
@@ -1002,7 +1000,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME2}`;
         
         do {
-            const response = await fetch(`${url}?fields[]=Subcontractor%20Company%20Name&fields[]=Vanir%20Branch&fields[]=Subcontractor%20Phone%20Number${offset ? `&offset=${offset}` : ''}`, {
+            const response = await fetch(`${url}?fields[]=Subcontractor%20Company%20Name&fields[]=Vanir%20Branch${offset ? `&offset=${offset}` : ''}`, {
                 headers: {
                     Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
                 }
@@ -1018,15 +1016,15 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             offset = data.offset;  
         } while (offset);
     
-        const subOptions = Array.from(new Set(records.map(record => ({
-            name: record.fields['Subcontractor Company Name'] || 'Unnamed Subcontractor',
-            vanirOffice: record.fields['Vanir Branch'] || 'Unknown Branch',
-            phone: record.fields['Subcontractor Phone Number'] || 'N/A'  // Include the phone number
-        })).filter(Boolean)));
+        const subOptions = Array.from(new Set(records.map(record => {
+    
+            return {
+                name: record.fields['Subcontractor Company Name'] || 'Unnamed Subcontractor',
+                vanirOffice: record.fields['Vanir Branch'] || 'Unknown Branch'            };
+        }).filter(Boolean)));
         
         return subOptions;  
     }
-    
     
     async function displayData(records, tableSelector, isSecondary = false) {
         const tbody = document.querySelector(`${tableSelector} tbody`);
@@ -1137,70 +1135,7 @@ filteredOptions.forEach(option => {
 
 cell.appendChild(select);
 
- // Add change event listener for disabling checkbox
- select.addEventListener('change', () => {
-    const selectedValue = select.value;
-    const subcontractorNotNeededCheckbox = cell.closest('tr').querySelector('input[data-field="Subcontractor Not Needed"]');
 
-    if (subcontractorNotNeededCheckbox) {
-        subcontractorNotNeededCheckbox.disabled = selectedValue !== '';  // Disable if any option other than placeholder
-        subcontractorNotNeededCheckbox.checked = false; // Reset checkbox
-        console.log('Updated checkbox disabled state:', subcontractorNotNeededCheckbox.disabled);
-    } else {
-        console.warn("Checkbox 'Subcontractor Not Needed' not found in the row.");
-    }
-});
-
-cell.appendChild(select);
-
-
-  // Create phone number div for Subcontractor
-  const phoneNumberDiv = document.createElement('div');
-  phoneNumberDiv.classList.add('subcontractor-phone-number');
-  phoneNumberDiv.style.marginBottom = '10px';
-  cell.appendChild(phoneNumberDiv);
-
-  if (value) {
-      const subcontractorRecord = options.find(opt => opt.name === value);
-      if (subcontractorRecord && subcontractorRecord.phone) {
-          phoneNumberDiv.innerHTML = `<a href="tel:${subcontractorRecord.phone}" style="cursor: pointer; text-decoration: none; color: inherit;">Phone: ${subcontractorRecord.phone}</a>`;
-          phoneNumberDiv.style.display = 'block';
-      } else {
-          phoneNumberDiv.style.display = 'none';
-      }
-  } else {
-      phoneNumberDiv.style.display = 'none';
-  }
-
-  select.addEventListener('change', () => {
-    const selectedSubcontractor = select.value;
-
-    // Update the phone number display based on selected subcontractor
-    const subcontractorRecord = options.find(opt => opt.name === selectedSubcontractor);
-    if (subcontractorRecord && subcontractorRecord.phone) {
-        phoneNumberDiv.innerHTML = `<a href="tel:${subcontractorRecord.phone}" style="cursor: pointer; text-decoration: none; color: inherit;">Phone: ${subcontractorRecord.phone}</a>`;
-        phoneNumberDiv.style.display = 'block';
-    } else {
-        phoneNumberDiv.style.display = 'none';
-    }
-
-    // Locate the 'Subcontractor Not Needed' checkbox directly using its field name
-    const subcontractorNotNeededCheckbox = cell.closest('tr').querySelector('input[data-field="Subcontractor Not Needed"]');
-    
-    if (subcontractorNotNeededCheckbox) {
-        // Disable the checkbox if any option other than the placeholder is chosen
-        const isPlaceholderSelected = (selectedSubcontractor === '');
-        subcontractorNotNeededCheckbox.disabled = !isPlaceholderSelected;
-        subcontractorNotNeededCheckbox.checked = false; // Reset checkbox if it's disabled
-        console.log('Checkbox status updated:', !isPlaceholderSelected);
-    } else {
-        console.warn("Checkbox 'Subcontractor Not Needed' not found in the row.");
-    }
-});
-
-
-
-// Track selection changes for updating Airtable records
 select.addEventListener('change', () => {
     const newValue = select.value;
     updatedFields[record.id] = updatedFields[record.id] || {};
@@ -1208,7 +1143,7 @@ select.addEventListener('change', () => {
     hasChanges = true;
 
     showSubmitButton(record.id);
-  
+
     // Enable or disable the checkbox based on selection
     const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
     if (fieldReviewCheckbox) {
@@ -1374,14 +1309,11 @@ select.addEventListener('change', () => {
     
                 row.appendChild(cell);
             });
-
+    
             tbody.appendChild(row);
         });
     }
-
-
-
- 
+    
 
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
@@ -1431,7 +1363,7 @@ select.addEventListener('change', () => {
             }
         }, 1000); 
     }
-    
+
     function openImageViewer(images, startIndex) {
         let imageViewerModal = document.getElementById('image-viewer-modal');
         if (!imageViewerModal) {

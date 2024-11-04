@@ -616,27 +616,27 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     
         const dropboxUploadUrl = 'https://content.dropboxapi.com/2/files/upload';
-        const path = `/${file.name}`;
+        const path = `/uploads/${encodeURIComponent(file.name)}`;
         console.log(`Uploading file to Dropbox: ${file.name} at path: ${path}`);
     
         try {
             const response = await fetch(dropboxUploadUrl, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${dropboxAccessToken}`,
-                    'Content-Type': 'application/octet-stream',
-                    'Dropbox-API-Arg': JSON.stringify({
-                        path: path,
+                    "Authorization": `Bearer ${encodeURIComponent(dropboxAccessToken)}`, // Encode the token
+                    "Dropbox-API-Arg": JSON.stringify({
+                        path: path, // Encode file name to prevent errors
                         mode: 'add',
                         autorename: true,
                         mute: false
-                    })
+                    }),
+                    "Content-Type": "application/octet-stream"
                 },
                 body: file
             });
     
             console.log(`Dropbox file upload response status: ${response.status}`);
-            
+    
             if (!response.ok) {
                 const errorResponse = await response.json();
                 console.error('Error uploading file to Dropbox:', errorResponse);
@@ -664,6 +664,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             return null;
         }
     }
+    
     
 
     async function getDropboxSharedLink(filePath) {
@@ -1321,24 +1322,55 @@ select.addEventListener('change', () => {
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, imageField);
-    
         const updatedImages = currentImages.filter(image => image.id !== imageId);
     
         const body = JSON.stringify({ fields: { [imageField]: updatedImages.length > 0 ? updatedImages : [] } });
-    
         const imageElement = document.querySelector(`img[src="${currentImages.find(img => img.id === imageId)?.url}"]`);
         const trashCan = document.querySelector('.trash-can');
     
         if (!imageElement || !trashCan) {
-            console.error('Image element or trash can element not found.');
             return;
         }
     
-        const imageRect = imageElement.getBoundingClientRect();
-        const trashCanRect = trashCan.getBoundingClientRect();
+        // Define the white smoke "poof" effect
+        const style = document.createElement('style');
+        style.innerHTML = `
+            @keyframes poofToWhiteSmoke {
+                0% {
+                    opacity: 1;
+                    transform: scale(1) rotate(0deg);
+                    filter: blur(0);
+                }
+                25% {
+                    opacity: 0.8;
+                    transform: scale(1.2) rotate(10deg);
+                    filter: blur(2px);
+                    background-color: rgba(255, 255, 255, 0.3);
+                }
+                50% {
+                    opacity: 0.5;
+                    transform: scale(1.5) rotate(20deg);
+                    filter: blur(5px);
+                    background-color: rgba(255, 255, 255, 0.6);
+                }
+                75% {
+                    opacity: 0.3;
+                    transform: scale(1.8) rotate(-15deg);
+                    filter: blur(10px);
+                    background-color: rgba(255, 255, 255, 0.8);
+                }
+                100% {
+                    opacity: 0;
+                    transform: scale(2) rotate(30deg);
+                    filter: blur(12px);
+                    background-color: rgba(255, 255, 255, 1);
+                }
+            }
+        `;
+        document.head.appendChild(style);
     
-        imageElement.style.transition = 'transform 0.8s ease, opacity 0.8s ease';
-        imageElement.style.transform = `translate(${trashCanRect.left - imageRect.left}px, ${trashCanRect.top - imageRect.top}px) scale(0)`;
+        // Apply the animation and remove the image after animation completes
+        imageElement.style.animation = 'poofToWhiteSmoke 3s ease forwards'; // Set to 3s for visibility
     
         setTimeout(async () => {
             try {
@@ -1356,17 +1388,14 @@ select.addEventListener('change', () => {
                     console.error(`Error updating record: ${response.status} ${response.statusText}`, errorDetails);
                 } else {
                     console.log('Image successfully deleted from Airtable:', await response.json());
-    
                     imageElement.remove();
-    
-                    await fetchAllData();
                 }
             } catch (error) {
                 console.error('Error updating record in Airtable:', error);
             }
-        }, 1000); 
+        }, 3000); // Match the timeout to the animation duration
     }
-
+       
     function openImageViewer(images, startIndex) {
         let imageViewerModal = document.getElementById('image-viewer-modal');
         if (!imageViewerModal) {

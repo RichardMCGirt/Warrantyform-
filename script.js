@@ -772,19 +772,49 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
+    function adjustTableWidth() {
+        const mainContent = document.querySelector('#airtable-data tbody');
+        const secondaryContent = document.querySelector('#feild-data tbody');
+    
+        const hasPrimaryRecords = mainContent && mainContent.children.length > 0;
+        const hasSecondaryRecords = secondaryContent && secondaryContent.children.length > 0;
+    
+        if (hasPrimaryRecords && !hasSecondaryRecords) {
+            document.body.classList.add('single-table-view');
+        } else if (!hasPrimaryRecords && hasSecondaryRecords) {
+            document.body.classList.add('single-table-view');
+        } else {
+            document.body.classList.remove('single-table-view');
+        }
+    }
+    
+    
+    // Call `adjustTableWidth` after data is loaded or when the table visibility changes
+    fetchAllData().then(adjustTableWidth);
+    
 
     function syncTableWidths() {
         const mainTable = document.querySelector('#airtable-data');
         const secondaryTable = document.querySelector('#feild-data');
-
-        if (mainTable && secondaryTable) {
-            // Get the computed width of the main table
+        
+        // Check if either table has rows (records)
+        const mainTableHasRecords = mainTable && mainTable.querySelector('tbody tr') !== null;
+        const secondaryTableHasRecords = secondaryTable && secondaryTable.querySelector('tbody tr') !== null;
+    
+        // If only one table has records, set its width to 80%
+        if (mainTableHasRecords && !secondaryTableHasRecords) {
+            mainTable.style.width = '80%';
+            secondaryTable.style.width = '0';  // Hide or reduce the other table
+        } else if (secondaryTableHasRecords && !mainTableHasRecords) {
+            secondaryTable.style.width = '80%';
+            mainTable.style.width = '0';  // Hide or reduce the other table
+        } else if (mainTableHasRecords && secondaryTableHasRecords) {
+            // If both have records, synchronize their widths
             const mainTableWidth = mainTable.offsetWidth;
-            
-            // Apply the same width to the secondary table
             secondaryTable.style.width = `${mainTableWidth}px`;
         }
     }
+    
     
     let vendorOptions = []; // Declare vendorOptions properly
 
@@ -793,10 +823,9 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     async function fetchAllData() {
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
-
+    
         originalValues = { /* Populate this with fetched data */ };
         console.log('Original values loaded:', originalValues);
-    
     
         let loadProgress = 0;
         const loadInterval = setInterval(() => {
@@ -824,7 +853,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 vendorOptions = []; // Continue with empty array if error occurs
             }
     
-            // Fetch sub options (assuming it's fetched from another Airtable table or source)
+            // Fetch sub options
             try {
                 subOptions = await fetchAirtableSubOptionsFromDifferentTable() || [];
             } catch (error) {
@@ -886,7 +915,10 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 secondaryContent.style.opacity = '1';
             }, 10);
     
+            // Adjust table width if only one table has records
+            adjustTableWidth();
             syncTableWidths();
+    
         } catch (error) {
             console.error('Error fetching all data:', error);
     
@@ -899,9 +931,12 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 secondaryContent.style.opacity = '1';
             }, 10);
     
+            // Adjust table width if only one table has records
+            adjustTableWidth();
             syncTableWidths();
         }
     }
+    
     
     
     function checkForChanges(recordId) {
@@ -1031,11 +1066,29 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     }
     
     async function displayData(records, tableSelector, isSecondary = false) {
-        const tbody = document.querySelector(`${tableSelector} tbody`);
+        const tableElement = document.querySelector(tableSelector); // Select the entire table
+        const tableContainer = tableElement.closest('.scrollable-div'); // Find the table's container
+        const tbody = tableElement.querySelector('tbody'); // Select the table body
+        const thead = tableElement.querySelector('thead'); // Select the table header
+        const h2Element = tableContainer.previousElementSibling; // Select the corresponding h2
+    
+        // Clear the table body
         tbody.innerHTML = '';
     
-        if (records.length === 0) return;
-    
+        // Hide the entire table, header, and h2 if there are no records
+        if (records.length === 0) {
+            h2Element.style.display = 'none';            // Hide the h2
+            tableElement.style.display = 'none';         // Hide the table
+            thead.style.display = 'none';                // Hide the header
+            return;
+        } else {
+            h2Element.style.display = 'block';           // Show the h2 if records are present
+            tableElement.style.display = 'table';        // Show the table
+            thead.style.display = 'table-header-group';  // Show the header
+            tableContainer.style.width = '100%';         // Ensure table auto-adjusts to content width
+        }
+        
+        // Populate rows based on the provided configuration
         records.forEach(record => {
             const fields = record.fields;
             const row = document.createElement('tr');

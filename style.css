@@ -16,6 +16,20 @@ td {
     max-height: 100px;
 }
 
+/* Default style for both tables */
+.scrollable-div {
+    margin: 0 auto;
+    max-width: calc(100% - 40px); /* Set 20px margin on each side */
+    overflow-x: auto;
+}
+
+.single-table-view .scrollable-div {
+    width: calc(100% - 40px); /* Adjust to match your desired width */
+    margin: 0 auto;
+}
+
+
+
 td:nth-child(7) .delete-button,
 td:nth-child(7) .add-photo-button {
     width: 100%;
@@ -95,7 +109,6 @@ th, td {
     white-space: normal;
     overflow-wrap: break-word;
     word-break: keep-all;
-    max-width: 200px;
 }
 
 th {

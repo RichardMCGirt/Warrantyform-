@@ -7,6 +7,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     let dropboxAppSecret;
     let dropboxRefreshToken;
 
+    const calendarLinks = await fetchCalendarLinks();
+
+
 // Run fetch functions concurrently
 Promise.all([
     fetchvendors(),
@@ -67,16 +70,6 @@ Promise.all([
     const headerTitle = document.querySelector('h1');
     const modal = document.getElementById("materials-modal");
 
-    const calendarLinks = [
-        { id: 'https://calendar.google.com/calendar/embed?src=c_d113e252e0e5c8cfbf17a13149707a30d3c0fbeeff1baaac7a46940c2cc448ca%40group.calendar.google.com&ctz=America%2FToronto', name: 'Charleston' },
-        { id: 'https://calendar.google.com/calendar/ical/c_03867438b82e5dfd8d4d3b6096c8eb1c715425fa012054cc95f8dea7ef41c79b%40group.calendar.google.com/public/basic.ics', name: 'Greensboro' },
-        { id: 'https://calendar.google.com/calendar/embed?src=c_ad562073f4db2c47279af5aa40e53fc2641b12ad2497ccd925feb220a0f1abee%40group.calendar.google.com&ctz=America%2FToronto', name: 'Myrtle Beach' },
-        { id: 'https://calendar.google.com/calendar/embed?src=c_45db4e963c3363676038697855d7aacfd1075da441f9308e44714768d4a4f8de%40group.calendar.google.com&ctz=America%2FToronto', name: 'Wilmington' },
-        { id: 'https://calendar.google.com/calendar/embed?src=c_0476130ac741b9c58b404c737a8068a8b1b06ba1de2a84cff08c5d15ced54edf%40group.calendar.google.com&ctz=America%2FToronto', name: 'Greenville' },
-        { id: 'https://calendar.google.com/calendar/embed?src=c_df033dd6c81bb3cbb5c6fdfd58dd2931e145e061b8a04ea0c13c79963cb6d515%40group.calendar.google.com&ctz=America%2FToronto', name: 'Columbia' },
-        { id: 'https://calendar.google.com/calendar/embed?src=c_ebe1fcbce1be361c641591a6c389d4311df7a97961af0020c889686ae059d20a%40group.calendar.google.com&ctz=America%2FToronto', name: 'Savannah' },
-        { id: 'https://calendar.google.com/calendar/embed?src=warranty%40vanirinstalledsales.com&ctz=America%2FToronto', name: 'Raleigh' }
-    ];
 
     let updatedFields = {};
     let hasChanges = false;
@@ -299,6 +292,32 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             console.error('Error occurred during fetchDropboxCredentials:', error);
         }
     }
+
+    async function fetchCalendarLinks() {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Error fetching calendar links: ${response.status} ${response.statusText}`);
+            }
+    
+            const data = await response.json();
+    
+            // Ensure correct fields are mapped (e.g., 'name' and 'CalendarLink')
+            return data.records.map(record => ({
+                name: record.fields['name'],           // Airtable's display name
+                link: record.fields['CalendarLink']    // Airtable's URL field
+            }));
+        } catch (error) {
+            console.error('Error fetching calendar links from Airtable:', error);
+            return [];
+        }
+    }
+    
+    
 
     async function fetchvendors() {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID3}/${window.env.AIRTABLE_TABLE_NAME3}`;
@@ -1092,6 +1111,12 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         records.forEach(record => {
             const fields = record.fields;
             const row = document.createElement('tr');
+            const matchingCalendar = calendarLinks.find(calendar => calendar.name === fields['name']);
+            const url = matchingCalendar ? matchingCalendar.link : '#';
+    
+            const cell = document.createElement('td');
+            cell.innerHTML = `<a href="${url}" target="_blank">${fields['b'] || 'N/A'}</a>`;
+            row.appendChild(cell);
     
             const fieldConfigs = isSecondary ? [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
@@ -1334,11 +1359,11 @@ select.addEventListener('change', () => {
 }
                 else if (link) {
                     const matchingCalendar = calendarLinks.find(calendar => calendar.name === value);
-                    if (matchingCalendar) {
-                        cell.innerHTML = `<a href="${matchingCalendar.id}" target="_blank">${value}</a>`;
-                    } else {
-                        cell.textContent = value;
-                    }
+    if (matchingCalendar) {
+        cell.innerHTML = `<a href="${matchingCalendar.link}" target="_blank">${value}</a>`;
+    } else {
+        cell.textContent = value;
+    }
                 } else if (email) {
                     cell.innerHTML = value ? `<a href="mailto:${value}">${value}</a>` : 'N/A';
                 } else if (directions) {

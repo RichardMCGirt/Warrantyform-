@@ -1564,18 +1564,10 @@ imageViewerModal.addEventListener('click', function(event) {
     
     let confirmationShown = false; 
 
-    // Function to submit changes
+// Function to submit changes
 async function submitChanges() {
-    // Check for any unsaved changes and valid active record
-    if (!hasChanges || !activeRecordId) {
-        showToast('No changes to submit.');
-        hideSubmitButton();
-        return;
-    }
-
-    // Confirm submission if not already confirmed
     if (!confirmationShown) {
-        const userConfirmed = confirm("Are you sure you want to submit these changes?");
+        const userConfirmed = confirm("Are you sure you want to submit all changes?");
         if (!userConfirmed) {
             showToast('Submission canceled.');
             confirmationShown = false;
@@ -1585,49 +1577,65 @@ async function submitChanges() {
     }
 
     try {
-        console.log('Submitting changes...'); // Log the start of submission
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
 
-        // Get fields to update for the active record
-        const fieldsToUpdate = updatedFields[activeRecordId];
+        // Loop through all records
+        for (const recordId in originalValues) {
+            const fieldsToUpdate = updatedFields[recordId] || {};
 
-        // Handle specific updates, such as the 'sub' field, if present
-        if (fieldsToUpdate['sub']) {
-            await updateRecord(activeRecordId, { 'Subcontractor': fieldsToUpdate['sub'] });
-        }
-
-        // Remove the 'sub' field from updates and apply any remaining changes
-        if (Object.keys(fieldsToUpdate).length > 0) {
-            delete fieldsToUpdate['sub'];
-            if (Object.keys(fieldsToUpdate).length > 0) {
-                await updateRecord(activeRecordId, fieldsToUpdate);
+            // Check Start Date and generate Calendar Link if it doesn't exist or needs updating
+            const startDateField = originalValues[recordId]?.['Start Date'];
+            const existingCalendarLink = originalValues[recordId]?.['Calendar Link'];
+            
+            if (startDateField && !existingCalendarLink) { // Add `!existingCalendarLink` if you only want to add the link if it's missing
+                // Convert Start Date from 'MM/DD/YYYY HH:mm AM/PM' format to 'YYYYMMDD'
+                const parsedDate = new Date(startDateField);
+                
+                if (!isNaN(parsedDate)) {
+                    const formattedStartDate = parsedDate.toISOString().split('T')[0].replace(/-/g, '');
+                    const calendarUrl = `https://calendar.google.com/calendar/embed?src=c_ebe1fcbce1be361c641591a6c389d4311df7a97961af0020c889686ae059d20a%40group.calendar.google.com&ctz=America%2FToronto&dates=${formattedStartDate}/${formattedStartDate}`;
+                    
+                    fieldsToUpdate['Calendar Link'] = calendarUrl;
+                    console.log(`Generated Calendar Link for record ${recordId}:`, calendarUrl); // Log each Calendar Link
+                } else {
+                    console.error(`Invalid Start Date format for record ${recordId}, unable to generate Calendar Link.`);
+                }
             }
+
+            // Skip if there are no fields to update
+            if (Object.keys(fieldsToUpdate).length === 0) continue;
+
+            // Log the payload for this record before updating
+            console.log(`Payload to update in Airtable for record ${recordId}:`, fieldsToUpdate);
+
+            // Update record in Airtable
+            await updateRecord(recordId, fieldsToUpdate);
         }
 
-        showToast('Changes submitted successfully!');
-        console.log('Changes submitted successfully for record:', activeRecordId);
-
-        // Reset tracking variables after successful submission
+        showToast('All changes submitted successfully!');
         updatedFields = {};
         hasChanges = false;
         activeRecordId = null;
         confirmationShown = false;
         hideSubmitButton();
 
-        // Fetch updated data after submission
-        await fetchAllData();
+        await fetchAllData(); // Refresh data
     } catch (error) {
         console.error('Error during submission:', error);
         showToast('Error submitting changes.');
         confirmationShown = false;
     } finally {
-        // Re-display content and reset UI elements
         mainContent.style.display = 'block';
         secondaryContent.style.display = 'block';
         hideSubmitButton();
     }
 }
+
+
+
+    
+    
 
     
 

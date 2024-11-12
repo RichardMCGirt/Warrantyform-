@@ -1083,6 +1083,10 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         
         return subOptions;  
     }
+
+    console.log('Primary Records:', primaryRecords);
+console.log('Secondary Records:', secondaryRecords);
+
     
     async function displayData(records, tableSelector, isSecondary = false) {
         const tableElement = document.querySelector(tableSelector); // Select the entire table
@@ -1129,7 +1133,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
                 { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true }
             ] : [
-                { field: 'b', value: fields['b'] || 'N/A', link: true },
+                { field: 'b', value: fields['b'] || 'N/A', link: true },  // Keep only this "Branch" entry
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
@@ -1149,6 +1153,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Subcontractor', value: fields['Subcontractor'] || '', dropdown: true, options: subOptions },
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
             ];
+            
     
             fieldConfigs.forEach(config => {
                 const { field, value, checkbox, editable, link, image, dropdown, options, email, directions, imageField } = config;

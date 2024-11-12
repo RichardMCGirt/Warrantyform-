@@ -28,6 +28,12 @@ td {
     margin: 0 auto;
 }
 
+#airtable-data th:nth-child(2),
+#airtable-data td:nth-child(2) {
+    display: none;
+}
+
+
 
 
 td:nth-child(7) .delete-button,

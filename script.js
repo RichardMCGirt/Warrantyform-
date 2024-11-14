@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     let dropboxRefreshToken;
 
     const calendarLinks = await fetchCalendarLinks();
+    let isSubmitting = false;
 
     let confirmationShown = false; 
 
@@ -1085,8 +1086,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         return subOptions;  
     }
 
-    console.log('Primary Records:', primaryRecords);
-console.log('Secondary Records:', secondaryRecords);
 
     
     async function displayData(records, tableSelector, isSecondary = false) {
@@ -1663,14 +1662,6 @@ async function submitChanges() {
     }
 }
 
-
-
-    
-    
-
-    
-
-let isSubmitting = false;
 
 submitButton.addEventListener('click', function () {
     console.log('Submit button clicked.');

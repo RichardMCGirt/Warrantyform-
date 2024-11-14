@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const calendarLinks = await fetchCalendarLinks();
 
+    let confirmationShown = false; 
 
 // Run fetch functions concurrently
 Promise.all([
@@ -1148,7 +1149,7 @@ console.log('Secondary Records:', secondaryRecords);
                     options: vendorOptions  
                 },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
-                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
+                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather', 'Other'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
                 { field: 'Subcontractor', value: fields['Subcontractor'] || '', dropdown: true, options: subOptions },
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
@@ -1592,7 +1593,6 @@ imageViewerModal.addEventListener('click', function(event) {
         console.log('Submit button hidden. No changes detected.');
     }
     
-    let confirmationShown = false; 
 
 // Function to submit changes
 async function submitChanges() {
@@ -1655,7 +1655,8 @@ async function submitChanges() {
         console.error('Error during submission:', error);
         showToast('Error submitting changes.');
         confirmationShown = false;
-    } finally {
+    }
+        finally {
         mainContent.style.display = 'block';
         secondaryContent.style.display = 'block';
         hideSubmitButton();

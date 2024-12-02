@@ -69,7 +69,10 @@ async function fetchVendorsWithEmails() {
     return vendors;
 }
 
-// Function to update the Warranties table with matched email information, overwriting or clearing emails if "Material Vendor" has changed
+// Function to introduce a delay
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+// Modify the update function to include a delay
 async function updateWarrantyEmails() {
     console.log("Starting to update Warranties with vendor email data...");
     const warranties = await fetchAllWarrantyRecords();
@@ -80,7 +83,13 @@ async function updateWarrantyEmails() {
         return map;
     }, {});
 
-    const updatePromises = warranties.map(async (warranty) => {
+    const updatePromises = warranties.map(async (warranty, index) => {
+        // Add delay after every 5 requests
+        if (index > 0 && index % 5 === 0) {
+            console.log("Pausing to respect rate limits...");
+            await delay(1000);  // Delay for 1 second
+        }
+
         const vendorName = warranty.fields['Material Vendor'];
         const matchedVendor = vendorMap[vendorName];
 
@@ -112,7 +121,6 @@ async function updateWarrantyEmails() {
                 'Vendor Return Email': '',
                 'Vendor Secondary Return Email': ''
             };
-            console.warn(`No match found for Material Vendor: ${vendorName}. Clearing email fields for warranty record ${warranty.id}.`);
         }
 
         // Proceed with the update only if there are fields to update
@@ -131,7 +139,7 @@ async function updateWarrantyEmails() {
                 if (!response.ok) {
                     console.error(`Error updating warranty ${warranty.id}: ${response.statusText}`);
                 } else {
-                    console.log(`Successfully updated warranty ${warranty.id} with vendor emails or cleared fields.`);
+                    console.log(`Successfully updated warranty ${warranty.id}`);
                 }
             } catch (error) {
                 console.error(`Error updating warranty ${warranty.id}:`, error);
@@ -144,6 +152,7 @@ async function updateWarrantyEmails() {
     await Promise.all(updatePromises);
     console.log("All warranties updated with vendor emails, where necessary.");
 }
+
 
 // Execute the update function
 updateWarrantyEmails().then(() => {

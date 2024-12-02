@@ -7,6 +7,11 @@ document.addEventListener('DOMContentLoaded', async function () {
     let dropboxAppSecret;
     let dropboxRefreshToken;
 
+    const calendarLinks = await fetchCalendarLinks();
+    let isSubmitting = false;
+
+    let confirmationShown = false; 
+
 // Run fetch functions concurrently
 Promise.all([
     fetchvendors(),
@@ -64,19 +69,8 @@ Promise.all([
     const mainContent = document.getElementById('main-content');
     const secondaryContent = document.getElementById('secoundary-content');
     const toast = document.getElementById('toast');
-    const headerTitle = document.querySelector('h1');
     const modal = document.getElementById("materials-modal");
 
-    const calendarLinks = [
-        { id: 'https://calendar.google.com/calendar/embed?src=c_d113e252e0e5c8cfbf17a13149707a30d3c0fbeeff1baaac7a46940c2cc448ca%40group.calendar.google.com&ctz=America%2FToronto', name: 'Charleston' },
-        { id: 'https://calendar.google.com/calendar/ical/c_03867438b82e5dfd8d4d3b6096c8eb1c715425fa012054cc95f8dea7ef41c79b%40group.calendar.google.com/public/basic.ics', name: 'Greensboro' },
-        { id: 'https://calendar.google.com/calendar/embed?src=c_ad562073f4db2c47279af5aa40e53fc2641b12ad2497ccd925feb220a0f1abee%40group.calendar.google.com&ctz=America%2FToronto', name: 'Myrtle Beach' },
-        { id: 'https://calendar.google.com/calendar/embed?src=c_45db4e963c3363676038697855d7aacfd1075da441f9308e44714768d4a4f8de%40group.calendar.google.com&ctz=America%2FToronto', name: 'Wilmington' },
-        { id: 'https://calendar.google.com/calendar/embed?src=c_0476130ac741b9c58b404c737a8068a8b1b06ba1de2a84cff08c5d15ced54edf%40group.calendar.google.com&ctz=America%2FToronto', name: 'Greenville' },
-        { id: 'https://calendar.google.com/calendar/embed?src=c_df033dd6c81bb3cbb5c6fdfd58dd2931e145e061b8a04ea0c13c79963cb6d515%40group.calendar.google.com&ctz=America%2FToronto', name: 'Columbia' },
-        { id: 'https://calendar.google.com/calendar/embed?src=c_ebe1fcbce1be361c641591a6c389d4311df7a97961af0020c889686ae059d20a%40group.calendar.google.com&ctz=America%2FToronto', name: 'Savannah' },
-        { id: 'https://calendar.google.com/calendar/embed?src=warranty%40vanirinstalledsales.com&ctz=America%2FToronto', name: 'Raleigh' }
-    ];
 
     let updatedFields = {};
     let hasChanges = false;
@@ -299,6 +293,32 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             console.error('Error occurred during fetchDropboxCredentials:', error);
         }
     }
+
+    async function fetchCalendarLinks() {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
+            });
+    
+            if (!response.ok) {
+                throw new Error(`Error fetching calendar links: ${response.status} ${response.statusText}`);
+            }
+    
+            const data = await response.json();
+    
+            // Ensure correct fields are mapped (e.g., 'name' and 'CalendarLink')
+            return data.records.map(record => ({
+                name: record.fields['name'],           // Airtable's display name
+                link: record.fields['CalendarLink']    // Airtable's URL field
+            }));
+        } catch (error) {
+            console.error('Error fetching calendar links from Airtable:', error);
+            return [];
+        }
+    }
+    
+    
 
     async function fetchvendors() {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID3}/${window.env.AIRTABLE_TABLE_NAME3}`;
@@ -772,19 +792,49 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
+    function adjustTableWidth() {
+        const mainContent = document.querySelector('#airtable-data tbody');
+        const secondaryContent = document.querySelector('#feild-data tbody');
+    
+        const hasPrimaryRecords = mainContent && mainContent.children.length > 0;
+        const hasSecondaryRecords = secondaryContent && secondaryContent.children.length > 0;
+    
+        if (hasPrimaryRecords && !hasSecondaryRecords) {
+            document.body.classList.add('single-table-view');
+        } else if (!hasPrimaryRecords && hasSecondaryRecords) {
+            document.body.classList.add('single-table-view');
+        } else {
+            document.body.classList.remove('single-table-view');
+        }
+    }
+    
+    
+    // Call `adjustTableWidth` after data is loaded or when the table visibility changes
+    fetchAllData().then(adjustTableWidth);
+    
 
     function syncTableWidths() {
         const mainTable = document.querySelector('#airtable-data');
         const secondaryTable = document.querySelector('#feild-data');
-
-        if (mainTable && secondaryTable) {
-            // Get the computed width of the main table
+        
+        // Check if either table has rows (records)
+        const mainTableHasRecords = mainTable && mainTable.querySelector('tbody tr') !== null;
+        const secondaryTableHasRecords = secondaryTable && secondaryTable.querySelector('tbody tr') !== null;
+    
+        // If only one table has records, set its width to 80%
+        if (mainTableHasRecords && !secondaryTableHasRecords) {
+            mainTable.style.width = '80%';
+            secondaryTable.style.width = '0';  // Hide or reduce the other table
+        } else if (secondaryTableHasRecords && !mainTableHasRecords) {
+            secondaryTable.style.width = '80%';
+            mainTable.style.width = '0';  // Hide or reduce the other table
+        } else if (mainTableHasRecords && secondaryTableHasRecords) {
+            // If both have records, synchronize their widths
             const mainTableWidth = mainTable.offsetWidth;
-            
-            // Apply the same width to the secondary table
             secondaryTable.style.width = `${mainTableWidth}px`;
         }
     }
+    
     
     let vendorOptions = []; // Declare vendorOptions properly
 
@@ -793,10 +843,9 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     async function fetchAllData() {
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
-
+    
         originalValues = { /* Populate this with fetched data */ };
         console.log('Original values loaded:', originalValues);
-    
     
         let loadProgress = 0;
         const loadInterval = setInterval(() => {
@@ -824,7 +873,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 vendorOptions = []; // Continue with empty array if error occurs
             }
     
-            // Fetch sub options (assuming it's fetched from another Airtable table or source)
+            // Fetch sub options
             try {
                 subOptions = await fetchAirtableSubOptionsFromDifferentTable() || [];
             } catch (error) {
@@ -880,28 +929,32 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             // Reveal content after loading
             mainContent.style.display = 'block';
             secondaryContent.style.display = 'block';
-            headerTitle.classList.add('visible');
             setTimeout(() => {
                 mainContent.style.opacity = '1';
                 secondaryContent.style.opacity = '1';
             }, 10);
     
+            // Adjust table width if only one table has records
+            adjustTableWidth();
             syncTableWidths();
+    
         } catch (error) {
             console.error('Error fetching all data:', error);
     
             // Fallback to ensure that the page still loads even if fetching data fails
             mainContent.style.display = 'block';
             secondaryContent.style.display = 'block';
-            headerTitle.classList.add('visible');
             setTimeout(() => {
                 mainContent.style.opacity = '1';
                 secondaryContent.style.opacity = '1';
             }, 10);
     
+            // Adjust table width if only one table has records
+            adjustTableWidth();
             syncTableWidths();
         }
     }
+    
     
     
     function checkForChanges(recordId) {
@@ -1002,43 +1055,78 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         let records = [];
         let offset = null;
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME2}`;
-        
-        do {
-            const response = await fetch(`${url}?fields[]=Subcontractor%20Company%20Name&fields[]=Vanir%20Branch${offset ? `&offset=${offset}` : ''}`, {
-                headers: {
-                    Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
-                }
-            });
+        const delay = ms => new Promise(resolve => setTimeout(resolve, ms)); // Helper function for delay
     
-            if (!response.ok) {
-                console.error(`Error fetching subcontractor options: ${response.status} ${response.statusText}`);
+        do {
+            try {
+                const response = await fetch(`${url}?fields[]=Subcontractor%20Company%20Name&fields[]=Vanir%20Branch${offset ? `&offset=${offset}` : ''}`, {
+                    headers: {
+                        Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
+                    }
+                });
+    
+                if (!response.ok) {
+                    console.error(`Error fetching subcontractor options: ${response.status} ${response.statusText}`);
+                    break;
+                }
+    
+                const data = await response.json();
+                records = records.concat(data.records); // Accumulate records
+                offset = data.offset; // Pagination offset
+    
+                if (offset) {
+                    await delay(200); // Introduce a delay of 200ms between requests
+                }
+            } catch (error) {
+                console.error('Error during fetch:', error);
                 break;
             }
-    
-            const data = await response.json();
-            records = records.concat(data.records);  
-            offset = data.offset;  
         } while (offset);
     
-        const subOptions = Array.from(new Set(records.map(record => {
+        const subOptions = Array.from(new Set(records.map(record => ({
+            name: record.fields['Subcontractor Company Name'] || 'Unnamed Subcontractor',
+            vanirOffice: record.fields['Vanir Branch'] || 'Unknown Branch'
+        })).filter(Boolean)));
     
-            return {
-                name: record.fields['Subcontractor Company Name'] || 'Unnamed Subcontractor',
-                vanirOffice: record.fields['Vanir Branch'] || 'Unknown Branch'            };
-        }).filter(Boolean)));
-        
-        return subOptions;  
+        return subOptions;
     }
     
+
+
+    
     async function displayData(records, tableSelector, isSecondary = false) {
-        const tbody = document.querySelector(`${tableSelector} tbody`);
+        const tableElement = document.querySelector(tableSelector); // Select the entire table
+        const tableContainer = tableElement.closest('.scrollable-div'); // Find the table's container
+        const tbody = tableElement.querySelector('tbody'); // Select the table body
+        const thead = tableElement.querySelector('thead'); // Select the table header
+        const h2Element = tableContainer.previousElementSibling; // Select the corresponding h2
+    
+        // Clear the table body
         tbody.innerHTML = '';
     
-        if (records.length === 0) return;
-    
+        // Hide the entire table, header, and h2 if there are no records
+        if (records.length === 0) {
+            h2Element.style.display = 'none';            // Hide the h2
+            tableElement.style.display = 'none';         // Hide the table
+            thead.style.display = 'none';                // Hide the header
+            return;
+        } else {
+            h2Element.style.display = 'block';           // Show the h2 if records are present
+            tableElement.style.display = 'table';        // Show the table
+            thead.style.display = 'table-header-group';  // Show the header
+            tableContainer.style.width = '100%';         // Ensure table auto-adjusts to content width
+        }
+        
+        // Populate rows based on the provided configuration
         records.forEach(record => {
             const fields = record.fields;
             const row = document.createElement('tr');
+            const matchingCalendar = calendarLinks.find(calendar => calendar.name === fields['name']);
+            const url = matchingCalendar ? matchingCalendar.link : '#';
+    
+            const cell = document.createElement('td');
+            cell.innerHTML = `<a href="${url}" target="_blank">${fields['b'] || 'N/A'}</a>`;
+            row.appendChild(cell);
     
             const fieldConfigs = isSecondary ? [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
@@ -1051,7 +1139,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
                 { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true }
             ] : [
-                { field: 'b', value: fields['b'] || 'N/A', link: true },
+                { field: 'b', value: fields['b'] || 'N/A', link: true },  // Keep only this "Branch" entry
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
@@ -1066,11 +1154,12 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     options: vendorOptions  
                 },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
-                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'] },
+                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather', 'Other'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
                 { field: 'Subcontractor', value: fields['Subcontractor'] || '', dropdown: true, options: subOptions },
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
             ];
+            
     
             fieldConfigs.forEach(config => {
                 const { field, value, checkbox, editable, link, image, dropdown, options, email, directions, imageField } = config;
@@ -1281,11 +1370,11 @@ select.addEventListener('change', () => {
 }
                 else if (link) {
                     const matchingCalendar = calendarLinks.find(calendar => calendar.name === value);
-                    if (matchingCalendar) {
-                        cell.innerHTML = `<a href="${matchingCalendar.id}" target="_blank">${value}</a>`;
-                    } else {
-                        cell.textContent = value;
-                    }
+    if (matchingCalendar) {
+        cell.innerHTML = `<a href="${matchingCalendar.link}" target="_blank">${value}</a>`;
+    } else {
+        cell.textContent = value;
+    }
                 } else if (email) {
                     cell.innerHTML = value ? `<a href="mailto:${value}">${value}</a>` : 'N/A';
                 } else if (directions) {
@@ -1509,20 +1598,11 @@ imageViewerModal.addEventListener('click', function(event) {
         console.log('Submit button hidden. No changes detected.');
     }
     
-    let confirmationShown = false; 
 
-    // Function to submit changes
+// Function to submit changes
 async function submitChanges() {
-    // Check for any unsaved changes and valid active record
-    if (!hasChanges || !activeRecordId) {
-        showToast('No changes to submit.');
-        hideSubmitButton();
-        return;
-    }
-
-    // Confirm submission if not already confirmed
     if (!confirmationShown) {
-        const userConfirmed = confirm("Are you sure you want to submit these changes?");
+        const userConfirmed = confirm("Are you sure you want to submit all changes?");
         if (!userConfirmed) {
             showToast('Submission canceled.');
             confirmationShown = false;
@@ -1532,53 +1612,62 @@ async function submitChanges() {
     }
 
     try {
-        console.log('Submitting changes...'); // Log the start of submission
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
 
-        // Get fields to update for the active record
-        const fieldsToUpdate = updatedFields[activeRecordId];
+        // Loop through all records
+        for (const recordId in originalValues) {
+            const fieldsToUpdate = updatedFields[recordId] || {};
 
-        // Handle specific updates, such as the 'sub' field, if present
-        if (fieldsToUpdate['sub']) {
-            await updateRecord(activeRecordId, { 'Subcontractor': fieldsToUpdate['sub'] });
-        }
-
-        // Remove the 'sub' field from updates and apply any remaining changes
-        if (Object.keys(fieldsToUpdate).length > 0) {
-            delete fieldsToUpdate['sub'];
-            if (Object.keys(fieldsToUpdate).length > 0) {
-                await updateRecord(activeRecordId, fieldsToUpdate);
+            // Check Start Date and generate Calendar Link if it doesn't exist or needs updating
+            const startDateField = originalValues[recordId]?.['Start Date'];
+            const existingCalendarLink = originalValues[recordId]?.['Calendar Link'];
+            
+            if (startDateField && !existingCalendarLink) { // Add `!existingCalendarLink` if you only want to add the link if it's missing
+                // Convert Start Date from 'MM/DD/YYYY HH:mm AM/PM' format to 'YYYYMMDD'
+                const parsedDate = new Date(startDateField);
+                
+                if (!isNaN(parsedDate)) {
+                    const formattedStartDate = parsedDate.toISOString().split('T')[0].replace(/-/g, '');
+                    const calendarUrl = `https://calendar.google.com/calendar/embed?src=c_ebe1fcbce1be361c641591a6c389d4311df7a97961af0020c889686ae059d20a%40group.calendar.google.com&ctz=America%2FToronto&dates=${formattedStartDate}/${formattedStartDate}`;
+                    
+                    fieldsToUpdate['Calendar Link'] = calendarUrl;
+                    console.log(`Generated Calendar Link for record ${recordId}:`, calendarUrl); // Log each Calendar Link
+                } else {
+                    console.error(`Invalid Start Date format for record ${recordId}, unable to generate Calendar Link.`);
+                }
             }
+
+            // Skip if there are no fields to update
+            if (Object.keys(fieldsToUpdate).length === 0) continue;
+
+            // Log the payload for this record before updating
+            console.log(`Payload to update in Airtable for record ${recordId}:`, fieldsToUpdate);
+
+            // Update record in Airtable
+            await updateRecord(recordId, fieldsToUpdate);
         }
 
-        showToast('Changes submitted successfully!');
-        console.log('Changes submitted successfully for record:', activeRecordId);
-
-        // Reset tracking variables after successful submission
+        showToast('All changes submitted successfully!');
         updatedFields = {};
         hasChanges = false;
         activeRecordId = null;
         confirmationShown = false;
         hideSubmitButton();
 
-        // Fetch updated data after submission
-        await fetchAllData();
+        await fetchAllData(); // Refresh data
     } catch (error) {
         console.error('Error during submission:', error);
         showToast('Error submitting changes.');
         confirmationShown = false;
-    } finally {
-        // Re-display content and reset UI elements
+    }
+        finally {
         mainContent.style.display = 'block';
         secondaryContent.style.display = 'block';
         hideSubmitButton();
     }
 }
 
-    
-
-let isSubmitting = false;
 
 submitButton.addEventListener('click', function () {
     console.log('Submit button clicked.');

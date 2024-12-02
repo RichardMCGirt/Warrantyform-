@@ -5,9 +5,34 @@ body {
     color: #333;
     margin: 0;
     padding: 0;
-    cursor: url('favicon3.ico') 16 16, auto; /* Center the cursor’s hotspot */
 
 }
+
+/* Navigation Link Styles */
+.nav-link {
+    display: inline-block;
+    padding: 10px 20px;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    background-color: #003366; /* Matches your button color */
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.nav-link:hover {
+    background-color: #002244; /* Darker shade for hover effect */
+    transform: translateY(-2px); /* Slight lift effect */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow for hover */
+}
+
+.nav-link.active {
+    background-color: #002244; /* Highlight active state */
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
 
 h2 {
     text-align: center;
@@ -16,6 +41,28 @@ h2 {
 td {
     max-height: 100px;
 }
+
+/* Default style for both tables */
+.scrollable-div {
+    margin: 0 auto;
+    max-width: calc(100% - 40px); /* Set 20px margin on each side */
+    overflow-x: auto;
+}
+
+.single-table-view .scrollable-div {
+    width: calc(100% - 40px); /* Adjust to match your desired width */
+    margin: 0 auto;
+}
+
+#airtable-data th:nth-child(2),
+#airtable-data td:nth-child(2),
+#feild-data td:nth-child(2),
+#feild-data th:nth-child(2) {
+    display: none;
+}
+
+
+
 
 td:nth-child(7) .delete-button,
 td:nth-child(7) .add-photo-button {
@@ -59,18 +106,27 @@ td:nth-child(7) .add-photo-button {
 /* Header Styles */
 .header {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 10px;
-    cursor: pointer;
-    position: relative;
+    align-items: center; /* Vertically center the content */
+    justify-content: center; /* Horizontally center the content */
+    padding: 10px;
+    gap: 20px; /* Space between the logo and search input */
+    width: 100%; /* Ensures the header spans the full width */
 }
 
 .logo {
     height: 80px;
-    margin-right: 10px;
     transition: opacity 1s ease-in-out;
 }
+
+#search-input {
+    flex-grow: 0; /* Ensures the input doesn't stretch */
+    padding: 8px;
+    font-size: 16px;
+    border: 2px solid #8B0000;
+    border-radius: 4px;
+    width: 300px; /* Set a fixed width for the input */
+}
+
 
 /* Main Content Styles */
 #main-content, #secoundary-content {
@@ -96,7 +152,6 @@ th, td {
     white-space: normal;
     overflow-wrap: break-word;
     word-break: keep-all;
-    max-width: 200px;
 }
 
 th {
@@ -354,21 +409,9 @@ button:hover {
     color: #fff;
 }
 
-/* Search Input */
-.search-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
 
-#search-input {
-    padding: 8px;
-    width: 80%;
-    max-width: 500px;
-    border-radius: 4px;
-    font-size: 16px;
-    border: 2px solid #8B0000;
-}
+
+
 
 /* Toast Notification */
 #toast {
@@ -487,13 +530,7 @@ button:hover {
     transition: opacity 0.5s ease, visibility 0.5s ease;
 }
 
-/* Search Container Styles */
-.search-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 20px auto; /* Center and add margin */
-}
+
 
 #search-input {
     padding: 10px;
@@ -770,9 +807,7 @@ td:nth-child(7) {
         font-size: 12px;
     }
 
-    .search-container {
-        left: 50%;
-    }
+   
 
       /* Add styles to make divs scrollable */
       .scrollable-div {

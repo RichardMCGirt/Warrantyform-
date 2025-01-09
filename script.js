@@ -25,9 +25,7 @@ Promise.all([
 });
 
         // Function to check if Dropbox token is still valid
-        async function checkDropboxTokenValidity() {
-            console.log('Checking if Dropbox token is still valid...');
-        
+        async function checkDropboxTokenValidity() {      
             if (!dropboxAccessToken) {
                 return;
             }
@@ -242,9 +240,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     // Fetch Dropbox credentials from Airtable
     async function fetchDropboxCredentials() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-        console.log('Starting fetchDropboxCredentials function');
-        console.log('Airtable URL:', url);
-        console.log('Fetching Dropbox credentials from Airtable...');
 
         try {
             const response = await fetch(url, {
@@ -288,7 +283,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             if (!dropboxAccessToken || !dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
                 console.error('One or more Dropbox credentials are missing after fetching.');
             } else {
-                console.log('All Dropbox credentials successfully fetched and set.');
             }
         } catch (error) {
             console.error('Error occurred during fetchDropboxCredentials:', error);
@@ -318,8 +312,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             return [];
         }
     }
-    
-    
 
     async function fetchvendors() {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID3}/${window.env.AIRTABLE_TABLE_NAME3}`;
@@ -472,7 +464,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-
     // Create file input dynamically
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -686,8 +677,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-    
-
     async function getDropboxSharedLink(filePath) {
         if (!dropboxAccessToken) {
             console.error('Dropbox Access Token is not available.');
@@ -782,7 +771,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             });
     
             if (!response.ok) {
-                console.error(`Error fetching data: ${response.status} ${response.statusText}`);
                 return { records: [] }; // Return an empty array on error
             }
     
@@ -809,11 +797,9 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-    
     // Call `adjustTableWidth` after data is loaded or when the table visibility changes
     fetchAllData().then(adjustTableWidth);
     
-
     function syncTableWidths() {
         const mainTable = document.querySelector('#airtable-data');
         const secondaryTable = document.querySelector('#feild-data');
@@ -836,7 +822,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-    
     let vendorOptions = []; // Declare vendorOptions properly
 
     let subOptions = []; // Declare subOptions globally
@@ -846,7 +831,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         secondaryContent.style.display = 'none';
     
         originalValues = { /* Populate this with fetched data */ };
-        console.log('Original values loaded:', originalValues);
     
         let loadProgress = 0;
         const loadInterval = setInterval(() => {
@@ -898,7 +882,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     console.error('Error: Invalid data structure or no records found.');
                     break; // Exit loop if no valid data is fetched
                 }
-    
                 offset = data.offset;
             } while (offset);
     
@@ -957,8 +940,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             syncTableWidths();
         }
     }
-    
-    
     
     function checkForChanges(recordId) {
         console.log(`Checking for changes in record ID: ${recordId}`);
@@ -1026,8 +1007,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         });
     });
     
-    
-    
     // Resize observer to adjust the secondary table width when the main table resizes
     const mainTable = document.querySelector('#airtable-data');
     const resizeObserver = new ResizeObserver(() => {
@@ -1067,7 +1046,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             });
     
             if (!response.ok) {
-                console.error(`Error fetching subcontractor options: ${response.status} ${response.statusText}`);
                 break;
             }
     
@@ -1086,8 +1064,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         return subOptions;  
     }
 
-
-    
     async function displayData(records, tableSelector, isSecondary = false) {
         const tableElement = document.querySelector(tableSelector); // Select the entire table
         const tableContainer = tableElement.closest('.scrollable-div'); // Find the table's container
@@ -1154,7 +1130,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
             ];
             
-    
             fieldConfigs.forEach(config => {
                 const { field, value, checkbox, editable, link, image, dropdown, options, email, directions, imageField } = config;
                 const cell = document.createElement('td');
@@ -1401,7 +1376,6 @@ select.addEventListener('change', () => {
         });
     }
     
-
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, imageField);
@@ -1542,7 +1516,6 @@ imageViewerModal.addEventListener('click', function(event) {
     }
 });
        
-    
         updateModalImage();
         imageViewerModal.style.display = 'flex'; 
     
@@ -1592,7 +1565,6 @@ imageViewerModal.addEventListener('click', function(event) {
         console.log('Submit button hidden. No changes detected.');
     }
     
-
 // Function to submit changes
 async function submitChanges() {
     if (!confirmationShown) {
@@ -1604,7 +1576,6 @@ async function submitChanges() {
         }
         confirmationShown = true;
     }
-
     try {
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
@@ -1631,7 +1602,6 @@ async function submitChanges() {
                     console.error(`Invalid Start Date format for record ${recordId}, unable to generate Calendar Link.`);
                 }
             }
-
             // Skip if there are no fields to update
             if (Object.keys(fieldsToUpdate).length === 0) continue;
 
@@ -1662,7 +1632,6 @@ async function submitChanges() {
     }
 }
 
-
 submitButton.addEventListener('click', function () {
     console.log('Submit button clicked.');
 
@@ -1689,7 +1658,6 @@ submitButton.addEventListener('click', function () {
     }
 });
     
-
     document.addEventListener('DOMContentLoaded', function () {
         function adjustImageSize() {
             const images = document.querySelectorAll('td:nth-child(7) .image-carousel img');
@@ -1736,7 +1704,6 @@ let hasChanges = false;
             hideSubmitButton();
         }
     }
-
 
  // Attach event listeners to track changes
  document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {

@@ -11,74 +11,18 @@ document.addEventListener('DOMContentLoaded', async function () {
     let isSubmitting = false;
 
     let confirmationShown = false; 
-    const toast = document.getElementById('toast');
 
-    async function refreshDropboxToken() {
-        console.log('Attempting to refresh Dropbox token...');
-    
-        if (!dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
-            console.error('Dropbox credentials are not available.');
-            showToast('Dropbox credentials are missing. Please fetch credentials first.');
-            await fetchDropboxCredentials();  // Attempt to fetch credentials again
-            return;
-        }
-    
-        const tokenUrl = 'https://api.dropboxapi.com/oauth2/token';
-        const headers = new Headers();
-        headers.append('Authorization', 'Basic ' + btoa(`${dropboxAppKey}:${dropboxAppSecret}`));
-        headers.append('Content-Type', 'application/x-www-form-urlencoded');
-    
-        const body = new URLSearchParams();
-        body.append('grant_type', 'refresh_token');
-        body.append('refresh_token', dropboxRefreshToken);
-    
-        try {
-            const response = await fetch(tokenUrl, {
-                method: 'POST',
-                headers: headers,
-                body: body
-            });
-    
-            if (!response.ok) {
-                const errorResponse = await response.json();
-                console.error('Error refreshing Dropbox token:', errorResponse);
-                showToast('Error refreshing Dropbox token.');
-                return;
-            }
-    
-            const data = await response.json();
-            dropboxAccessToken = data.access_token;
-            console.log('Dropbox token refreshed successfully:', dropboxAccessToken);
-            await updateDropboxTokenInAirtable(dropboxAccessToken);
-        } catch (error) {
-            console.error('Error refreshing Dropbox token:', error);
-            showToast('Error refreshing Dropbox token.');
-        }
-    }
-    
-
-    fetchDropboxCredentials().then(() => {
-        Promise.all([
-            fetchvendors(),
-            fetchAirtableFields(),
-            refreshDropboxToken(), // Run only after credentials are fetched
-            checkDropboxTokenValidity()
-        ]).then(() => {
-            console.log("All fetch operations completed.");
-        }).catch(error => {
-            console.error("An error occurred during one of the fetch operations:", error);
-        });
-    });
-
-window.onload = async () => {
-    try {
-        await refreshDropboxToken();
-        console.log('Dropbox token refreshed successfully on page load.');
-    } catch (error) {
-        console.error('Error refreshing Dropbox token on page load:', error);
-    }
-};
-
+// Run fetch functions concurrently
+Promise.all([
+    fetchvendors(),
+    fetchAirtableFields(),
+    fetchDropboxCredentials(),
+    checkDropboxTokenValidity()
+]).then(() => {
+    console.log("All fetch operations completed.");
+}).catch(error => {
+    console.error("An error occurred during one of the fetch operations:", error);
+});
 
         // Function to check if Dropbox token is still valid
         async function checkDropboxTokenValidity() {      
@@ -122,6 +66,7 @@ window.onload = async () => {
     const loadingLogo = document.querySelector('.loading-logo');
     const mainContent = document.getElementById('main-content');
     const secondaryContent = document.getElementById('secoundary-content');
+    const toast = document.getElementById('toast');
     const headerTitle = document.querySelector('h1');
     const modal = document.getElementById("materials-modal");
 
@@ -371,6 +316,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     async function fetchvendors() {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID3}/${window.env.AIRTABLE_TABLE_NAME3}`;
         
+        console.log(`Starting to fetch vendors from: ${url}`);
     
         try {
             const response = await fetch(url, {
@@ -404,7 +350,52 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
+    async function refreshDropboxToken() {
+        console.log('Attempting to refresh Dropbox token...');
+        showToast('Refreshing Dropbox token...');  // Notify the user that the token is being refreshed
     
+        if (!dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
+            console.error('Dropbox credentials are not available.');
+            showToast('Dropbox credentials are missing. Token refresh failed.');
+            return;
+        }
+    
+        const tokenUrl = 'https://api.dropboxapi.com/oauth2/token';
+    
+        const headers = new Headers();
+        headers.append('Authorization', 'Basic ' + btoa(`${dropboxAppKey}:${dropboxAppSecret}`));
+        headers.append('Content-Type', 'application/x-www-form-urlencoded');
+    
+        const body = new URLSearchParams();
+        body.append('grant_type', 'refresh_token');
+        body.append('refresh_token', dropboxRefreshToken);
+    
+        try {
+            const response = await fetch(tokenUrl, {
+                method: 'POST',
+                headers: headers,
+                body: body
+            });
+    
+            if (!response.ok) {
+                const errorResponse = await response.json();
+                console.error(`Error refreshing Dropbox token: ${response.status} ${response.statusText}`, errorResponse);
+                showToast('Error refreshing Dropbox token.');
+                return;
+            }
+    
+            const data = await response.json();
+            dropboxAccessToken = data.access_token; // Update the access token with the new one
+            console.log('Dropbox token refreshed successfully:', dropboxAccessToken);
+            showToast('Dropbox token refreshed successfully.');
+    
+            // Update the new token in Airtable
+            await updateDropboxTokenInAirtable(dropboxAccessToken);
+        } catch (error) {
+            console.error('Error refreshing Dropbox token:', error);
+            showToast('Error refreshing Dropbox token.');
+        }
+    }
     
 
     async function fetchRecordsFromAirtable() {
@@ -427,97 +418,51 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             return [];
         }
     }
-
-    // Function to hide the loading logo after 3 minutes
-function hideLoadingLogo() {
-    const loadingLogo = document.querySelector('.loading-logo');
-    if (loadingLogo) {
-        loadingLogo.style.display = 'none';
-        console.log('Loading logo hidden after 3 minutes.');
-    } else {
-        console.warn('Loading logo not found.');
-    }
-}
-
-// Set a timer for 1.5 minutes (90,000 milliseconds)
-setTimeout(hideLoadingLogo, 90000); 
-
     
-// Function to check the number of records and hide the search bar if less than 5
-function checkRecordCount() {
-    const tableBody = document.querySelector('#airtable-data tbody');
-    const rows = tableBody ? tableBody.getElementsByTagName('tr') : [];
-    
-    const searchContainer = document.querySelector('.search-container');
-    console.log("Number of records found:", rows.length);
-
-    if (rows.length < 5) {
-        searchContainer.style.display = 'none';
-        console.log("Search container hidden: Less than 5 records.");
-    } else {
-        searchContainer.style.display = 'block';
-        console.log("Search container visible: 5 or more records.");
-    }
-}
-
-
-// Call this function after populating the table
-document.addEventListener('DOMContentLoaded', function () {
-    console.log("DOM fully loaded. Checking record count...");
-    checkRecordCount();
-});
-
 
     async function updateDropboxTokenInAirtable(token) {
         console.log('Updating Dropbox token in Airtable...');
-        
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));  // Delay function for rate limiting
+        showToast('Updating Dropbox token in Airtable...');  // Notify the user that the token is being updated
     
         try {
-            const allRecords = await fetchRecordsFromAirtable(); // Fetch all records first
-            for (const record of allRecords) {
+            const allRecords = await fetchRecordsFromAirtable(); // Fetch all necessary records
+            const updatePromises = allRecords.map(record => {
                 const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-                
-                try {
-                    const response = await fetch(url, {
-                        method: 'PATCH',
-                        headers: {
-                            Authorization: `Bearer ${airtableApiKey}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            records: [
-                                {
-                                    id: record.id,
-                                    fields: {
-                                        'Dropbox Token': token  // Update the Dropbox token field
-                                    }
+    
+                return fetch(url, {
+                    method: 'PATCH',
+                    headers: {
+                        Authorization: `Bearer ${airtableApiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        records: [
+                            {
+                                id: record.id, // Use the actual record ID
+                                fields: {
+                                    'Dropbox Token': token  // Update this field with the new token
                                 }
-                            ]
-                        })
-                    });
+                            }
+                        ]
+                    })
+                });
+            });
     
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        console.error(`Error updating record ${record.id}:`, errorData);
-                    } else {
-                    }
-    
-                } catch (error) {
-                    console.error(`Error updating record ${record.id}:`, error);
+            const responses = await Promise.all(updatePromises);
+            responses.forEach((response, index) => {
+                if (!response.ok) {
+                    console.error(`Error updating record ${allRecords[index].id}: ${response.status} ${response.statusText}`);
+                } else {
+                    console.log(`Record ${allRecords[index].id} updated successfully.`);
                 }
+            });
     
-                await delay(250); // Wait for 250ms before the next request
-            }
-            
-            console.log('All records have been updated with the new Dropbox token.');
-    
+            showToast('Dropbox token updated in Airtable successfully.');
         } catch (error) {
-            console.error('Error fetching records or updating Dropbox token in Airtable:', error);
+            console.error('Error updating Dropbox token in Airtable:', error);
             showToast('Error updating Dropbox token in Airtable.');
         }
     }
-    
     
     // Create file input dynamically
     const fileInput = document.createElement('input');
@@ -881,71 +826,106 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let subOptions = []; // Declare subOptions globally
 
-    // Updated fetchAllData to call checkRecordCount after data is fully populated
-async function fetchAllData() {
-    mainContent.style.display = 'none';
-    secondaryContent.style.display = 'none';
-    originalValues = {}; 
-    let loadProgress = 0;
-    const loadInterval = setInterval(() => {
-        loadProgress += (100 - loadProgress) * 0.1;
-        const roundedProgress = Math.round(loadProgress);
-
-        loadingLogo.style.maskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
-        loadingLogo.style.webkitMaskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
-
-        if (roundedProgress >= 99) {
-            clearInterval(loadInterval);
-            loadingLogo.classList.add('full-color');
-        }
-    }, 50);
-
-    try {
-        let allRecords = [];
-        let offset = null;
-
-        do {
-            const data = await fetchData(offset);
-            if (data && Array.isArray(data.records)) {
-                allRecords = allRecords.concat(data.records);
-                data.records.forEach(record => {
-                    originalValues[record.id] = { ...record.fields };
-                });
-            } else {
-                console.error('Error: Invalid data structure or no records found.');
-                break;
+    async function fetchAllData() {
+        mainContent.style.display = 'none';
+        secondaryContent.style.display = 'none';
+    
+        originalValues = { /* Populate this with fetched data */ };
+    
+        let loadProgress = 0;
+        const loadInterval = setInterval(() => {
+            loadProgress += (100 - loadProgress) * 0.1;
+            const roundedProgress = Math.round(loadProgress);
+    
+            loadingLogo.style.maskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
+            loadingLogo.style.webkitMaskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
+    
+            if (roundedProgress >= 99) {
+                clearInterval(loadInterval);
+                loadingLogo.classList.add('full-color');
             }
-            offset = data.offset;
-        } while (offset);
-
-        // Populate tables and call checkRecordCount after data is fully loaded
-        const primaryRecords = allRecords.filter(record =>
-            record.fields['Status'] === 'Field Tech Review Needed' &&
-            !record.fields['Field Tech Reviewed']
-        );
-
-        const secondaryRecords = allRecords.filter(record =>
-            record.fields['Status'] === 'Scheduled- Awaiting Field' &&
-            !record.fields['Job Completed']
-        );
-
-        await displayData(primaryRecords, '#airtable-data');
-        await displayData(secondaryRecords, '#feild-data');
-
-        mainContent.style.display = 'block';
-        secondaryContent.style.display = 'block';
-        headerTitle.classList.add('visible');
-        setTimeout(() => {
-            mainContent.style.opacity = '1';
-            secondaryContent.style.opacity = '1';
-        }, 10);
-
-        adjustTableWidth();
-        checkRecordCount(); // Ensure this is called after data loading
-    } catch (error) {
-        console.error('Error fetching all data:', error);
-
-
+        }, 50);
+    
+        try {
+            let allRecords = [];
+            let offset = null;
+    
+            // Fetch vendor options for 'Material Vendor' dropdown
+            try {
+                vendorOptions = await fetchvendors(); // Fetch vendor data and assign it to vendorOptions
+            } catch (error) {
+                console.error('Error fetching vendor options:', error);
+                vendorOptions = []; // Continue with empty array if error occurs
+            }
+    
+            // Fetch sub options
+            try {
+                subOptions = await fetchAirtableSubOptionsFromDifferentTable() || [];
+            } catch (error) {
+                console.error('Error fetching sub options:', error);
+                subOptions = []; // Continue with an empty subOptions array
+            }
+    
+            // Fetch all records and store original values
+            do {
+                const data = await fetchData(offset);
+    
+                // Ensure data.records exists and is an array
+                if (data && Array.isArray(data.records)) {
+                    allRecords = allRecords.concat(data.records);
+    
+                    // Store original values for each record
+                    data.records.forEach(record => {
+                        originalValues[record.id] = { ...record.fields };
+                    });
+                } else {
+                    console.error('Error: Invalid data structure or no records found.');
+                    break; // Exit loop if no valid data is fetched
+                }
+                offset = data.offset;
+            } while (offset);
+    
+            // Filter and sort records for primary and secondary views
+            const primaryRecords = allRecords.filter(record =>
+                record.fields['Status'] === 'Field Tech Review Needed' &&
+                !record.fields['Field Tech Reviewed'] // Checks if the checkbox is not checked
+            );
+    
+            const secondaryRecords = allRecords.filter(record =>
+                record.fields['Status'] === 'Scheduled- Awaiting Field' &&
+                !record.fields['Job Completed'] // Ensures 'Job Completed' is unchecked
+            );
+    
+            // Sort primary records by StartDate and Vanir Branch
+            primaryRecords.sort((a, b) => {
+                const dateA = new Date(a.fields['StartDate']);
+                const dateB = new Date(b.fields['StartDate']);
+    
+                if (dateA < dateB) return -1;
+                if (dateA > dateB) return 1;
+                return (a.fields['b'] || '').localeCompare(b.fields['b'] || '');
+            });
+    
+            // Display the primary and secondary records in your tables with vendor options
+            await displayData(primaryRecords, '#airtable-data', false, vendorOptions);
+            await displayData(secondaryRecords, '#feild-data', true, subOptions);
+    
+            // Reveal content after loading
+            mainContent.style.display = 'block';
+            secondaryContent.style.display = 'block';
+            headerTitle.classList.add('visible');
+            setTimeout(() => {
+                mainContent.style.opacity = '1';
+                secondaryContent.style.opacity = '1';
+            }, 10);
+    
+            // Adjust table width if only one table has records
+            adjustTableWidth();
+            syncTableWidths();
+    
+        } catch (error) {
+            console.error('Error fetching all data:', error);
+    
             // Fallback to ensure that the page still loads even if fetching data fails
             mainContent.style.display = 'block';
             secondaryContent.style.display = 'block';
@@ -1057,41 +1037,32 @@ async function fetchAllData() {
         let records = [];
         let offset = null;
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME2}`;
-        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms)); // Delay function to avoid rate limits
         
-        try {
-            do {
-                const response = await fetch(`${url}?fields[]=Subcontractor%20Company%20Name&fields[]=Vanir%20Branch${offset ? `&offset=${offset}` : ''}`, {
-                    headers: {
-                        Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
-                    }
-                });
-    
-                if (!response.ok) {
-                    console.error(`Error fetching data: ${response.statusText}`);
-                    break;
+        do {
+            const response = await fetch(`${url}?fields[]=Subcontractor%20Company%20Name&fields[]=Vanir%20Branch${offset ? `&offset=${offset}` : ''}`, {
+                headers: {
+                    Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
                 }
+            });
     
-                const data = await response.json();
-                records = records.concat(data.records);
-                offset = data.offset;
+            if (!response.ok) {
+                break;
+            }
     
-                // **Delay to avoid hitting rate limits**
-                await delay(250); // Adjust this if you hit limits frequently (250ms = 4 requests per second)
-                
-            } while (offset);
-        } catch (error) {
-            console.error('Error fetching subcontractor options:', error);
-        }
+            const data = await response.json();
+            records = records.concat(data.records);  
+            offset = data.offset;  
+        } while (offset);
     
-        const subOptions = Array.from(new Set(records.map(record => ({
-            name: record.fields['Subcontractor Company Name'] || 'Unnamed Subcontractor',
-            vanirOffice: record.fields['Vanir Branch'] || 'Unknown Branch'
-        })).filter(Boolean)));
+        const subOptions = Array.from(new Set(records.map(record => {
     
-        return subOptions;
+            return {
+                name: record.fields['Subcontractor Company Name'] || 'Unnamed Subcontractor',
+                vanirOffice: record.fields['Vanir Branch'] || 'Unknown Branch'            };
+        }).filter(Boolean)));
+        
+        return subOptions;  
     }
-    
 
     async function displayData(records, tableSelector, isSecondary = false) {
         const tableElement = document.querySelector(tableSelector); // Select the entire table
@@ -1468,20 +1439,18 @@ select.addEventListener('change', () => {
                     },
                     body: body
                 });
-        
+    
                 if (!response.ok) {
                     const errorDetails = await response.json();
                     console.error(`Error updating record: ${response.status} ${response.statusText}`, errorDetails);
                 } else {
                     console.log('Image successfully deleted from Airtable:', await response.json());
                     imageElement.remove();
-                    window.location.reload(); // Refresh the page after successful deletion
                 }
             } catch (error) {
                 console.error('Error updating record in Airtable:', error);
             }
         }, 3000); // Match the timeout to the animation duration
-        
     }
        
     function openImageViewer(images, startIndex) {
@@ -1836,8 +1805,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 });
 
 document.addEventListener('DOMContentLoaded', async function () {
-    await fetchDropboxCredentials();  // Ensure credentials are fetched before further actions
-    await refreshDropboxToken();      // Attempt to refresh token after fetching credentials
     let debounceTimeout = null; 
 
     function handleDelayedSubmit(recordId) {
@@ -1923,47 +1890,18 @@ async function updateRecord(recordId, fields) {
     }
 }
     
-document.getElementById('search-input').addEventListener('input', function () {
-    const searchValue = this.value.toLowerCase();
+    document.getElementById('search-input').addEventListener('input', function () {
+        const searchValue = this.value.toLowerCase();
 
-    ['#airtable-data', '#feild-data'].forEach(tableSelector => {
-        const rows = document.querySelectorAll(`${tableSelector} tbody tr`);
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            const match = Array.from(cells).some(cell => cell.textContent.toLowerCase().includes(searchValue));
-            row.style.display = match ? '' : 'none';
+        ['#airtable-data', '#feild-data'].forEach(tableSelector => {
+            const rows = document.querySelectorAll(`${tableSelector} tbody tr`);
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const match = Array.from(cells).some(cell => cell.textContent.toLowerCase().includes(searchValue));
+                row.style.display = match ? '' : 'none';
+            });
         });
     });
-});
-
-document.addEventListener('DOMContentLoaded', async function () {
-    async function toggleSearchBarVisibility() {
-        await fetchAllData(); // Ensure data is fetched before checking visibility
-        const airtableRows = document.querySelectorAll('#airtable-data tbody tr');
-        const fieldDataRows = document.querySelectorAll('#feild-data tbody tr');
-        const totalRecords = airtableRows.length + fieldDataRows.length;
-        const searchBar = document.getElementById('search-input');
-
-        console.log('Number of records displayed:');
-        console.log('Airtable Rows:', airtableRows.length);
-        console.log('Field Data Rows:', fieldDataRows.length);
-        console.log('Total Records:', totalRecords);
-
-        if (totalRecords < 5) {
-            searchBar.style.display = 'none';
-            console.log('Search bar hidden due to less than 5 records.');
-        } else {
-            searchBar.style.display = 'block';
-            console.log('Search bar visible with sufficient records.');
-        }
-    }
-
-    // Call the function after the data is loaded
-    await toggleSearchBarVisibility();
-});
-
-
-
 
     window.onclick = function (event) {
         if (event.target == modal) {

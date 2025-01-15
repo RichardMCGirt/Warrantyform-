@@ -1086,6 +1086,13 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             thead.style.display = 'table-header-group';  // Show the header
             tableContainer.style.width = '100%';         // Ensure table auto-adjusts to content width
         }
+
+         // Sort records alphabetically by field 'b'
+    records.sort((a, b) => {
+        const valueA = a.fields['b'] ? a.fields['b'].toLowerCase() : '';
+        const valueB = b.fields['b'] ? b.fields['b'].toLowerCase() : '';
+        return valueA.localeCompare(valueB);
+    });
         
         // Populate rows based on the provided configuration
         records.forEach(record => {

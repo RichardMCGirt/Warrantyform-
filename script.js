@@ -1123,7 +1123,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
-                { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
+                { field: 'Materials Needed', value: fields['Materials Needed'] || '', editable: true },
                 {
                     field: 'Material Vendor',
                     value: fields['Material Vendor'] || '',

@@ -1112,7 +1112,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },       
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true, imageField: 'Completed  Pictures' },
-                { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
+                { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || '', editable: true },
                 { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true }
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },  // Keep only this "Branch" entry

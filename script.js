@@ -226,9 +226,9 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         submitButton.style.left = lastLeft;
         submitButton.style.display = 'block';
         activeRecordId = recordId;
-        console.log('Submit button shown for changes in record:', recordId);
     }
 }
+
     
     // Event listeners to show the submit button when input is typed or value is changed
     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
@@ -892,8 +892,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             );
     
             const secondaryRecords = allRecords.filter(record =>
-                record.fields['Status'] === 'Scheduled- Awaiting Field' &&
-                !record.fields['Job Completed'] // Ensures 'Job Completed' is unchecked
+                record.fields['Status'] === 'Scheduled- Awaiting Field'  // Ensures 'Job Completed' is unchecked
             );
     
             // Sort primary records by StartDate and Vanir Branch
@@ -1379,6 +1378,34 @@ select.addEventListener('change', () => {
         });
     }
     
+    document.querySelectorAll('td[data-field="DOW to be Completed"]').forEach(cell => {
+        cell.addEventListener('input', function () {
+            const recordId = this.closest('tr').dataset.id;
+            handleInputChange.call(this);
+            checkForChanges(recordId);
+        });
+        cell.addEventListener('blur', function () {
+            const recordId = this.closest('tr').dataset.id;
+            handleInputChange.call(this);
+            checkForChanges(recordId);
+        });
+    });
+
+    document.querySelectorAll('td[data-field="DOW to be Completed"]').forEach(cell => {
+        cell.addEventListener('input', function () {
+            const recordId = this.closest('tr').dataset.id;
+            handleInputChange.call(this);
+            checkForChanges(recordId);
+        });
+        cell.addEventListener('blur', function () {
+            const recordId = this.closest('tr').dataset.id;
+            handleInputChange.call(this);
+            checkForChanges(recordId);
+        });
+    });
+    
+    
+
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, imageField);

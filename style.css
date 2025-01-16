@@ -491,354 +491,92 @@ button:hover {
     transform: rotate(90deg);
 }
 
-@media (max-width: 768px) {
-    .logo {
-        height: 60px; /* Smaller logo size for mobile */
+/* Base adjustments for tablets and mobile devices */
+@media screen and (max-width: 1024px) {
+    /* Navigation */
+    .nav-link {
+        font-size: 14px;
+        padding: 8px 16px;
     }
 
-    h1 {
-        font-size: 20px;
-    }
-
-
-  /* Add styles to make divs scrollable */
-  .scrollable-div {
-    max-height: 1000px; /* Set a max-height for scrollable area */
-    overflow-y: auto; /* Enable vertical scrolling */
-    overflow-x: auto;
-}
-
-.styled-select select {
-    width: 100%;
-    font-size: 14px;
-    position: relative;
-    z-index: 1000; /* Ensure dropdown is above other elements */
-}
-
-/* Centering the Toast Notification */
-#toast {
-    visibility: hidden;
-    min-width: 60%; /* Adjust the width to 60% */
-    background-color: navy;
-    color: #fff;
-    text-align: center;
-    border-radius: 5px;
-    padding: 12px;
-    position: fixed;
-    z-index: 1;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 14px; /* Adjust font size for mobile */
-    opacity: 0;
-    transition: opacity 0.5s ease, visibility 0.5s ease;
-}
-
-/* Search Container Styles */
-.search-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 20px auto; /* Center and add margin */
-}
-
-#search-input {
-    padding: 10px;
-    width: 80%;
-    max-width: 500px; /* Limit the width on larger screens */
-    border-radius: 4px;
-    font-size: 16px;
-    border: 2px solid #8B0000;
-}
-
-
-
-}
-
-/* Responsive Styles for Mobile */
-@media (max-width: 768px) {
-
-    
+    /* Table */
     table {
-        width: 95%;
+        width: 100%;
     }
 
     th, td {
-        padding: 8px;
+        font-size: 14px;
+        padding: 6px;
+    }
+
+    .scrollable-div {
+        max-height: 300px; /* Adjust for smaller screens */
+    }
+
+    /* Search input */
+    #search-input {
+        width: 90%;
         font-size: 14px;
     }
 
-    #search-input {
-        padding: 8px;
-        width: 80%;
+    /* Modal */
+    .modal-content {
+        width: 90%; /* Adjust modal to fit mobile screens */
     }
-    
+}
 
-    /* Adjust image carousel in table index 7 */
-    td:nth-child(7) .image-carousel {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-wrap: wrap;
-        max-width: 100%;
+@media screen and (max-width: 768px) {
+    /* Header and Logo */
+    .header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .logo {
+        width: 150px;
         margin: 0 auto;
     }
 
-    td:nth-child(7) .image-carousel img {
-        max-width: 100px;
-        max-height: 100px;
-        object-fit: cover;
-        margin: 5px;
-        border-radius: 5px;
+    /* Navigation */
+    .nav-link {
+        font-size: 12px;
+        padding: 6px 12px;
     }
 
-    /* Carousel navigation buttons */
-    td:nth-child(7) .carousel-nav-button {
-        font-size: 20px;
-        width: 30px;
-        height: 40px;
-        display: inline-block;
-        line-height: 30px;
-        background-color: rgba(0, 0, 0, 0.5);
-        color: white;
-        text-align: center;
-        border-radius: 50%;
-        margin: 5px;
-        cursor: pointer;
+    /* Search input */
+    #search-input {
+        width: 100%;
+    }
+
+    /* Tables */
+    th, td {
+        font-size: 12px;
     }
 
     /* Buttons */
-    td:nth-child(7) .delete-button,
-    td:nth-child(7) .add-photo-button {
-        width: 100%;
-        padding: 10px;
-     
-        font-size: 14px;
-        margin-top: 10px;
-        border: none;
-        border-radius: 5px;
-        color: white;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
-    }
-
-    .styled-select select {
-        width: 100%;
-        font-size: 14px;
-        position: relative;
-        z-index: 1000; /* Ensure dropdown is above other elements */
-    }
-
-      /* Add styles to make divs scrollable */
-      .scrollable-div {
-        max-height: 1000px; /* Set a max-height for scrollable area */
-        overflow-y: auto; /* Enable vertical scrolling */
-        overflow-x: auto;
-    }
-
-
-}
-
-
-@media (max-width: 576px) {
-    .logo {
-        height: 50px; /* Smaller logo for extra small screens */
-    }
-
-      /* Add styles to make divs scrollable */
-      .scrollable-div {
-        max-height: 1000px; /* Set a max-height for scrollable area */
-        overflow-y: auto; /* Enable vertical scrolling */
-        overflow-x: auto;
-    }
-
-    #search-input {
-        width: 95%;
-        padding: 6px;
-    }
-
-    .styled-select select {
-        width: 100%;
-        font-size: 14px;
-        position: relative;
-        z-index: 1000; /* Ensure dropdown is above other elements */
-    }
-    
-    h1 {
-        font-size: 16px;
-    }
-}
-
-@media (max-width: 576px) {
-    th, td {
-        padding: 6px;
-        font-size: 12px;
-    }
-
-  /* Add styles to make divs scrollable */
-  .scrollable-div {
-    max-height: 1000px; /* Set a max-height for scrollable area */
-    overflow-y: auto; /* Enable vertical scrolling */
-    overflow-x: auto;
-}
-
-    .styled-select select {
-        width: 100%;
-        font-size: 14px;
-        position: relative;
-        z-index: 1000; /* Ensure dropdown is above other elements */
-    }
-
-    /* Further reduce image sizes in index 7 for small devices */
-    td:nth-child(7) .image-carousel img {
-        max-width: 80px;
-        max-height: 80px;
-    }
-
-    td:nth-child(7) .carousel-nav-button {
-        font-size: 18px;
-        width: 25px;
-        height: 25px;
-        line-height: 25px;
-    }
-
-    td:nth-child(7) .delete-button,
-    td:nth-child(7) .add-photo-button {
-        font-size: 12px;
-    }
-}
-
-/* Ensure that images and buttons don't overflow */
-td:nth-child(7) {
-    overflow: hidden;
-    word-wrap: break-word;
-}
-
-@media (max-width: 400px) {
-    .logo {
-        height: 40px;
-    }
-
-    h1 {
-        font-size: 16px;
-    }
-
-      /* Add styles to make divs scrollable */
-      .scrollable-div {
-        max-height: 1000px; /* Set a max-height for scrollable area */
-        overflow-y: auto; /* Enable vertical scrolling */
-        overflow-x: auto;
-    }
-
-    .styled-select select {
-        width: 100%;
-        font-size: 14px;
-        position: relative;
-        z-index: 1000; /* Ensure dropdown is above other elements */
-    }
-
-    #search-input {
-        width: 100%;
-        padding: 6px;
-        font-size: 14px;
-    }
-
-    table, th, td {
-        font-size: 10px;
-        padding: 4px;
-    }
-
-    button {
-        width: 120px;
-        font-size: 10px;
-    }
-}
-
-/* Landscape Orientation for Small Devices */
-@media (max-width: 576px) and (orientation: landscape) {
-    .logo {
-        height: 50px;
-    }
-
-    h1 {
-        font-size: 18px;
-    }
-
-    .styled-select select {
-        width: 100%;
-        font-size: 14px;
-        position: relative;
-        z-index: 1000; /* Ensure dropdown is above other elements */
-    }
-
-      /* Add styles to make divs scrollable */
-      .scrollable-div {
-        max-height: 1000px; /* Set a max-height for scrollable area */
-        overflow-y: auto; /* Enable vertical scrolling */
-        overflow-x: auto;
-    }
-
-    #search-input {
-        width: 100%;
-        padding: 6px;
-    }
-
-    table, th, td {
-        width: 95%;
-        font-size: 12px;
-        padding: 6px;
-    }
-
     button {
         width: 140px;
         font-size: 12px;
     }
 }
 
-@media (max-width: 400px) and (orientation: landscape) {
-    .logo {
-        height: 35px;
-    }
-
-    h1 {
-        font-size: 14px;
-    }
-
-    .styled-select select {
+@media screen and (max-width: 430px) {
+    /* Navigation */
+    .nav-link {
+        display: block;
         width: 100%;
-        font-size: 14px;
-        position: relative;
-        z-index: 1000; /* Ensure dropdown is above other elements */
+        margin-bottom: 10px;
+        text-align: center;
     }
 
-    #search-input {
-        width: 100%;
-        padding: 5px;
-        font-size: 12px;
-    }
-
-    .search-container {
-        left: 50%;
-    }
-
-      /* Add styles to make divs scrollable */
-      .scrollable-div {
-        max-height: 1000px; /* Set a max-height for scrollable area */
-        overflow-y: auto; /* Enable vertical scrolling */
-        overflow-x: auto;
-    }
-
-    table, th, td {
-        font-size: 9px;
-        padding: 3px;
-    }
-
-    table {
+    /* Modal */
+    .modal-content {
         width: 95%;
     }
 
-    button {
-        width: 110px;
-        font-size: 9px;
+    /* Toast */
+    #toast {
+        font-size: 12px;
+        padding: 8px;
     }
 }

@@ -1239,21 +1239,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true }
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },  // Keep only this "Branch" entry
+                { field: 'field tech', value: fields['field tech'] || '', editable: false },
+
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
-                { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
-                { field: 'Description of Issue', value: fields['Description of Issue'] ? fields['Description of Issue'].replace(/<\/?[^>]+(>|$)/g, "") : '' },
+
+                { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
+                { field: 'Description of Issue', value: fields['Description of Issue'] ? fields['Description of Issue'].replace(/<\/?[^>]+(>|$)/g, "") : '' },
+
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || '', editable: true },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || '', editable: true },
+                { field: 'Subcontractor', value: fields['Subcontractor'] || '', dropdown: true, options: subOptions },
+                { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true },
+
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
                 { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather', 'Other'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
-                { field: 'field tech', value: fields['field tech'] || '', editable: false },
 
-                { field: 'Subcontractor', value: fields['Subcontractor'] || '', dropdown: true, options: subOptions },
-                { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
             ];
             
             fieldConfigs.forEach(config => {

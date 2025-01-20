@@ -991,6 +991,20 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             hideSubmitButton();
         }
     }
+
+    // Function to hide the logo after 2 minutes
+function hideLogoAfterDelay() {
+    const logo = document.querySelector('.logo.loading-logo');
+    if (logo) {
+        setTimeout(() => {
+            logo.style.display = 'none';
+        }, 120000); // 120,000 milliseconds = 2 minutes
+    }
+}
+
+// Call the function when the page loads
+window.onload = hideLogoAfterDelay;
+
     
     function handleInputChange(event) {
         const recordId = this.closest('tr').dataset.id;
@@ -1004,13 +1018,21 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         checkForChanges(recordId);
     }
     
-    document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+    document.querySelectorAll('input:not([type="radio"]), select, td[contenteditable="true"]').forEach(element => {
         element.addEventListener('input', function () {
-            const recordId = this.closest('tr').dataset.id;
+            const closestRow = this.closest('tr');
+            if (!closestRow) {
+                console.error("No valid parent <tr> found for element:", this);
+                return;
+            }
+    
+            const recordId = closestRow.dataset.id;
             console.log(`Input event detected for record ID: ${recordId}`);
             handleInputChange.call(this);
             checkForChanges(recordId);
         });
+    
+    
     
         element.addEventListener('change', function () {
             const recordId = this.closest('tr').dataset.id;
@@ -1059,6 +1081,79 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             console.error('Error fetching fields from Airtable:', error);
         }
     }
+
+
+    async function fetchDataAndInitializeFilter() {
+        await fetchAllData(); // Ensure this function populates the tables
+        console.log("Data loaded from Airtable.");
+    
+        const dropdown = document.querySelector('#filter-dropdown');
+        if (dropdown) {
+            console.log("Dropdown found. Adding change event listener.");
+            dropdown.addEventListener('change', filterRecords); // Attach filter logic
+        } else {
+            console.error("Dropdown with ID #filter-dropdown not found.");
+        }
+    }
+    
+    // Call this function after DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', fetchDataAndInitializeFilter);
+    
+
+// Function to filter table rows based on selected branch
+function filterRecords() {
+    const dropdown = document.querySelector('#filter-dropdown');
+    if (!dropdown) {
+        console.error("Dropdown element not found");
+        return;
+    }
+
+    const selectedBranch = dropdown.value;
+    console.log(`Selected branch: "${selectedBranch}"`);
+
+    const tables = ['#airtable-data', '#feild-data'];
+
+    tables.forEach(tableSelector => {
+        console.log(`Filtering table: ${tableSelector}`);
+        const rows = document.querySelectorAll(`${tableSelector} tbody tr`);
+
+        if (rows.length === 0) {
+            console.warn(`No rows found in table: ${tableSelector}`);
+            return;
+        }
+
+        rows.forEach((row, index) => {
+            const branchCell = row.querySelector('td:first-child');
+            if (branchCell) {
+                const branch = branchCell.textContent.trim();
+                console.log(`Row ${index + 1}: Branch = "${branch}"`);
+                if (selectedBranch === '' || branch === selectedBranch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            } else {
+                console.warn(`Row ${index + 1}: Branch cell not found.`);
+            }
+        });
+    });
+}
+
+
+// Attach event listener to dropdown
+document.addEventListener('DOMContentLoaded', () => {
+    const dropdown = document.querySelector('#filter-dropdown');
+    if (dropdown) {
+        console.log("Dropdown found. Adding change event listener."); // Debug log
+        dropdown.addEventListener('change', filterRecords); // Filter on dropdown change
+    } else {
+        console.error("Dropdown with ID #filter-dropdown not found.");
+    }
+});
+
+
+
+
    
     async function fetchAirtableSubOptionsFromDifferentTable() {
         let records = [];
@@ -1150,9 +1245,8 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
-                { field: 'Materials Needed', value: fields['Materials Needed'] || '', editable: true },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || '', editable: true },
-
+                { field: 'Materials Needed', value: fields['Materials Needed'] || '', editable: true },
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
                 { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather', 'Other'] },
                 { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
@@ -1204,6 +1298,11 @@ const placeholderOption = document.createElement('option');
 placeholderOption.value = '';
 placeholderOption.textContent = placeholderText;
 select.appendChild(placeholderOption);
+
+filteredOptions = subOptions.filter(option => {
+    // Ensure the field 'b' matches the desired value in 'fields'
+    return option.vanirOffice === (fields['b'] || 'N/A');
+});
 
 filteredOptions.sort((a, b) => {
     const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase();  // Ensure valid comparison for both cases
@@ -1836,18 +1935,30 @@ adjustImageSize();
 adjustButtonPosition();
 }); 
 
-document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+document.querySelectorAll('table input, table select, table td[contenteditable="true"]').forEach(element => {
     element.addEventListener('input', function () {
-        const recordId = this.closest('tr').dataset.id;
+        const closestRow = this.closest('tr');
+        if (!closestRow || !closestRow.dataset.id) {
+            console.error("No valid <tr> or 'dataset.id' found for element:", this);
+            return;
+        }
+        const recordId = closestRow.dataset.id;
         console.log(`Input event detected for record ID: ${recordId}`);
         handleInputChange.call(this);
     });
 
     element.addEventListener('change', function () {
-        const recordId = this.closest('tr').dataset.id;
+        const closestRow = this.closest('tr');
+        if (!closestRow || !closestRow.dataset.id) {
+            console.error("No valid <tr> or 'dataset.id' found for element:", this);
+            return;
+        }
+        const recordId = closestRow.dataset.id;
         console.log(`Change event detected for record ID: ${recordId}`);
         handleInputChange.call(this);
     });
+
+
 
     element.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
@@ -1861,6 +1972,36 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded and parsed.');
+
+    const radioButtons = document.querySelectorAll('input[name="branch"]');
+    if (radioButtons.length === 0) {
+        console.error('No radio buttons found. Ensure the DOM contains the inputs.');
+        return;
+    }
+
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', () => {
+            const selectedBranch = document.querySelector('input[name="branch"]:checked').value || '';
+            console.log(`Filtering records for branch: ${selectedBranch || 'All'}`);
+
+            const tables = ['#airtable-data', '#feild-data'];
+            tables.forEach(tableSelector => {
+                const rows = document.querySelectorAll(`${tableSelector} tbody tr`);
+                rows.forEach(row => {
+                    const branchCell = row.querySelector('td:first-child');
+                    if (branchCell) {
+                        const branchValue = branchCell.textContent.trim();
+                        row.style.display = branchValue === selectedBranch || selectedBranch === '' ? '' : 'none';
+                    }
+                });
+            });
+        });
+    });
+});
+
 
 document.addEventListener('DOMContentLoaded', async function () {
     let debounceTimeout = null; 
@@ -1889,17 +2030,78 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
-    document.querySelectorAll('input[type="checkbox"], select, td[contenteditable="true"]').forEach(element => {
-        element.addEventListener('input', function () {
-            const closestRow = this.closest('tr'); 
-            if (closestRow) { 
-                const recordId = closestRow.dataset.id;
-                checkForChanges(recordId);  
-            } else {
-                console.warn('No parent <tr> found for the element', this);
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM fully loaded and parsed.');
+    
+        // Fetch and populate table data
+        fetchAllData().then(() => {
+            console.log('Table data loaded.');
+    
+            // Add event listeners for branch radio buttons
+            const radioButtons = document.querySelectorAll('input[name="branch"]');
+            if (radioButtons.length === 0) {
+                console.error('No radio buttons found. Ensure the DOM contains the inputs.');
+                return;
             }
+    
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    const selectedBranch = document.querySelector('input[name="branch"]:checked').value || '';
+                    console.log(`Filtering records for branch: ${selectedBranch || 'All'}`);
+    
+                    const tables = ['#airtable-data', '#feild-data'];
+                    tables.forEach(tableSelector => {
+                        const rows = document.querySelectorAll(`${tableSelector} tbody tr`);
+                        rows.forEach(row => {
+                            const branchCell = row.querySelector('td:first-child');
+                            if (branchCell) {
+                                const branchValue = branchCell.textContent.trim();
+                                row.style.display = branchValue === selectedBranch || selectedBranch === '' ? '' : 'none';
+                            } else {
+                                console.warn('Branch cell not found for row:', row);
+                            }
+                        });
+                    });
+                });
+            });
+    
+            console.log('Event listeners added to radio buttons.');
         });
     });
+    
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Select all radio buttons for branch filtering
+        const radioButtons = document.querySelectorAll('input[name="branch"]');
+    
+        // Attach a change event listener to each radio button
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', (event) => {
+                const selectedBranch = event.target.value;
+                console.log(`User selected branch: ${selectedBranch || 'All'}`);
+            });
+        });
+    });
+    
+
+    document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+        element.addEventListener('input', function () {
+            const closestRow = this.closest('tr');
+            
+            if (!closestRow || !closestRow.dataset.id) {
+                console.error("No valid parent <tr> or dataset 'id' found for element:", this);
+                return;
+            }
+    
+            const recordId = closestRow.dataset.id;
+            console.log(`Handling input change for record ID: ${recordId}`);
+            
+            // Call the function to handle updates (if applicable)
+            handleInputChange.call(this);
+            checkForChanges(recordId);
+        });
+    });
+    
     
     document.querySelectorAll('td[contenteditable="true"], input[type="text"]').forEach(element => {
         element.addEventListener('keypress', (event) => {

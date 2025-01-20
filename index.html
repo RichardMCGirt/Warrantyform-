@@ -23,9 +23,44 @@
         Changes submitted successfully!
     </div>
     <br>
+   
     <div class="search-container">
+      <form>
+            <label for="filter-branch">Filter by Branch:</label>
+            <div id="filter-branch">
+                <label>
+                    <input type="checkbox" name="branch" value="All" checked> All
+                </label><br>
+                <label>
+                    <input type="checkbox" name="branch" value="Charleston"> Charleston
+                </label><br>
+                <label>
+                    <input type="checkbox" name="branch" value="Charlotte"> Charlotte
+                </label><br>
+                <label>
+                    <input type="checkbox" name="branch" value="Columbia"> Columbia
+                </label><br>
+                <label>
+                    <input type="checkbox" name="branch" value="Greenville SC"> Greenville SC
+                </label><br>
+                <label>
+                    <input type="checkbox" name="branch" value="Myrtle Beach"> Myrtle Beach
+                </label><br>
+                <label>
+                    <input type="checkbox" name="branch" value="Raleigh"> Raleigh
+                </label><br>
+                <label>
+                    <input type="checkbox" name="branch" value="Wilmington"> Wilmington
+                </label>
+            </div>
+            
+        </form> 
+        
         <input type="text" id="search-input" placeholder="Search..." />
     </div>
+    
+    
+    
     <div class="table-wrapper">
 
     <div id="main-content" style="display: none;">
@@ -42,8 +77,8 @@
                         <th>Description</th>
                         <th>Contact Email</th>
                         <th>Pictures</th>
-                        <th>Materials Needed</th>
                         <th>DOW to be Completed</th>
+                        <th>Materials Needed</th>
                         <th>Billable/ Non Billable</th>
                         <th>Billable Reason</th>
                         <th>Field Reviewed</th>
@@ -89,20 +124,59 @@
 
     <!-- Configuration for Airtable -->
     <script>
-        window.env = {
-            AIRTABLE_API_KEY: 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238',
-            AIRTABLE_BASE_ID: 'appO21PVRA4Qa087I',
-            AIRTABLE_TABLE_NAME: 'tbl6EeKPsNuEvt5yJ',
-            AIRTABLE_TABLE_NAME2: 'tbl9SgC5wUi2TQuF7',
-            AIRTABLE_BASE_ID3: 'appeNSp44fJ8QYeY5',
-AIRTABLE_TABLE_NAME3:'tblLEYdDi0hfD9fT3'
+ window.env = {
+    AIRTABLE_API_KEY: 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238',
+    AIRTABLE_BASE_ID: 'appO21PVRA4Qa087I',
+    AIRTABLE_TABLE_NAME: 'tbl6EeKPsNuEvt5yJ',
+    AIRTABLE_TABLE_NAME2: 'tbl9SgC5wUi2TQuF7',
+    AIRTABLE_BASE_ID3: 'appeNSp44fJ8QYeY5',
+    AIRTABLE_TABLE_NAME3: 'tblLEYdDi0hfD9fT3' // Corrected with a comma
+};
 
-        };
 
     </script>
     <!-- JavaScript for interactivity -->
     <script src="populatevendoremail.js"></script>
     <script src="script.js"></script>
+    <script>
+
+// Wait for the DOM to fully load
+document.addEventListener('DOMContentLoaded', () => {
+    const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
+
+    // Function to filter rows based on selected branches
+    function filterRows() {
+        const tableRows = document.querySelectorAll('#airtable-data tbody tr'); // Fetch rows dynamically
+        const selectedBranches = Array.from(checkboxes)
+            .filter(checkbox => checkbox.checked && checkbox.value !== 'All')
+            .map(checkbox => checkbox.value);
+
+        tableRows.forEach(row => {
+            const branchColumn = row.querySelector('td:nth-child(1)'); // Assuming branch is the first column
+            if (branchColumn) {
+                const branchValue = branchColumn.textContent.trim();
+
+                // Show row if no specific branch is selected or if it matches any selected branch
+                if (selectedBranches.length === 0 || selectedBranches.includes(branchValue)) {
+                    row.style.display = ''; // Show the row
+                } else {
+                    row.style.display = 'none'; // Hide the row
+                }
+            }
+        });
+    }
+
+    // Add event listeners to checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', filterRows);
+    });
+
+    // Initial filtering
+    filterRows();
+});
+
+
+</script>
 
 </body>
 </html>

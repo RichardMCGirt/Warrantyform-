@@ -1175,8 +1175,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             const matchingCalendar = calendarLinks.find(calendar => calendar.name === fields['name']);
             const url = matchingCalendar ? matchingCalendar.link : '#';
-            const dropdownOptions = subOptions.length ? subOptions : ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather', 'Other'];
-            const allOptions = [...new Set([...hardcodedOptions, ...subOptions.map(option => option.name)])];
+         
 
             const cell = document.createElement('td');
             cell.innerHTML = `<a href="${url}" target="_blank">${fields['b'] || 'N/A'}</a>`;
@@ -1209,8 +1208,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 { field: 'Subcontractor', value: fields['Subcontractor'] || '', dropdown: true, options: subOptions },
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true },
 
-                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
-                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true },
+                { 
+                    field: 'Billable/ Non Billable', 
+                    value: fields['Billable/ Non Billable'] || '', 
+                    dropdown: true, 
+                    options: ['Billable', 'Non Billable'] 
+                  },
+                  { 
+                    field: 'Billable Reason (If Billable)', 
+                    value: fields['Billable Reason (If Billable)'] || '', 
+                    dropdown: true 
+                  },
 
                                { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
 
@@ -1218,67 +1226,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             console.log('Hardcoded Options:', hardcodedOptions);
             console.log('Fetched Options:', subOptions);
-// Ensure hardcodedOptions is defined
-
-
-
-// Process each field configuration and create table cells
-fieldConfigs.forEach(config => {
-    const cell = document.createElement('td');
-    const { field, value, dropdown, link } = config;
-
-    if (dropdown) {
-        // Create dropdown with placeholder and hardcoded options
-        const dropdownElement = createDropdownWithPlaceholder(field, value, record.id);
-        cell.appendChild(dropdownElement);
-    } else if (link) {
-        // Create link cell
-        cell.innerHTML = value ? `<a href="#" target="_blank">${value}</a>` : 'N/A';
-    } else {
-        // Plain text cell
-        cell.textContent = value;
-    }
-
-    row.appendChild(cell);
-});
-
-
-// Create dropdown with placeholder and hardcoded options
-function createDropdownWithPlaceholder(field, value, recordId) {
-    const select = document.createElement('select');
-    select.classList.add('styled-select');
-
-    // Add placeholder option
-    const placeholderOption = document.createElement('option');
-    placeholderOption.value = '';
-    placeholderOption.textContent = 'Select a reason';
-    placeholderOption.disabled = true;
-    placeholderOption.selected = !value;
-    select.appendChild(placeholderOption);
-
-    // Add hardcoded options
-    const hardcodedOptions = ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather', 'Other'];
-    hardcodedOptions.forEach(option => {
-        const optionElement = document.createElement('option');
-        optionElement.value = option;
-        optionElement.textContent = option;
-        if (option === value) optionElement.selected = true;
-        select.appendChild(optionElement);
-    });
-
-    // Handle change event to track updates
-    select.addEventListener('change', function () {
-        const newValue = select.value;
-        updatedFields[recordId] = updatedFields[recordId] || {};
-        updatedFields[recordId][field] = newValue;
-        hasChanges = true;
-        showSubmitButton(recordId);
-    });
-
-    return select;
-}
-
-
             
             fieldConfigs.forEach(config => {
                 const { field, value, checkbox, editable, link, image, dropdown, options, email, directions, imageField } = config;
@@ -1840,7 +1787,7 @@ submitButton.addEventListener('click', function () {
     
     document.addEventListener('DOMContentLoaded', function () {
         function adjustImageSize() {
-            const images = document.querySelectorAll('td:nth-child(7) .image-carousel img');
+            const images = document.querySelectorAll('td:nth-child(9) .image-carousel img');
             images.forEach(img => {
                 if (window.innerWidth < 576) {
                     img.style.maxWidth = '80px';

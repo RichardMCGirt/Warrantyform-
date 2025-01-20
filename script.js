@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableApiKey = window.env.AIRTABLE_API_KEY;
     const airtableBaseId = window.env.AIRTABLE_BASE_ID;
     const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
+    const hardcodedOptions = ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather', 'Other'];
+
     let dropboxAccessToken;
     let dropboxAppKey;
     let dropboxAppSecret;
@@ -14,7 +16,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 // Run fetch functions concurrently
 Promise.all([
-    fetchvendors(),
     fetchAirtableFields(),
     fetchDropboxCredentials(),
     checkDropboxTokenValidity()
@@ -309,43 +310,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             }));
         } catch (error) {
             console.error('Error fetching calendar links from Airtable:', error);
-            return [];
-        }
-    }
-
-    async function fetchvendors() {
-        const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID3}/${window.env.AIRTABLE_TABLE_NAME3}`;
-        
-        console.log(`Starting to fetch vendors from: ${url}`);
-    
-        try {
-            const response = await fetch(url, {
-                headers: {
-                    Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
-                }
-            });
-    
-    
-            if (!response.ok) {
-                console.error(`Error fetching records: ${response.status} ${response.statusText}`);
-                return [];
-            }
-    
-            const data = await response.json();
-    
-            // Add log to inspect available fields
-            data.records.forEach(record => {
-            });
-    
-            // Check if 'Name' is the correct field name
-            const vendors = data.records
-                .filter(record => record.fields['Name'])  // Filter only records that have 'Name'
-                .map(record => record.fields['Name']);    // Extract the vendor names
-    
-    
-            return vendors;  // Return the list of vendor names
-        } catch (error) {
-            console.error('Error fetching vendor records:', error);
             return [];
         }
     }
@@ -878,14 +842,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             let allRecords = [];
             let offset = null;
     
-            // Fetch vendor options for 'Material Vendor' dropdown
-            try {
-                vendorOptions = await fetchvendors(); // Fetch vendor data and assign it to vendorOptions
-            } catch (error) {
-                console.error('Error fetching vendor options:', error);
-                vendorOptions = []; // Continue with empty array if error occurs
-            }
-    
+            
             // Fetch sub options
             try {
                 subOptions = await fetchAirtableSubOptionsFromDifferentTable() || [];
@@ -1150,11 +1107,7 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Dropdown with ID #filter-dropdown not found.");
     }
 });
-
-
-
-
-   
+  
     async function fetchAirtableSubOptionsFromDifferentTable() {
         let records = [];
         let offset = null;
@@ -1222,7 +1175,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             const matchingCalendar = calendarLinks.find(calendar => calendar.name === fields['name']);
             const url = matchingCalendar ? matchingCalendar.link : '#';
-    
+            const dropdownOptions = subOptions.length ? subOptions : ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather', 'Other'];
+            const allOptions = [...new Set([...hardcodedOptions, ...subOptions.map(option => option.name)])];
+
             const cell = document.createElement('td');
             cell.innerHTML = `<a href="${url}" target="_blank">${fields['b'] || 'N/A'}</a>`;
             row.appendChild(cell);
@@ -1255,10 +1210,75 @@ document.addEventListener('DOMContentLoaded', () => {
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true },
 
                 { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
-                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather', 'Other'] },
-                { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
+                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true },
+
+                               { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
 
             ];
+
+            console.log('Hardcoded Options:', hardcodedOptions);
+            console.log('Fetched Options:', subOptions);
+// Ensure hardcodedOptions is defined
+
+
+
+// Process each field configuration and create table cells
+fieldConfigs.forEach(config => {
+    const cell = document.createElement('td');
+    const { field, value, dropdown, link } = config;
+
+    if (dropdown) {
+        // Create dropdown with placeholder and hardcoded options
+        const dropdownElement = createDropdownWithPlaceholder(field, value, record.id);
+        cell.appendChild(dropdownElement);
+    } else if (link) {
+        // Create link cell
+        cell.innerHTML = value ? `<a href="#" target="_blank">${value}</a>` : 'N/A';
+    } else {
+        // Plain text cell
+        cell.textContent = value;
+    }
+
+    row.appendChild(cell);
+});
+
+
+// Create dropdown with placeholder and hardcoded options
+function createDropdownWithPlaceholder(field, value, recordId) {
+    const select = document.createElement('select');
+    select.classList.add('styled-select');
+
+    // Add placeholder option
+    const placeholderOption = document.createElement('option');
+    placeholderOption.value = '';
+    placeholderOption.textContent = 'Select a reason';
+    placeholderOption.disabled = true;
+    placeholderOption.selected = !value;
+    select.appendChild(placeholderOption);
+
+    // Add hardcoded options
+    const hardcodedOptions = ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather', 'Other'];
+    hardcodedOptions.forEach(option => {
+        const optionElement = document.createElement('option');
+        optionElement.value = option;
+        optionElement.textContent = option;
+        if (option === value) optionElement.selected = true;
+        select.appendChild(optionElement);
+    });
+
+    // Handle change event to track updates
+    select.addEventListener('change', function () {
+        const newValue = select.value;
+        updatedFields[recordId] = updatedFields[recordId] || {};
+        updatedFields[recordId][field] = newValue;
+        hasChanges = true;
+        showSubmitButton(recordId);
+    });
+
+    return select;
+}
+
+
             
             fieldConfigs.forEach(config => {
                 const { field, value, checkbox, editable, link, image, dropdown, options, email, directions, imageField } = config;
@@ -1286,7 +1306,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
             
             
-let placeholderText = 'Select a Vendor...'; // Default placeholder
 if (field === 'Subcontractor') {
     placeholderText = 'Select a Subcontractor ...';
 } else if (field === 'Billable/ Non Billable') {
@@ -1537,8 +1556,6 @@ select.addEventListener('change', () => {
         });
     });
     
-    
-
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, imageField);

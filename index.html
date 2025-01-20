@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .map(checkbox => checkbox.value);
 
         tableRows.forEach(row => {
-            const branchColumn = row.querySelector('td:nth-child(14)'); // Assuming the field tech column is the 14th column
+            const branchColumn = row.querySelector('td:nth-child(3)'); // Assuming the field tech column is the 14th column
             if (branchColumn) {
                 const branchValue = branchColumn.textContent.trim();
 
@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (allSelected) {
             const visibleNames = new Set();
             tableRows.forEach(row => {
-                const branchColumn = row.querySelector('td:nth-child(14)');
+                const branchColumn = row.querySelector('td:nth-child(3)');
                 if (branchColumn && row.style.display !== 'none') {
                     const branchValue = branchColumn.textContent.trim();
                     branchValue.split(',').forEach(name => visibleNames.add(name.trim()));

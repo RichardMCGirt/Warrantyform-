@@ -1345,7 +1345,7 @@ select.addEventListener('change', () => {
     const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
     if (fieldReviewCheckbox) {
         fieldReviewCheckbox.disabled = (newValue === "");
-        fieldReviewCheckbox.checked = false;
+        fieldReviewCheckbox.checked = true;
     }
 });
                     const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');

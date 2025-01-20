@@ -154,6 +154,14 @@ th {
     height: 3.5em;
 }
 
+.single-table-view .scrollable-div {
+    width: 100%;
+    overflow-y: auto;
+}
+.scrollable-div {
+    max-height: calc(100vh - 200px); /* Default fallback */
+    overflow-y: auto;
+}
 
 
 

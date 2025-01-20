@@ -790,10 +790,37 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     
         if (hasPrimaryRecords && !hasSecondaryRecords) {
             document.body.classList.add('single-table-view');
+            makeTableScrollable('#airtable-data');
         } else if (!hasPrimaryRecords && hasSecondaryRecords) {
             document.body.classList.add('single-table-view');
+            makeTableScrollable('#feild-data');
         } else {
             document.body.classList.remove('single-table-view');
+            resetTableScroll('#airtable-data');
+            resetTableScroll('#feild-data');
+        }
+    }
+    
+    // Adjust the table height to fill the available space dynamically
+    function makeTableScrollable(tableSelector) {
+        const table = document.querySelector(tableSelector);
+        const headerHeight = document.querySelector('nav').offsetHeight +
+            document.querySelector('.header').offsetHeight +
+            document.querySelector('.search-container').offsetHeight +
+            50; // Add some padding
+    
+        if (table) {
+            table.parentElement.style.maxHeight = `calc(100vh - ${headerHeight}px)`;
+            table.parentElement.style.overflowY = 'auto';
+        }
+    }
+    
+    // Reset scrollability for tables when both are visible
+    function resetTableScroll(tableSelector) {
+        const table = document.querySelector(tableSelector);
+        if (table) {
+            table.parentElement.style.maxHeight = '';
+            table.parentElement.style.overflowY = '';
         }
     }
     
@@ -803,7 +830,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     function syncTableWidths() {
         const mainTable = document.querySelector('#airtable-data');
         const secondaryTable = document.querySelector('#feild-data');
-        
+    
         // Check if either table has rows (records)
         const mainTableHasRecords = mainTable && mainTable.querySelector('tbody tr') !== null;
         const secondaryTableHasRecords = secondaryTable && secondaryTable.querySelector('tbody tr') !== null;
@@ -811,16 +838,17 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         // If only one table has records, set its width to 80%
         if (mainTableHasRecords && !secondaryTableHasRecords) {
             mainTable.style.width = '80%';
-            secondaryTable.style.width = '0';  // Hide or reduce the other table
+            secondaryTable.style.width = '0'; // Hide or reduce the other table
         } else if (secondaryTableHasRecords && !mainTableHasRecords) {
             secondaryTable.style.width = '80%';
-            mainTable.style.width = '0';  // Hide or reduce the other table
+            mainTable.style.width = '0'; // Hide or reduce the other table
         } else if (mainTableHasRecords && secondaryTableHasRecords) {
             // If both have records, synchronize their widths
             const mainTableWidth = mainTable.offsetWidth;
             secondaryTable.style.width = `${mainTableWidth}px`;
         }
     }
+    
     
     let vendorOptions = []; // Declare vendorOptions properly
 

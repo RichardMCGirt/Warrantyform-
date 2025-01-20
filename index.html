@@ -26,34 +26,34 @@
    
     <div class="search-container">
       <form>
-            <label for="filter-branch">Filter by Branch:</label>
+            <label for="filter-branch">Filter by Feild Technician:</label>
             <div id="filter-branch">
                 <label>
                     <input type="checkbox" name="branch" value="All" checked> All
                 </label><br>
                 <label>
-                    <input type="checkbox" name="branch" value="Charleston"> Charleston
+                    <input type="checkbox" name="branch" value="Justin Leviner"> Justin Leviner
                 </label><br>
                 <label>
-                    <input type="checkbox" name="branch" value="Charlotte"> Charlotte
+                    <input type="checkbox" name="branch" value="Diana Smith"> Diana Smith
                 </label><br>
                 <label>
-                    <input type="checkbox" name="branch" value="Columbia"> Columbia
+                    <input type="checkbox" name="branch" value="Wesley Dyson"> Wesley Dyson
                 </label><br>
                 <label>
-                    <input type="checkbox" name="branch" value="Greensboro"> Greensboro
+                    <input type="checkbox" name="branch" value="Drew Gump"> Drew Gump
                 </label><br>
                 <label>
-                    <input type="checkbox" name="branch" value="Greenville SC"> Greenville SC
+                    <input type="checkbox" name="branch" value="Nick Campbell"> Nick Campbell
                 </label><br>
                 <label>
-                    <input type="checkbox" name="branch" value="Myrtle Beach"> Myrtle Beach
+                    <input type="checkbox" name="branch" value="Mercedes  Brown"> Mercedes Brown
                 </label><br>
                 <label>
-                    <input type="checkbox" name="branch" value="Raleigh"> Raleigh
+                    <input type="checkbox" name="branch" value="Doug Sprenkle"> Doug Sprenkle
                 </label><br>
                 <label>
-                    <input type="checkbox" name="branch" value="Wilmington"> Wilmington
+                    <input type="checkbox" name="branch" value="Cleandro Gonzalez"> Cleandro Gonzalez
                 </label>
             </div>
             
@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .map(checkbox => checkbox.value);
 
         tableRows.forEach(row => {
-            const branchColumn = row.querySelector('td:nth-child(1)'); // Assuming branch is the first column
+            const branchColumn = row.querySelector('td:nth-child(14)'); // Assuming branch is the first column
             if (branchColumn) {
                 const branchValue = branchColumn.textContent.trim();
 

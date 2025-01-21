@@ -1210,6 +1210,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || '', editable: true },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || '', editable: true },
                 { field: 'Subcontractor', value: fields['Subcontractor'] || '', dropdown: true, options: subOptions },
+                {
+                    field: 'Repair Charge Amount',
+                    value: fields['Repair Charge Amount'] 
+                        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(fields['Repair Charge Amount']) 
+                        : '',
+                    editable: true
+                },
+                
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true },
 
                 { 
@@ -1223,13 +1231,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     dropdown: true 
                   },
 
-                               { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
-                               {
-                                field: 'Repair Charge Amount',
-                                value: fields['Repair Charge Amount'] 
-                                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(fields['Repair Charge Amount']) 
-                                    : ''
-                            }
+                               { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true }
+                          
                             
 
             ];

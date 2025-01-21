@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableBaseId = window.env.AIRTABLE_BASE_ID;
     const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
     const billableOptions = ['Billable', 'Non Billable'];
-    const reasonOptions = ['Another Trade Damaged Work', 'Another Trade Damaged Work', 'Weather'];
+    const reasonOptions = ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'];
 
 
     

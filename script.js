@@ -1211,9 +1211,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 { field: 'Materials Needed', value: fields['Materials Needed'] || '', editable: true },
                 { field: 'Subcontractor', value: fields['Subcontractor'] || '', dropdown: true, options: subOptions },
                 {
-                    field: 'Repair Charge Amount',
-                    value: fields['Repair Charge Amount'] 
-                        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(fields['Repair Charge Amount']) 
+                    field: 'Subcontractor Payment',
+                    value: fields['Subcontractor Payment'] 
+                        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(fields['Subcontractor Payment']) 
                         : '',
                     editable: true
                 },

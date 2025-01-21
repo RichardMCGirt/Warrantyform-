@@ -1193,6 +1193,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true, imageField: 'Completed  Pictures' },
                 { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || '', editable: true },
+
                 { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true }
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },  // Keep only this "Branch" entry
@@ -1223,6 +1224,13 @@ document.addEventListener('DOMContentLoaded', () => {
                   },
 
                                { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
+                               {
+                                field: 'Repair Charge Amount',
+                                value: fields['Repair Charge Amount'] 
+                                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(fields['Repair Charge Amount']) 
+                                    : ''
+                            }
+                            
 
             ];
 

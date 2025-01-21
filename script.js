@@ -2,8 +2,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableApiKey = window.env.AIRTABLE_API_KEY;
     const airtableBaseId = window.env.AIRTABLE_BASE_ID;
     const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
-    const hardcodedOptions = ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather', 'Other'];
+    const billableOptions = ['Billable', 'Non Billable'];
 
+    
     let dropboxAccessToken;
     let dropboxAppKey;
     let dropboxAppSecret;
@@ -1212,10 +1213,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     field: 'Billable/ Non Billable', 
                     value: fields['Billable/ Non Billable'] || '', 
                     dropdown: true, 
-                    options: ['Billable', 'Non Billable'] 
                   },
                   { 
-                    field: 'Billable Reason (If Billable)', 
+                    field: 'Billable Reatyleon (If Billable)', 
                     value: fields['Billable Reason (If Billable)'] || '', 
                     dropdown: true 
                   },
@@ -1224,8 +1224,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             ];
 
-            console.log('Hardcoded Options:', hardcodedOptions);
-            console.log('Fetched Options:', subOptions);
             
             fieldConfigs.forEach(config => {
                 const { field, value, checkbox, editable, link, image, dropdown, options, email, directions, imageField } = config;
@@ -1239,18 +1237,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (dropdown || field === 'sub') {
                     const select = document.createElement('select');
                     select.classList.add('styled-select');
-                
+                    
+                    // Define placeholder and options dynamically
+                    let placeholderText = '';
                     let filteredOptions = [];
-                    if (field === 'Subcontractor') {
-                        const vanirBranchValue = fields['b'];  
-                        
-                        filteredOptions = subOptions.filter(sub => sub.vanirOffice === vanirBranchValue);
-                
-                        if (filteredOptions.length === 0) {
-                        }
-                    } else {
-                        filteredOptions = options;
+                    
+                    // Customize dropdown content based on the field
+                    switch (field) {
+                        case 'Subcontractor':
+                            placeholderText = 'Select a Subcontractor ...';
+                            filteredOptions = subOptions.filter(option => option.vanirOffice === (fields['b'] || 'N/A'));
+                            break;
+                        case 'Billable/ Non Billable':
+                            placeholderText = 'Select Billable Status ...';
+                            filteredOptions = billableOptions; // Static list of billable statuses
+                            break;
+                        case 'Billable Reason (If Billable)':
+                            placeholderText = 'Select a Reason ...';
+                            filteredOptions = reasonOptions; // Static list of billable reasons
+                            break;
+                        case 'Material Vendor':
+                            placeholderText = 'Select a Vendor ...';
+                            filteredOptions = vendorOptions; // Dynamic or static vendor options
+                            break;
+                        default:
+                            placeholderText = 'Select an Option ...';
+                            break;
                     }
+                
+                   
+                
             
             
 if (field === 'Subcontractor') {
@@ -1271,40 +1287,45 @@ placeholderOption.value = '';
 placeholderOption.textContent = placeholderText;
 select.appendChild(placeholderOption);
 
-filteredOptions = subOptions.filter(option => {
-    // Ensure the field 'b' matches the desired value in 'fields'
-    return option.vanirOffice === (fields['b'] || 'N/A');
-});
-
+// Sort and populate options
 filteredOptions.sort((a, b) => {
-    const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase();  // Ensure valid comparison for both cases
+    const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase();
     const nameB = b.name ? b.name.toLowerCase() : b.toLowerCase();
     return nameA.localeCompare(nameB);
 });
 
 filteredOptions.forEach(option => {
     const optionElement = document.createElement('option');
-    const optionValue = option.name || option; // Ensure compatibility with both hardcoded and dynamic options
-
+    const optionValue = typeof option === 'object' ? option.name : option;
+    const displayText = typeof option === 'object' && option.displayName ? option.displayName : optionValue;
+    
     optionElement.value = optionValue;
-    optionElement.textContent = optionValue;
-
-    if (optionValue === value || optionValue === fields['Subcontractor']) {
-        optionElement.selected = true;  // Mark this option as selected
+    optionElement.textContent = displayText;
+    
+    // Mark as selected if it matches the field's value
+    if (optionValue === value || optionValue === fields[field]) {
+        optionElement.selected = true;
+    }
+    
+    // Optional: Disable certain options
+    if (option.disabled) {
+        optionElement.disabled = true;
     }
 
     select.appendChild(optionElement);
 });
 
+// Append the dropdown to the cell
 cell.appendChild(select);
+
+
 
 
 select.addEventListener('change', () => {
     const newValue = select.value;
     updatedFields[record.id] = updatedFields[record.id] || {};
-    updatedFields[record.id][field] = newValue;
+    updatedFields[record.id]['Billable/ Non Billable'] = newValue;
     hasChanges = true;
-
     showSubmitButton(record.id);
 
     // Enable or disable the checkbox based on selection
@@ -1502,6 +1523,30 @@ select.addEventListener('change', () => {
             checkForChanges(recordId);
         });
     });
+
+    function resetDropdownToBillable(selectElement) {
+        // Clear all existing options
+        while (selectElement.options.length > 0) {
+            selectElement.remove(0);
+        }
+    
+        // Add placeholder option
+        const placeholderOption = document.createElement('option');
+        placeholderOption.value = '';
+        placeholderOption.textContent = 'Select Billable Status...';
+        placeholderOption.disabled = true;
+        placeholderOption.selected = true;
+        selectElement.appendChild(placeholderOption);
+    
+        // Add "Billable" and "Non Billable" options
+        const billableOptions = ['Billable', 'Non Billable'];
+        billableOptions.forEach(option => {
+            const newOption = document.createElement('option');
+            newOption.value = option;
+            newOption.textContent = option;
+            selectElement.appendChild(newOption);
+        });
+    }
     
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;

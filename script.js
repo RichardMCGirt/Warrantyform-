@@ -1212,11 +1212,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 { field: 'Subcontractor', value: fields['Subcontractor'] || '', dropdown: true, options: subOptions },
                 {
                     field: 'Subcontractor Payment',
-                    value: fields['Subcontractor Payment'] 
-                        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(fields['Subcontractor Payment']) 
-                        : '',
+                    value: typeof fields['Subcontractor Payment'] === 'number'
+                        ? parseFloat(fields['Subcontractor Payment'].toFixed(2)) // Ensure numeric and two decimal places
+                        : 0, // Default to 0 if not a valid number
                     editable: true
                 },
+                
                 
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true },
 
@@ -2129,32 +2130,51 @@ document.body.appendChild(dynamicButtonsContainer);
         submitChanges();
     });
 
-async function updateRecord(recordId, fields) {
-    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
-    const body = JSON.stringify({ fields });
-
-    try {
-        const response = await fetch(url, {
-            method: 'PATCH',
-            headers: {
-                Authorization: `Bearer ${airtableApiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: body
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`Error updating record: ${response.status} ${response.statusText}`);
-            console.error(`Error Details:`, errorData);
-        } else {
-            const successData = await response.json();
-            console.log('Record updated successfully:', successData);
+    async function updateRecord(recordId, fields) {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
+    
+        // Ensure Subcontractor Payment is a valid number
+        if (fields['Subcontractor Payment'] !== undefined) {
+            fields['Subcontractor Payment'] = Number(fields['Subcontractor Payment']);
+            if (isNaN(fields['Subcontractor Payment'])) {
+                console.error('Invalid Subcontractor Payment value:', fields['Subcontractor Payment']);
+                return; // Exit if invalid
+            }
         }
-    } catch (error) {
-        console.error('Error occurred while updating record in Airtable:', error);
+    
+        const body = JSON.stringify({ fields });
+    
+        console.log(`Attempting to update record with ID: ${recordId}`);
+        console.log(`Request URL: ${url}`);
+        console.log(`Request Body:`, body);
+    
+        try {
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    Authorization: `Bearer ${airtableApiKey}`,
+                    'Content-Type': 'application/json',
+                },
+                body: body,
+            });
+    
+            console.log(`Response Status: ${response.status} ${response.statusText}`);
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error(`Error updating record: ${response.status} ${response.statusText}`);
+                console.error(`Error Details:`, errorData);
+            } else {
+                const successData = await response.json();
+                console.log('Record updated successfully:', successData);
+            }
+        } catch (error) {
+            console.error('Error occurred while updating record in Airtable:', error);
+        }
     }
-}
+    
+    
+    
     
     document.getElementById('search-input').addEventListener('input', function () {
         const searchValue = this.value.toLowerCase();

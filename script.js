@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableBaseId = window.env.AIRTABLE_BASE_ID;
     const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
     const billableOptions = ['Billable', 'Non Billable'];
+    const reasonOptions = ['Another Trade Damaged Work', 'Another Trade Damaged Work', 'Weather'];
+
 
     
     let dropboxAccessToken;
@@ -1215,7 +1217,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     dropdown: true, 
                   },
                   { 
-                    field: 'Billable Reatyleon (If Billable)', 
+                    field: 'Billable Reason (If Billable)', 
                     value: fields['Billable Reason (If Billable)'] || '', 
                     dropdown: true 
                   },
@@ -1524,29 +1526,7 @@ select.addEventListener('change', () => {
         });
     });
 
-    function resetDropdownToBillable(selectElement) {
-        // Clear all existing options
-        while (selectElement.options.length > 0) {
-            selectElement.remove(0);
-        }
     
-        // Add placeholder option
-        const placeholderOption = document.createElement('option');
-        placeholderOption.value = '';
-        placeholderOption.textContent = 'Select Billable Status...';
-        placeholderOption.disabled = true;
-        placeholderOption.selected = true;
-        selectElement.appendChild(placeholderOption);
-    
-        // Add "Billable" and "Non Billable" options
-        const billableOptions = ['Billable', 'Non Billable'];
-        billableOptions.forEach(option => {
-            const newOption = document.createElement('option');
-            newOption.value = option;
-            newOption.textContent = option;
-            selectElement.appendChild(newOption);
-        });
-    }
     
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;

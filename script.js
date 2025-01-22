@@ -763,24 +763,36 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             makeTableScrollable('#feild-data');
         } else {
             document.body.classList.remove('single-table-view');
-            resetTableScroll('#airtable-data');
-            resetTableScroll('#feild-data');
+            if (mainContent) resetTableScroll('#airtable-data');
+            if (secondaryContent) resetTableScroll('#feild-data');
         }
     }
+    
     
     // Adjust the table height to fill the available space dynamically
     function makeTableScrollable(tableSelector) {
         const table = document.querySelector(tableSelector);
-        const headerHeight = document.querySelector('nav').offsetHeight +
-            document.querySelector('.header').offsetHeight +
-            document.querySelector('.search-container').offsetHeight +
+    
+        if (!table || !table.parentElement) {
+            console.warn(`Table or parent element not found for selector: ${tableSelector}`);
+            return;
+        }
+    
+        const nav = document.querySelector('nav');
+        const header = document.querySelector('.header');
+        const searchContainer = document.querySelector('.search-container');
+    
+        const headerHeight = 
+            (nav ? nav.offsetHeight : 0) +
+            (header ? header.offsetHeight : 0) +
+            (searchContainer ? searchContainer.offsetHeight : 0) +
             50; // Add some padding
     
-        if (table) {
-            table.parentElement.style.maxHeight = `calc(100vh - ${headerHeight}px)`;
-            table.parentElement.style.overflowY = 'auto';
-        }
+        table.parentElement.style.maxHeight = `calc(100vh - ${headerHeight}px)`;
+        table.parentElement.style.overflowY = 'auto';
     }
+    
+    
     
     // Reset scrollability for tables when both are visible
     function resetTableScroll(tableSelector) {
@@ -1213,10 +1225,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 {
                     field: 'Subcontractor Payment',
                     value: typeof fields['Subcontractor Payment'] === 'number'
-                        ? parseFloat(fields['Subcontractor Payment'].toFixed(2)) // Ensure numeric and two decimal places
-                        : 0, // Default to 0 if not a valid number
+                        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(fields['Subcontractor Payment'])
+                        : '$0.00', // Default to $0.00 if not a valid number
                     editable: true
                 },
+                
                 
                 
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true },
@@ -1338,9 +1351,13 @@ cell.appendChild(select);
 select.addEventListener('change', () => {
     const newValue = select.value;
     updatedFields[record.id] = updatedFields[record.id] || {};
-    updatedFields[record.id]['Billable/ Non Billable'] = newValue;
+    updatedFields[record.id][field] = newValue; // Update the correct field
+    
+    // Log the details of the dropdown change
+    console.log(`Dropdown changed. Record ID: ${record.id}, Field: ${field}, New Value: ${newValue}`);
+    
     hasChanges = true;
-    showSubmitButton(record.id);
+    showSubmitButton(record.id); // Show the submit button for this record
 
 
 
@@ -2150,30 +2167,28 @@ document.body.appendChild(dynamicButtonsContainer);
         console.log(`Request URL: ${url}`);
         console.log(`Request Body:`, body);
     
-        try {
-            const response = await fetch(url, {
-                method: 'PATCH',
-                headers: {
-                    Authorization: `Bearer ${airtableApiKey}`,
-                    'Content-Type': 'application/json',
-                },
-                body: body,
-            });
-    
-            console.log(`Response Status: ${response.status} ${response.statusText}`);
-    
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error(`Error updating record: ${response.status} ${response.statusText}`);
-                console.error(`Error Details:`, errorData);
-            } else {
-                const successData = await response.json();
-                console.log('Record updated successfully:', successData);
-            }
-        } catch (error) {
-            console.error('Error occurred while updating record in Airtable:', error);
+        
+    try {
+        const response = await fetch(url, {
+            method: 'PATCH',
+            headers: {
+                Authorization: `Bearer ${airtableApiKey}`,
+                'Content-Type': 'application/json',
+            },
+            body,
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            console.error(`Failed to update record ${recordId}:`, error);
+        } else {
+            const success = await response.json();
+            console.log(`Record ${recordId} updated successfully:`, success);
         }
+    } catch (error) {
+        console.error(`Error updating record ${recordId}:`, error);
     }
+}
     
     
     

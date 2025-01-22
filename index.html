@@ -10,19 +10,58 @@
 
 </head>
 <body>
-    <div class="header">
+    <nav>
+        <a href="https://airtable.com/appO21PVRA4Qa087I/shrIB8uJAdVkCfipw" class="nav-link active" target="_blank">Enter Record</a>
+    </nav>
+   <div class="header">
         <img src="VANIR-transparent (1).png" alt="Vanir Installed Sales Logo" class="logo loading-logo">
         <h1 class="hidden"></h1>
-    </div>
+    </div> 
 
     <!-- Toast Notification -->
     <div id="toast">
         Changes submitted successfully!
     </div>
     <br>
-    <div class="search-container">
+   
+        <form>
+            <label for="filter-branch" class="filter-label">Filter by Field Technician:</label>
+            <div id="filter-branch" class="checkbox-container">
+                <label>
+                    <input type="checkbox" name="branch" value="All" checked> <span>All</span>
+                </label>
+                <label>
+                    <input type="checkbox" name="branch" value="Justin Leviner"> <span>Justin Leviner</span>
+                </label>
+                <label>
+                    <input type="checkbox" name="branch" value="Diana Smith"> <span>Diana Smith</span>
+                </label>
+                <label>
+                    <input type="checkbox" name="branch" value="Wesley Dyson"> <span>Wesley Dyson</span>
+                </label>
+                <label>
+                    <input type="checkbox" name="branch" value="Drew Gump"> <span>Drew Gump</span>
+                </label>
+                <label>
+                    <input type="checkbox" name="branch" value="Nick Campbell"> <span>Nick Campbell</span>
+                </label>
+                <label>
+                    <input type="checkbox" name="branch" value="Mercedes Brown"> <span>Mercedes Brown</span>
+                </label>
+                <label>
+                    <input type="checkbox" name="branch" value="Doug Sprenkle"> <span>Doug Sprenkle</span>
+                </label>
+                <label>
+                    <input type="checkbox" name="branch" value="Cleandro Gonzalez"> <span>Cleandro Gonzalez</span>
+                </label>
+            </div>
+            
+        </form>
         <input type="text" id="search-input" placeholder="Search..." />
-    </div>
+    
+    
+    
+    
     <div class="table-wrapper">
 
     <div id="main-content" style="display: none;">
@@ -32,21 +71,28 @@
                 <thead>
                     <tr>
                         <th>Branch</th>
-                        <th>Branch</th>
-
+                        <th></th>
+                        <th>Field Tech Assigned</th>
                         <th>Lot Number and Community</th>
-                        <th>Homeowner Name</th>
+
                         <th>Address</th>
-                        <th>Description</th>
+                        <th>Homeowner Name</th>
                         <th>Contact Email</th>
+                        <th>Description of Issue</th>
                         <th>Pictures</th>
+                        <th>DOW to be Completed</th>
+
                         <th>Materials Needed</th>
-                        <th>Material Vendor</th>
+                        <th>Subcontractor</th>
+                        <th>Subcontractor Payment</th>
+
+                        <th>Subcontractor Not Needed</th>
+
                         <th>Billable/ Non Billable</th>
                         <th>Billable Reason</th>
                         <th>Field Reviewed</th>
-                        <th>Subcontractor</th>
-                        <th>Subcontractor Not Needed</th>
+
+
                     </tr>
                 </thead>
                 <tbody>
@@ -66,8 +112,7 @@
                 <thead>
                     <tr>
                         <th>Branch</th>
-                        <th>Branch</th>
-
+                        <th></th>
                         <th>Lot Number and Community</th>
                         <th>Homeowner Name</th>
                         <th>Address</th>
@@ -88,25 +133,138 @@
 
     <!-- Configuration for Airtable -->
     <script>
-        window.env = {
-            AIRTABLE_API_KEY: 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238',
-            AIRTABLE_BASE_ID: 'appO21PVRA4Qa087I',
-            AIRTABLE_TABLE_NAME: 'tbl6EeKPsNuEvt5yJ',
-            AIRTABLE_TABLE_NAME2: 'tbl9SgC5wUi2TQuF7',
-
-            AIRTABLE_BASE_ID3: 'appi4QZE0SrWI6tt2',
-AIRTABLE_TABLE_NAME3:'tbllFcCzQfRATm6dI'
-
-        };
+ window.env = {
+    AIRTABLE_API_KEY: 'patXTUS9m8os14OO1.6a81b7bc4dd88871072fe71f28b568070cc79035bc988de3d4228d52239c8238',
+    AIRTABLE_BASE_ID: 'appO21PVRA4Qa087I',
+    AIRTABLE_TABLE_NAME: 'tbl6EeKPsNuEvt5yJ',
+    AIRTABLE_TABLE_NAME2: 'tbl9SgC5wUi2TQuF7',
+    AIRTABLE_BASE_ID3: 'appeNSp44fJ8QYeY5',
+    AIRTABLE_TABLE_NAME3: 'tblLEYdDi0hfD9fT3' // Corrected with a comma
+};
 
 
     </script>
-
-
-
     <!-- JavaScript for interactivity -->
     <script src="populatevendoremail.js"></script>
     <script src="script.js"></script>
+    <script>
+
+// Wait for the DOM to fully load
+document.addEventListener('DOMContentLoaded', () => {
+    const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
+    const checkboxLabels = document.querySelectorAll('#filter-branch label');
+    const tableBody = document.querySelector('#airtable-data tbody'); // Table body element
+
+    // Function to filter rows based on selected field technicians
+    function filterRows() {
+        const tableRows = document.querySelectorAll('#airtable-data tbody tr'); // Fetch rows dynamically
+        const selectedBranches = Array.from(checkboxes)
+            .filter(checkbox => checkbox.checked && checkbox.value !== 'All')
+            .map(checkbox => checkbox.value);
+
+        tableRows.forEach(row => {
+            const branchColumn = row.querySelector('td:nth-child(3)'); // Assuming the field tech column is the 14th column
+            if (branchColumn) {
+                const branchValue = branchColumn.textContent.trim();
+
+                // Check if any of the selected branches are part of the branchColumn value
+                const matches = selectedBranches.some(branch => branchValue.includes(branch));
+
+                // Show the row if no specific branch is selected or if there are matches
+                if (selectedBranches.length === 0 || matches) {
+                    row.style.display = ''; // Show the row
+                } else {
+                    row.style.display = 'none'; // Hide the row
+                }
+            }
+        });
+
+        // Update the visibility of checkboxes based on "All" selection
+        updateCheckboxVisibility();
+    }
+
+    // Function to update checkbox visibility
+    function updateCheckboxVisibility() {
+        const tableRows = document.querySelectorAll('#airtable-data tbody tr');
+        const allSelected = document.querySelector('#filter-branch input[value="All"]').checked;
+
+        if (allSelected) {
+            const visibleNames = new Set();
+            tableRows.forEach(row => {
+                const branchColumn = row.querySelector('td:nth-child(3)');
+                if (branchColumn && row.style.display !== 'none') {
+                    const branchValue = branchColumn.textContent.trim();
+                    branchValue.split(',').forEach(name => visibleNames.add(name.trim()));
+                }
+            });
+
+            // Show or hide checkboxes based on visible names
+            checkboxLabels.forEach(label => {
+                const checkbox = label.querySelector('input');
+                if (checkbox && checkbox.value !== 'All') {
+                    if (visibleNames.has(checkbox.value)) {
+                        label.style.display = ''; // Show
+                    } else {
+                        label.style.display = 'none'; // Hide
+                    }
+                }
+            });
+        } else {
+            // Ensure all checkboxes are visible when "All" is not selected
+            checkboxLabels.forEach(label => {
+                label.style.display = '';
+            });
+        }
+    }
+
+    // Observe when rows are added to the table
+    const observer = new MutationObserver(() => {
+        filterRows(); // Apply filtering and update checkboxes when rows are added
+    });
+
+    if (tableBody) {
+        observer.observe(tableBody, { childList: true }); // Watch for changes in table rows
+    }
+
+    // Add event listeners to checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', filterRows);
+    });
+
+    // Initial filtering (in case rows are already present)
+    filterRows();
+});
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const filterBranchDiv = document.getElementById('filter-branch');
+
+    // Function to sort the checkboxes alphabetically
+    function sortCheckboxesAlphabetically() {
+        const labels = Array.from(filterBranchDiv.querySelectorAll('label'));
+        const allCheckbox = labels.shift(); // Remove "All" from the list for separate handling
+
+        // Sort the remaining labels alphabetically by the text content
+        labels.sort((a, b) => {
+            const textA = a.textContent.trim().toUpperCase();
+            const textB = b.textContent.trim().toUpperCase();
+            return textA.localeCompare(textB);
+        });
+
+        // Clear and re-append sorted labels
+        filterBranchDiv.innerHTML = '';
+        filterBranchDiv.appendChild(allCheckbox); // Add the "All" checkbox at the top
+        labels.forEach(label => filterBranchDiv.appendChild(label)); // Append sorted checkboxes
+    }
+
+    // Call the function to sort on page load
+    sortCheckboxesAlphabetically();
+});
+
+
+
+</script>
 
 </body>
 </html>

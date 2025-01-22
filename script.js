@@ -2,18 +2,23 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableApiKey = window.env.AIRTABLE_API_KEY;
     const airtableBaseId = window.env.AIRTABLE_BASE_ID;
     const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
+    const billableOptions = ['Billable', 'Non Billable'];
+    const reasonOptions = ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'];
+
+
+    
     let dropboxAccessToken;
     let dropboxAppKey;
     let dropboxAppSecret;
     let dropboxRefreshToken;
 
     const calendarLinks = await fetchCalendarLinks();
+    let isSubmitting = false;
 
     let confirmationShown = false; 
 
 // Run fetch functions concurrently
 Promise.all([
-    fetchvendors(),
     fetchAirtableFields(),
     fetchDropboxCredentials(),
     checkDropboxTokenValidity()
@@ -24,9 +29,7 @@ Promise.all([
 });
 
         // Function to check if Dropbox token is still valid
-        async function checkDropboxTokenValidity() {
-            console.log('Checking if Dropbox token is still valid...');
-        
+        async function checkDropboxTokenValidity() {      
             if (!dropboxAccessToken) {
                 return;
             }
@@ -227,9 +230,9 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         submitButton.style.left = lastLeft;
         submitButton.style.display = 'block';
         activeRecordId = recordId;
-        console.log('Submit button shown for changes in record:', recordId);
     }
 }
+
     
     // Event listeners to show the submit button when input is typed or value is changed
     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
@@ -241,9 +244,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     // Fetch Dropbox credentials from Airtable
     async function fetchDropboxCredentials() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-        console.log('Starting fetchDropboxCredentials function');
-        console.log('Airtable URL:', url);
-        console.log('Fetching Dropbox credentials from Airtable...');
 
         try {
             const response = await fetch(url, {
@@ -287,7 +287,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             if (!dropboxAccessToken || !dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
                 console.error('One or more Dropbox credentials are missing after fetching.');
             } else {
-                console.log('All Dropbox credentials successfully fetched and set.');
             }
         } catch (error) {
             console.error('Error occurred during fetchDropboxCredentials:', error);
@@ -314,45 +313,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             }));
         } catch (error) {
             console.error('Error fetching calendar links from Airtable:', error);
-            return [];
-        }
-    }
-    
-    
-
-    async function fetchvendors() {
-        const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID3}/${window.env.AIRTABLE_TABLE_NAME3}`;
-        
-        console.log(`Starting to fetch vendors from: ${url}`);
-    
-        try {
-            const response = await fetch(url, {
-                headers: {
-                    Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`
-                }
-            });
-    
-    
-            if (!response.ok) {
-                console.error(`Error fetching records: ${response.status} ${response.statusText}`);
-                return [];
-            }
-    
-            const data = await response.json();
-    
-            // Add log to inspect available fields
-            data.records.forEach(record => {
-            });
-    
-            // Check if 'Name' is the correct field name
-            const vendors = data.records
-                .filter(record => record.fields['Name'])  // Filter only records that have 'Name'
-                .map(record => record.fields['Name']);    // Extract the vendor names
-    
-    
-            return vendors;  // Return the list of vendor names
-        } catch (error) {
-            console.error('Error fetching vendor records:', error);
             return [];
         }
     }
@@ -471,7 +431,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-
     // Create file input dynamically
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -685,8 +644,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-    
-
     async function getDropboxSharedLink(filePath) {
         if (!dropboxAccessToken) {
             console.error('Dropbox Access Token is not available.');
@@ -781,7 +738,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             });
     
             if (!response.ok) {
-                console.error(`Error fetching data: ${response.status} ${response.statusText}`);
                 return { records: [] }; // Return an empty array on error
             }
     
@@ -801,22 +757,47 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     
         if (hasPrimaryRecords && !hasSecondaryRecords) {
             document.body.classList.add('single-table-view');
+            makeTableScrollable('#airtable-data');
         } else if (!hasPrimaryRecords && hasSecondaryRecords) {
             document.body.classList.add('single-table-view');
+            makeTableScrollable('#feild-data');
         } else {
             document.body.classList.remove('single-table-view');
+            resetTableScroll('#airtable-data');
+            resetTableScroll('#feild-data');
         }
     }
     
+    // Adjust the table height to fill the available space dynamically
+    function makeTableScrollable(tableSelector) {
+        const table = document.querySelector(tableSelector);
+        const headerHeight = document.querySelector('nav').offsetHeight +
+            document.querySelector('.header').offsetHeight +
+            document.querySelector('.search-container').offsetHeight +
+            50; // Add some padding
+    
+        if (table) {
+            table.parentElement.style.maxHeight = `calc(100vh - ${headerHeight}px)`;
+            table.parentElement.style.overflowY = 'auto';
+        }
+    }
+    
+    // Reset scrollability for tables when both are visible
+    function resetTableScroll(tableSelector) {
+        const table = document.querySelector(tableSelector);
+        if (table) {
+            table.parentElement.style.maxHeight = '';
+            table.parentElement.style.overflowY = '';
+        }
+    }
     
     // Call `adjustTableWidth` after data is loaded or when the table visibility changes
     fetchAllData().then(adjustTableWidth);
     
-
     function syncTableWidths() {
         const mainTable = document.querySelector('#airtable-data');
         const secondaryTable = document.querySelector('#feild-data');
-        
+    
         // Check if either table has rows (records)
         const mainTableHasRecords = mainTable && mainTable.querySelector('tbody tr') !== null;
         const secondaryTableHasRecords = secondaryTable && secondaryTable.querySelector('tbody tr') !== null;
@@ -824,10 +805,10 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         // If only one table has records, set its width to 80%
         if (mainTableHasRecords && !secondaryTableHasRecords) {
             mainTable.style.width = '80%';
-            secondaryTable.style.width = '0';  // Hide or reduce the other table
+            secondaryTable.style.width = '0'; // Hide or reduce the other table
         } else if (secondaryTableHasRecords && !mainTableHasRecords) {
             secondaryTable.style.width = '80%';
-            mainTable.style.width = '0';  // Hide or reduce the other table
+            mainTable.style.width = '0'; // Hide or reduce the other table
         } else if (mainTableHasRecords && secondaryTableHasRecords) {
             // If both have records, synchronize their widths
             const mainTableWidth = mainTable.offsetWidth;
@@ -845,7 +826,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         secondaryContent.style.display = 'none';
     
         originalValues = { /* Populate this with fetched data */ };
-        console.log('Original values loaded:', originalValues);
     
         let loadProgress = 0;
         const loadInterval = setInterval(() => {
@@ -865,14 +845,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             let allRecords = [];
             let offset = null;
     
-            // Fetch vendor options for 'Material Vendor' dropdown
-            try {
-                vendorOptions = await fetchvendors(); // Fetch vendor data and assign it to vendorOptions
-            } catch (error) {
-                console.error('Error fetching vendor options:', error);
-                vendorOptions = []; // Continue with empty array if error occurs
-            }
-    
+            
             // Fetch sub options
             try {
                 subOptions = await fetchAirtableSubOptionsFromDifferentTable() || [];
@@ -897,7 +870,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     console.error('Error: Invalid data structure or no records found.');
                     break; // Exit loop if no valid data is fetched
                 }
-    
                 offset = data.offset;
             } while (offset);
     
@@ -908,8 +880,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             );
     
             const secondaryRecords = allRecords.filter(record =>
-                record.fields['Status'] === 'Scheduled- Awaiting Field' &&
-                !record.fields['Job Completed'] // Ensures 'Job Completed' is unchecked
+                record.fields['Status'] === 'Scheduled- Awaiting Field'  // Ensures 'Job Completed' is unchecked
             );
     
             // Sort primary records by StartDate and Vanir Branch
@@ -957,8 +928,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-    
-    
     function checkForChanges(recordId) {
         console.log(`Checking for changes in record ID: ${recordId}`);
         const currentValues = updatedFields[recordId] || {};
@@ -982,6 +951,20 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             hideSubmitButton();
         }
     }
+
+    // Function to hide the logo after 2 minutes
+function hideLogoAfterDelay() {
+    const logo = document.querySelector('.logo.loading-logo');
+    if (logo) {
+        setTimeout(() => {
+            logo.style.display = 'none';
+        }, 120000); // 120,000 milliseconds = 2 minutes
+    }
+}
+
+// Call the function when the page loads
+window.onload = hideLogoAfterDelay;
+
     
     function handleInputChange(event) {
         const recordId = this.closest('tr').dataset.id;
@@ -995,13 +978,21 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         checkForChanges(recordId);
     }
     
-    document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+    document.querySelectorAll('input:not([type="radio"]), select, td[contenteditable="true"]').forEach(element => {
         element.addEventListener('input', function () {
-            const recordId = this.closest('tr').dataset.id;
+            const closestRow = this.closest('tr');
+            if (!closestRow) {
+                console.error("No valid parent <tr> found for element:", this);
+                return;
+            }
+    
+            const recordId = closestRow.dataset.id;
             console.log(`Input event detected for record ID: ${recordId}`);
             handleInputChange.call(this);
             checkForChanges(recordId);
         });
+    
+    
     
         element.addEventListener('change', function () {
             const recordId = this.closest('tr').dataset.id;
@@ -1024,8 +1015,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             }
         });
     });
-    
-    
     
     // Resize observer to adjust the secondary table width when the main table resizes
     const mainTable = document.querySelector('#airtable-data');
@@ -1052,7 +1041,76 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             console.error('Error fetching fields from Airtable:', error);
         }
     }
-   
+
+
+    async function fetchDataAndInitializeFilter() {
+        await fetchAllData(); // Ensure this function populates the tables
+        console.log("Data loaded from Airtable.");
+    
+        const dropdown = document.querySelector('#filter-dropdown');
+        if (dropdown) {
+            console.log("Dropdown found. Adding change event listener.");
+            dropdown.addEventListener('change', filterRecords); // Attach filter logic
+        } else {
+            console.error("Dropdown with ID #filter-dropdown not found.");
+        }
+    }
+    
+    // Call this function after DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', fetchDataAndInitializeFilter);
+    
+
+// Function to filter table rows based on selected branch
+function filterRecords() {
+    const dropdown = document.querySelector('#filter-dropdown');
+    if (!dropdown) {
+        console.error("Dropdown element not found");
+        return;
+    }
+
+    const selectedBranch = dropdown.value;
+    console.log(`Selected branch: "${selectedBranch}"`);
+
+    const tables = ['#airtable-data', '#feild-data'];
+
+    tables.forEach(tableSelector => {
+        console.log(`Filtering table: ${tableSelector}`);
+        const rows = document.querySelectorAll(`${tableSelector} tbody tr`);
+
+        if (rows.length === 0) {
+            console.warn(`No rows found in table: ${tableSelector}`);
+            return;
+        }
+
+        rows.forEach((row, index) => {
+            const branchCell = row.querySelector('td:first-child');
+            if (branchCell) {
+                const branch = branchCell.textContent.trim();
+                console.log(`Row ${index + 1}: Branch = "${branch}"`);
+                if (selectedBranch === '' || branch === selectedBranch) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            } else {
+                console.warn(`Row ${index + 1}: Branch cell not found.`);
+            }
+        });
+    });
+}
+
+
+// Attach event listener to dropdown
+document.addEventListener('DOMContentLoaded', () => {
+    const dropdown = document.querySelector('#filter-dropdown');
+    if (dropdown) {
+        console.log("Dropdown found. Adding change event listener."); // Debug log
+        dropdown.addEventListener('change', filterRecords); // Filter on dropdown change
+    } else {
+        console.error("Dropdown with ID #filter-dropdown not found.");
+    }
+});
+  
     async function fetchAirtableSubOptionsFromDifferentTable() {
         let records = [];
         let offset = null;
@@ -1066,7 +1124,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             });
     
             if (!response.ok) {
-                console.error(`Error fetching subcontractor options: ${response.status} ${response.statusText}`);
                 break;
             }
     
@@ -1085,10 +1142,17 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         return subOptions;  
     }
 
-    console.log('Primary Records:', primaryRecords);
-console.log('Secondary Records:', secondaryRecords);
-
+    document.addEventListener('DOMContentLoaded', async function () {
+        try {
+            subOptions = await fetchAirtableSubOptionsFromDifferentTable();
+            console.log('Subcontractor options fetched:', subOptions);
+            await fetchAllData(); // Load table data after fetching subcontractor options
+        } catch (error) {
+            console.error('Error fetching subcontractor options:', error);
+        }
+    });
     
+
     async function displayData(records, tableSelector, isSecondary = false) {
         const tableElement = document.querySelector(tableSelector); // Select the entire table
         const tableContainer = tableElement.closest('.scrollable-div'); // Find the table's container
@@ -1111,6 +1175,13 @@ console.log('Secondary Records:', secondaryRecords);
             thead.style.display = 'table-header-group';  // Show the header
             tableContainer.style.width = '100%';         // Ensure table auto-adjusts to content width
         }
+
+         // Sort records alphabetically by field 'b'
+    records.sort((a, b) => {
+        const valueA = a.fields['b'] ? a.fields['b'].toLowerCase() : '';
+        const valueB = b.fields['b'] ? b.fields['b'].toLowerCase() : '';
+        return valueA.localeCompare(valueB);
+    });
         
         // Populate rows based on the provided configuration
         records.forEach(record => {
@@ -1118,7 +1189,8 @@ console.log('Secondary Records:', secondaryRecords);
             const row = document.createElement('tr');
             const matchingCalendar = calendarLinks.find(calendar => calendar.name === fields['name']);
             const url = matchingCalendar ? matchingCalendar.link : '#';
-    
+         
+
             const cell = document.createElement('td');
             cell.innerHTML = `<a href="${url}" target="_blank">${fields['b'] || 'N/A'}</a>`;
             row.appendChild(cell);
@@ -1128,34 +1200,99 @@ console.log('Secondary Records:', secondaryRecords);
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
-                { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },       
+                { field: 'Description of Issue', value: fields['Description of Issue'] ? fields['Description of Issue'].replace(/<\/?[^>]+(>|$)/g, "") : '' },       
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Completed  Pictures', value: fields['Completed  Pictures'] || [], image: true, imageField: 'Completed  Pictures' },
-                { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || 'N/A', editable: true },
+                { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || '', editable: true },
+
                 { field: 'Job Completed', value: fields['Job Completed'] || false, checkbox: true }
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },  // Keep only this "Branch" entry
+                { field: 'field tech', value: fields['field tech'] || '', editable: false },
+
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
-                { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
-                { field: 'description', value: fields['description'] ? fields['description'].replace(/<\/?[^>]+(>|$)/g, "") : 'N/A' },
+
+                { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
+                { field: 'Description of Issue', value: fields['Description of Issue'] ? fields['Description of Issue'].replace(/<\/?[^>]+(>|$)/g, "") : '' },
+
                 { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
-                { field: 'Materials Needed', value: fields['Materials Needed'] || 'N/A', editable: true },
-                {
-                    field: 'Material Vendor',
-                    value: fields['Material Vendor'] || '',
-                    dropdown: true,
-                    options: vendorOptions  
-                },
-                { field: 'Billable/ Non Billable', value: fields['Billable/ Non Billable'] || '', dropdown: true, options: ['Billable', 'Non Billable'] },
-                { field: 'Billable Reason (If Billable)', value: fields['Billable Reason (If Billable)'] || '', dropdown: true, options: ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather', 'Other'] },
-                { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true },
+                { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || '', editable: true },
+                { field: 'Materials Needed', value: fields['Materials Needed'] || '', editable: true },
                 { field: 'Subcontractor', value: fields['Subcontractor'] || '', dropdown: true, options: subOptions },
-                { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true }
+                {
+                    field: 'Subcontractor Payment',
+                    value: typeof fields['Subcontractor Payment'] === 'number'
+                        ? parseFloat(fields['Subcontractor Payment'].toFixed(2)) // Ensure numeric and two decimal places
+                        : 0, // Default to 0 if not a valid number
+                    editable: true
+                },
+                
+                
+                { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true },
+
+                { 
+                    field: 'Billable/ Non Billable', 
+                    value: fields['Billable/ Non Billable'] || '', 
+                    dropdown: true, 
+                  },
+                  { 
+                    field: 'Billable Reason (If Billable)', 
+                    value: fields['Billable Reason (If Billable)'] || '', 
+                    dropdown: true 
+                  },
+
+                               { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true }
+                          
+                            
+
             ];
+
+            fieldConfigs.forEach(config => {
+                const { field, value, dropdown } = config;
             
-    
+                if (field === 'Subcontractor' && dropdown) {
+                    const select = document.createElement('select');
+                    select.classList.add('styled-select');
+            
+                    const placeholderOption = document.createElement('option');
+                    placeholderOption.value = '';
+                    placeholderOption.textContent = 'Select a Subcontractor...';
+                    select.appendChild(placeholderOption);
+            
+                    // Filter options based on the Vanir Branch of the current record
+                    const filteredOptions = subOptions.filter(option => option.vanirOffice === (fields['b'] || 'Unknown Branch'));
+            
+                    // Populate dropdown with filtered options
+                    filteredOptions.forEach(option => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option.name;
+                        optionElement.textContent = option.name;
+            
+                        // Set selected option
+                        if (option.name === value) {
+                            optionElement.selected = true;
+                        }
+            
+                        select.appendChild(optionElement);
+                    });
+            
+                    // Handle dropdown change
+                    select.addEventListener('change', () => {
+                        const newValue = select.value;
+                        updatedFields[record.id] = updatedFields[record.id] || {};
+                        updatedFields[record.id][field] = newValue;
+                        hasChanges = true;
+                        showSubmitButton(record.id);
+                    });
+            
+                    cell.appendChild(select);
+                }
+            });
+            
+
+            
             fieldConfigs.forEach(config => {
                 const { field, value, checkbox, editable, link, image, dropdown, options, email, directions, imageField } = config;
                 const cell = document.createElement('td');
@@ -1168,21 +1305,38 @@ console.log('Secondary Records:', secondaryRecords);
                 if (dropdown || field === 'sub') {
                     const select = document.createElement('select');
                     select.classList.add('styled-select');
-                
+                    
+                    // Define placeholder and options dynamically
+                    let placeholderText = '';
                     let filteredOptions = [];
-                    if (field === 'Subcontractor') {
-                        const vanirBranchValue = fields['b'];  
-                        
-                        filteredOptions = subOptions.filter(sub => sub.vanirOffice === vanirBranchValue);
-                
-                        if (filteredOptions.length === 0) {
-                        }
-                    } else {
-                        filteredOptions = options;
+                    
+                    // Customize dropdown content based on the field
+                    switch (field) {
+                        case 'Subcontractor':
+                            placeholderText = 'Select a Subcontractor ...';
+                            filteredOptions = subOptions.filter(option => option.vanirOffice === (fields['b'] || 'N/A'));
+                            break;
+                        case 'Billable/ Non Billable':
+                            placeholderText = 'Select Billable Status ...';
+                            filteredOptions = billableOptions; // Static list of billable statuses
+                            break;
+                        case 'Billable Reason (If Billable)':
+                            placeholderText = 'Select a Reason ...';
+                            filteredOptions = reasonOptions; // Static list of billable reasons
+                            break;
+                        case 'Material Vendor':
+                            placeholderText = 'Select a Vendor ...';
+                            filteredOptions = vendorOptions; // Dynamic or static vendor options
+                            break;
+                        default:
+                            placeholderText = 'Select an Option ...';
+                            break;
                     }
+                
+                   
+                
             
             
-let placeholderText = 'Select a Vendor...'; // Default placeholder
 if (field === 'Subcontractor') {
     placeholderText = 'Select a Subcontractor ...';
 } else if (field === 'Billable/ Non Billable') {
@@ -1201,42 +1355,52 @@ placeholderOption.value = '';
 placeholderOption.textContent = placeholderText;
 select.appendChild(placeholderOption);
 
+// Sort and populate options
 filteredOptions.sort((a, b) => {
-    const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase();  // Ensure valid comparison for both cases
+    const nameA = a.name ? a.name.toLowerCase() : a.toLowerCase();
     const nameB = b.name ? b.name.toLowerCase() : b.toLowerCase();
     return nameA.localeCompare(nameB);
 });
 
 filteredOptions.forEach(option => {
     const optionElement = document.createElement('option');
-    const optionValue = option.name || option; // Ensure compatibility with both hardcoded and dynamic options
-
+    const optionValue = typeof option === 'object' ? option.name : option;
+    const displayText = typeof option === 'object' && option.displayName ? option.displayName : optionValue;
+    
     optionElement.value = optionValue;
-    optionElement.textContent = optionValue;
-
-    if (optionValue === value || optionValue === fields['Subcontractor']) {
-        optionElement.selected = true;  // Mark this option as selected
+    optionElement.textContent = displayText;
+    
+    // Mark as selected if it matches the field's value
+    if (optionValue === value || optionValue === fields[field]) {
+        optionElement.selected = true;
+    }
+    
+    // Optional: Disable certain options
+    if (option.disabled) {
+        optionElement.disabled = true;
     }
 
     select.appendChild(optionElement);
 });
 
+// Append the dropdown to the cell
 cell.appendChild(select);
+
+
 
 
 select.addEventListener('change', () => {
     const newValue = select.value;
     updatedFields[record.id] = updatedFields[record.id] || {};
-    updatedFields[record.id][field] = newValue;
+    updatedFields[record.id]['Billable/ Non Billable'] = newValue;
     hasChanges = true;
-
     showSubmitButton(record.id);
 
     // Enable or disable the checkbox based on selection
     const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
     if (fieldReviewCheckbox) {
         fieldReviewCheckbox.disabled = (newValue === "");
-        fieldReviewCheckbox.checked = false;
+        fieldReviewCheckbox.checked = true;
     }
 });
                     const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
@@ -1402,7 +1566,34 @@ select.addEventListener('change', () => {
         });
     }
     
+    document.querySelectorAll('td[data-field="DOW to be Completed"]').forEach(cell => {
+        cell.addEventListener('input', function () {
+            const recordId = this.closest('tr').dataset.id;
+            handleInputChange.call(this);
+            checkForChanges(recordId);
+        });
+        cell.addEventListener('blur', function () {
+            const recordId = this.closest('tr').dataset.id;
+            handleInputChange.call(this);
+            checkForChanges(recordId);
+        });
+    });
 
+    document.querySelectorAll('td[data-field="DOW to be Completed"]').forEach(cell => {
+        cell.addEventListener('input', function () {
+            const recordId = this.closest('tr').dataset.id;
+            handleInputChange.call(this);
+            checkForChanges(recordId);
+        });
+        cell.addEventListener('blur', function () {
+            const recordId = this.closest('tr').dataset.id;
+            handleInputChange.call(this);
+            checkForChanges(recordId);
+        });
+    });
+
+    
+    
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, imageField);
@@ -1543,7 +1734,6 @@ imageViewerModal.addEventListener('click', function(event) {
     }
 });
        
-    
         updateModalImage();
         imageViewerModal.style.display = 'flex'; 
     
@@ -1593,9 +1783,9 @@ imageViewerModal.addEventListener('click', function(event) {
         console.log('Submit button hidden. No changes detected.');
     }
     
-
 // Function to submit changes
 async function submitChanges() {
+    // Show confirmation dialog if not already shown
     if (!confirmationShown) {
         const userConfirmed = confirm("Are you sure you want to submit all changes?");
         if (!userConfirmed) {
@@ -1607,42 +1797,47 @@ async function submitChanges() {
     }
 
     try {
+        // Hide content while processing
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
 
-        // Loop through all records
-        for (const recordId in originalValues) {
-            const fieldsToUpdate = updatedFields[recordId] || {};
+        // Loop through updated fields for all records
+        for (const recordId in updatedFields) {
+            const fieldsToUpdate = updatedFields[recordId];
 
-            // Check Start Date and generate Calendar Link if it doesn't exist or needs updating
+            // Ensure Subcontractor field is properly formatted
+            if (fieldsToUpdate['Subcontractor'] !== undefined) {
+                fieldsToUpdate['Subcontractor'] = fieldsToUpdate['Subcontractor'].toString().trim();
+            }
+
+            // Check if Start Date exists and generate Calendar Link if missing
             const startDateField = originalValues[recordId]?.['Start Date'];
             const existingCalendarLink = originalValues[recordId]?.['Calendar Link'];
-            
-            if (startDateField && !existingCalendarLink) { // Add `!existingCalendarLink` if you only want to add the link if it's missing
-                // Convert Start Date from 'MM/DD/YYYY HH:mm AM/PM' format to 'YYYYMMDD'
+            if (startDateField && !existingCalendarLink) {
                 const parsedDate = new Date(startDateField);
-                
+
                 if (!isNaN(parsedDate)) {
                     const formattedStartDate = parsedDate.toISOString().split('T')[0].replace(/-/g, '');
                     const calendarUrl = `https://calendar.google.com/calendar/embed?src=c_ebe1fcbce1be361c641591a6c389d4311df7a97961af0020c889686ae059d20a%40group.calendar.google.com&ctz=America%2FToronto&dates=${formattedStartDate}/${formattedStartDate}`;
                     
                     fieldsToUpdate['Calendar Link'] = calendarUrl;
-                    console.log(`Generated Calendar Link for record ${recordId}:`, calendarUrl); // Log each Calendar Link
+                    console.log(`Generated Calendar Link for record ${recordId}:`, calendarUrl);
                 } else {
                     console.error(`Invalid Start Date format for record ${recordId}, unable to generate Calendar Link.`);
                 }
             }
 
-            // Skip if there are no fields to update
+            // Skip records with no fields to update
             if (Object.keys(fieldsToUpdate).length === 0) continue;
 
-            // Log the payload for this record before updating
-            console.log(`Payload to update in Airtable for record ${recordId}:`, fieldsToUpdate);
+            // Log the fields being updated
+            console.log(`Payload to update for record ${recordId}:`, fieldsToUpdate);
 
-            // Update record in Airtable
+            // Update the record in Airtable
             await updateRecord(recordId, fieldsToUpdate);
         }
 
+        // Display success message and refresh data
         showToast('All changes submitted successfully!');
         updatedFields = {};
         hasChanges = false;
@@ -1650,27 +1845,19 @@ async function submitChanges() {
         confirmationShown = false;
         hideSubmitButton();
 
-        await fetchAllData(); // Refresh data
+        await fetchAllData(); // Reload data to reflect changes
     } catch (error) {
         console.error('Error during submission:', error);
         showToast('Error submitting changes.');
         confirmationShown = false;
-    }
-        finally {
+    } finally {
+        // Show content again after processing
         mainContent.style.display = 'block';
         secondaryContent.style.display = 'block';
         hideSubmitButton();
     }
 }
 
-
-
-    
-    
-
-    
-
-let isSubmitting = false;
 
 submitButton.addEventListener('click', function () {
     console.log('Submit button clicked.');
@@ -1698,10 +1885,9 @@ submitButton.addEventListener('click', function () {
     }
 });
     
-
     document.addEventListener('DOMContentLoaded', function () {
         function adjustImageSize() {
-            const images = document.querySelectorAll('td:nth-child(7) .image-carousel img');
+            const images = document.querySelectorAll('td:nth-child(9) .image-carousel img');
             images.forEach(img => {
                 if (window.innerWidth < 576) {
                     img.style.maxWidth = '80px';
@@ -1745,7 +1931,6 @@ let hasChanges = false;
             hideSubmitButton();
         }
     }
-
 
  // Attach event listeners to track changes
  document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
@@ -1820,18 +2005,30 @@ adjustImageSize();
 adjustButtonPosition();
 }); 
 
-document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+document.querySelectorAll('table input, table select, table td[contenteditable="true"]').forEach(element => {
     element.addEventListener('input', function () {
-        const recordId = this.closest('tr').dataset.id;
+        const closestRow = this.closest('tr');
+        if (!closestRow || !closestRow.dataset.id) {
+            console.error("No valid <tr> or 'dataset.id' found for element:", this);
+            return;
+        }
+        const recordId = closestRow.dataset.id;
         console.log(`Input event detected for record ID: ${recordId}`);
         handleInputChange.call(this);
     });
 
     element.addEventListener('change', function () {
-        const recordId = this.closest('tr').dataset.id;
+        const closestRow = this.closest('tr');
+        if (!closestRow || !closestRow.dataset.id) {
+            console.error("No valid <tr> or 'dataset.id' found for element:", this);
+            return;
+        }
+        const recordId = closestRow.dataset.id;
         console.log(`Change event detected for record ID: ${recordId}`);
         handleInputChange.call(this);
     });
+
+
 
     element.addEventListener('keypress', (event) => {
         if (event.key === 'Enter') {
@@ -1845,6 +2042,36 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     });
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded and parsed.');
+
+    const radioButtons = document.querySelectorAll('input[name="branch"]');
+    if (radioButtons.length === 0) {
+        console.error('No radio buttons found. Ensure the DOM contains the inputs.');
+        return;
+    }
+
+    radioButtons.forEach(radio => {
+        radio.addEventListener('change', () => {
+            const selectedBranch = document.querySelector('input[name="branch"]:checked').value || '';
+            console.log(`Filtering records for branch: ${selectedBranch || 'All'}`);
+
+            const tables = ['#airtable-data', '#feild-data'];
+            tables.forEach(tableSelector => {
+                const rows = document.querySelectorAll(`${tableSelector} tbody tr`);
+                rows.forEach(row => {
+                    const branchCell = row.querySelector('td:first-child');
+                    if (branchCell) {
+                        const branchValue = branchCell.textContent.trim();
+                        row.style.display = branchValue === selectedBranch || selectedBranch === '' ? '' : 'none';
+                    }
+                });
+            });
+        });
+    });
+});
+
 
 document.addEventListener('DOMContentLoaded', async function () {
     let debounceTimeout = null; 
@@ -1873,17 +2100,78 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
-    document.querySelectorAll('input[type="checkbox"], select, td[contenteditable="true"]').forEach(element => {
-        element.addEventListener('input', function () {
-            const closestRow = this.closest('tr'); 
-            if (closestRow) { 
-                const recordId = closestRow.dataset.id;
-                checkForChanges(recordId);  
-            } else {
-                console.warn('No parent <tr> found for the element', this);
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM fully loaded and parsed.');
+    
+        // Fetch and populate table data
+        fetchAllData().then(() => {
+            console.log('Table data loaded.');
+    
+            // Add event listeners for branch radio buttons
+            const radioButtons = document.querySelectorAll('input[name="branch"]');
+            if (radioButtons.length === 0) {
+                console.error('No radio buttons found. Ensure the DOM contains the inputs.');
+                return;
             }
+    
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    const selectedBranch = document.querySelector('input[name="branch"]:checked').value || '';
+                    console.log(`Filtering records for branch: ${selectedBranch || 'All'}`);
+    
+                    const tables = ['#airtable-data', '#feild-data'];
+                    tables.forEach(tableSelector => {
+                        const rows = document.querySelectorAll(`${tableSelector} tbody tr`);
+                        rows.forEach(row => {
+                            const branchCell = row.querySelector('td:first-child');
+                            if (branchCell) {
+                                const branchValue = branchCell.textContent.trim();
+                                row.style.display = branchValue === selectedBranch || selectedBranch === '' ? '' : 'none';
+                            } else {
+                                console.warn('Branch cell not found for row:', row);
+                            }
+                        });
+                    });
+                });
+            });
+    
+            console.log('Event listeners added to radio buttons.');
         });
     });
+    
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Select all radio buttons for branch filtering
+        const radioButtons = document.querySelectorAll('input[name="branch"]');
+    
+        // Attach a change event listener to each radio button
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', (event) => {
+                const selectedBranch = event.target.value;
+                console.log(`User selected branch: ${selectedBranch || 'All'}`);
+            });
+        });
+    });
+    
+
+    document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
+        element.addEventListener('input', function () {
+            const closestRow = this.closest('tr');
+            
+            if (!closestRow || !closestRow.dataset.id) {
+                console.error("No valid parent <tr> or dataset 'id' found for element:", this);
+                return;
+            }
+    
+            const recordId = closestRow.dataset.id;
+            console.log(`Handling input change for record ID: ${recordId}`);
+            
+            // Call the function to handle updates (if applicable)
+            handleInputChange.call(this);
+            checkForChanges(recordId);
+        });
+    });
+    
     
     document.querySelectorAll('td[contenteditable="true"], input[type="text"]').forEach(element => {
         element.addEventListener('keypress', (event) => {
@@ -1905,32 +2193,36 @@ document.body.appendChild(dynamicButtonsContainer);
         submitChanges();
     });
 
-async function updateRecord(recordId, fields) {
-    const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
-    const body = JSON.stringify({ fields });
-
-    try {
-        const response = await fetch(url, {
-            method: 'PATCH',
-            headers: {
-                Authorization: `Bearer ${airtableApiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: body
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error(`Error updating record: ${response.status} ${response.statusText}`);
-            console.error(`Error Details:`, errorData);
-        } else {
-            const successData = await response.json();
-            console.log('Record updated successfully:', successData);
+    async function updateRecord(recordId, fields) {
+        const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
+        const body = JSON.stringify({ fields });
+    
+        try {
+            const response = await fetch(url, {
+                method: 'PATCH',
+                headers: {
+                    Authorization: `Bearer ${airtableApiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: body
+            });
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error(`Error updating record ${recordId}:`, errorData);
+            } else {
+                const successData = await response.json();
+                console.log('Record updated successfully:', successData);
+            }
+        } catch (error) {
+            console.error('Error updating record in Airtable:', error);
         }
-    } catch (error) {
-        console.error('Error occurred while updating record in Airtable:', error);
     }
-}
+    
+    
+    
+    
+    
     
     document.getElementById('search-input').addEventListener('input', function () {
         const searchValue = this.value.toLowerCase();

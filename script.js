@@ -1142,17 +1142,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return subOptions;  
     }
 
-    document.addEventListener('DOMContentLoaded', async function () {
-        try {
-            subOptions = await fetchAirtableSubOptionsFromDifferentTable();
-            console.log('Subcontractor options fetched:', subOptions);
-            await fetchAllData(); // Load table data after fetching subcontractor options
-        } catch (error) {
-            console.error('Error fetching subcontractor options:', error);
-        }
-    });
-    
-
     async function displayData(records, tableSelector, isSecondary = false) {
         const tableElement = document.querySelector(tableSelector); // Select the entire table
         const tableContainer = tableElement.closest('.scrollable-div'); // Find the table's container
@@ -1248,49 +1237,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             
 
             ];
-
-            fieldConfigs.forEach(config => {
-                const { field, value, dropdown } = config;
-            
-                if (field === 'Subcontractor' && dropdown) {
-                    const select = document.createElement('select');
-                    select.classList.add('styled-select');
-            
-                    const placeholderOption = document.createElement('option');
-                    placeholderOption.value = '';
-                    placeholderOption.textContent = 'Select a Subcontractor...';
-                    select.appendChild(placeholderOption);
-            
-                    // Filter options based on the Vanir Branch of the current record
-                    const filteredOptions = subOptions.filter(option => option.vanirOffice === (fields['b'] || 'Unknown Branch'));
-            
-                    // Populate dropdown with filtered options
-                    filteredOptions.forEach(option => {
-                        const optionElement = document.createElement('option');
-                        optionElement.value = option.name;
-                        optionElement.textContent = option.name;
-            
-                        // Set selected option
-                        if (option.name === value) {
-                            optionElement.selected = true;
-                        }
-            
-                        select.appendChild(optionElement);
-                    });
-            
-                    // Handle dropdown change
-                    select.addEventListener('change', () => {
-                        const newValue = select.value;
-                        updatedFields[record.id] = updatedFields[record.id] || {};
-                        updatedFields[record.id][field] = newValue;
-                        hasChanges = true;
-                        showSubmitButton(record.id);
-                    });
-            
-                    cell.appendChild(select);
-                }
-            });
-            
 
             
             fieldConfigs.forEach(config => {
@@ -1395,6 +1341,8 @@ select.addEventListener('change', () => {
     updatedFields[record.id]['Billable/ Non Billable'] = newValue;
     hasChanges = true;
     showSubmitButton(record.id);
+
+
 
     // Enable or disable the checkbox based on selection
     const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
@@ -1785,7 +1733,6 @@ imageViewerModal.addEventListener('click', function(event) {
     
 // Function to submit changes
 async function submitChanges() {
-    // Show confirmation dialog if not already shown
     if (!confirmationShown) {
         const userConfirmed = confirm("Are you sure you want to submit all changes?");
         if (!userConfirmed) {
@@ -1795,49 +1742,42 @@ async function submitChanges() {
         }
         confirmationShown = true;
     }
-
     try {
-        // Hide content while processing
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
 
-        // Loop through updated fields for all records
-        for (const recordId in updatedFields) {
-            const fieldsToUpdate = updatedFields[recordId];
+        // Loop through all records
+        for (const recordId in originalValues) {
+            const fieldsToUpdate = updatedFields[recordId] || {};
 
-            // Ensure Subcontractor field is properly formatted
-            if (fieldsToUpdate['Subcontractor'] !== undefined) {
-                fieldsToUpdate['Subcontractor'] = fieldsToUpdate['Subcontractor'].toString().trim();
-            }
-
-            // Check if Start Date exists and generate Calendar Link if missing
+            // Check Start Date and generate Calendar Link if it doesn't exist or needs updating
             const startDateField = originalValues[recordId]?.['Start Date'];
             const existingCalendarLink = originalValues[recordId]?.['Calendar Link'];
-            if (startDateField && !existingCalendarLink) {
+            
+            if (startDateField && !existingCalendarLink) { // Add `!existingCalendarLink` if you only want to add the link if it's missing
+                // Convert Start Date from 'MM/DD/YYYY HH:mm AM/PM' format to 'YYYYMMDD'
                 const parsedDate = new Date(startDateField);
-
+                
                 if (!isNaN(parsedDate)) {
                     const formattedStartDate = parsedDate.toISOString().split('T')[0].replace(/-/g, '');
                     const calendarUrl = `https://calendar.google.com/calendar/embed?src=c_ebe1fcbce1be361c641591a6c389d4311df7a97961af0020c889686ae059d20a%40group.calendar.google.com&ctz=America%2FToronto&dates=${formattedStartDate}/${formattedStartDate}`;
                     
                     fieldsToUpdate['Calendar Link'] = calendarUrl;
-                    console.log(`Generated Calendar Link for record ${recordId}:`, calendarUrl);
+                    console.log(`Generated Calendar Link for record ${recordId}:`, calendarUrl); // Log each Calendar Link
                 } else {
                     console.error(`Invalid Start Date format for record ${recordId}, unable to generate Calendar Link.`);
                 }
             }
-
-            // Skip records with no fields to update
+            // Skip if there are no fields to update
             if (Object.keys(fieldsToUpdate).length === 0) continue;
 
-            // Log the fields being updated
-            console.log(`Payload to update for record ${recordId}:`, fieldsToUpdate);
+            // Log the payload for this record before updating
+            console.log(`Payload to update in Airtable for record ${recordId}:`, fieldsToUpdate);
 
-            // Update the record in Airtable
+            // Update record in Airtable
             await updateRecord(recordId, fieldsToUpdate);
         }
 
-        // Display success message and refresh data
         showToast('All changes submitted successfully!');
         updatedFields = {};
         hasChanges = false;
@@ -1845,19 +1785,18 @@ async function submitChanges() {
         confirmationShown = false;
         hideSubmitButton();
 
-        await fetchAllData(); // Reload data to reflect changes
+        await fetchAllData(); // Refresh data
     } catch (error) {
         console.error('Error during submission:', error);
         showToast('Error submitting changes.');
         confirmationShown = false;
-    } finally {
-        // Show content again after processing
+    }
+        finally {
         mainContent.style.display = 'block';
         secondaryContent.style.display = 'block';
         hideSubmitButton();
     }
 }
-
 
 submitButton.addEventListener('click', function () {
     console.log('Submit button clicked.');
@@ -2195,31 +2134,46 @@ document.body.appendChild(dynamicButtonsContainer);
 
     async function updateRecord(recordId, fields) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
+    
+        // Ensure Subcontractor Payment is a valid number
+        if (fields['Subcontractor Payment'] !== undefined) {
+            fields['Subcontractor Payment'] = Number(fields['Subcontractor Payment']);
+            if (isNaN(fields['Subcontractor Payment'])) {
+                console.error('Invalid Subcontractor Payment value:', fields['Subcontractor Payment']);
+                return; // Exit if invalid
+            }
+        }
+    
         const body = JSON.stringify({ fields });
+    
+        console.log(`Attempting to update record with ID: ${recordId}`);
+        console.log(`Request URL: ${url}`);
+        console.log(`Request Body:`, body);
     
         try {
             const response = await fetch(url, {
                 method: 'PATCH',
                 headers: {
                     Authorization: `Bearer ${airtableApiKey}`,
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: body
+                body: body,
             });
+    
+            console.log(`Response Status: ${response.status} ${response.statusText}`);
     
             if (!response.ok) {
                 const errorData = await response.json();
-                console.error(`Error updating record ${recordId}:`, errorData);
+                console.error(`Error updating record: ${response.status} ${response.statusText}`);
+                console.error(`Error Details:`, errorData);
             } else {
                 const successData = await response.json();
                 console.log('Record updated successfully:', successData);
             }
         } catch (error) {
-            console.error('Error updating record in Airtable:', error);
+            console.error('Error occurred while updating record in Airtable:', error);
         }
     }
-    
-    
     
     
     

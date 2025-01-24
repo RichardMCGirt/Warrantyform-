@@ -1346,8 +1346,14 @@ select.addEventListener('change', () => {
     // Enable or disable the checkbox based on selection
     const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
     if (fieldReviewCheckbox) {
-        fieldReviewCheckbox.disabled = (newValue === "");
-        fieldReviewCheckbox.checked = true;
+        if (newValue === "") {
+            // If no valid value is selected
+            fieldReviewCheckbox.disabled = false; // Enable the checkbox
+        } else {
+            // If a valid value is selected
+            fieldReviewCheckbox.disabled = true; // Disable the checkbox
+            fieldReviewCheckbox.checked = false; // Ensure the checkbox is not checked
+        }
     }
 });
                     const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
@@ -1456,13 +1462,18 @@ select.addEventListener('change', () => {
     }
     if (field === 'Subcontractor Not Needed') {
         const subcontractorDropdown = row.querySelector('select[data-field="Subcontractor"]');
-        if (subcontractorDropdown && subcontractorDropdown.value !== "Select a Subcontractor...") {
-            checkboxElement.disabled = true; 
-            checkboxElement.checked = false; 
-        } else {
-            checkboxElement.disabled = false; 
+        if (subcontractorDropdown) {
+            if (subcontractorDropdown.value !== "" && subcontractorDropdown.value !== "Select a Subcontractor...") {
+                // When a subcontractor is chosen
+                checkboxElement.disabled = true; // Disable the checkbox
+                checkboxElement.checked = false; // Ensure it is unchecked
+            } else {
+                // When no subcontractor is chosen
+                checkboxElement.disabled = false; // Enable the checkbox
+            }
         }
     }
+    
 
     checkboxElement.addEventListener('change', function () {
         const newValue = checkboxElement.checked;

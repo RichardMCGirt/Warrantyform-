@@ -1210,10 +1210,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },  // Keep only this "Branch" entry
                 { field: 'field tech', value: fields['field tech'] || '', editable: false },
-
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
-
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Description of Issue', value: fields['Description of Issue'] ? fields['Description of Issue'].replace(/<\/?[^>]+(>|$)/g, "") : '' },
@@ -1229,11 +1227,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         : '$0.00', // Default to $0.00 if not a valid number
                     editable: true
                 },
-                
-                
-                
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true },
-
                 { 
                     field: 'Billable/ Non Billable', 
                     value: fields['Billable/ Non Billable'] || '', 
@@ -1246,9 +1240,6 @@ document.addEventListener('DOMContentLoaded', () => {
                   },
 
                                { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true }
-                          
-                            
-
             ];
 
             
@@ -1292,10 +1283,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             break;
                     }
                 
-                   
-                
-            
-            
 if (field === 'Subcontractor') {
     placeholderText = 'Select a Subcontractor ...';
 } else if (field === 'Billable/ Non Billable') {
@@ -1345,9 +1332,6 @@ filteredOptions.forEach(option => {
 // Append the dropdown to the cell
 cell.appendChild(select);
 
-
-
-
 select.addEventListener('change', () => {
     const newValue = select.value;
     updatedFields[record.id] = updatedFields[record.id] || {};
@@ -1358,8 +1342,6 @@ select.addEventListener('change', () => {
     
     hasChanges = true;
     showSubmitButton(record.id); // Show the submit button for this record
-
-
 
     // Enable or disable the checkbox based on selection
     const fieldReviewCheckbox = row.querySelector('input[type="checkbox"]');
@@ -1557,8 +1539,6 @@ select.addEventListener('change', () => {
         });
     });
 
-    
-    
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, imageField);

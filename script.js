@@ -1216,8 +1216,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Description of Issue', value: fields['Description of Issue'] ? fields['Description of Issue'].replace(/<\/?[^>]+(>|$)/g, "") : '' },
 
-                { field: 'Picture(s) of Issue', value: fields['Picture(s) of Issue'] || [], image: true, link: true, imageField: 'Picture(s) of Issue' },
-                { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || '', editable: true },
+                {
+                    field: 'Picture(s) of Issue',
+                    value: fields['Picture(s) of Issue'] || [],
+                    image: true,
+                    link: true,
+                    imageField: 'Picture(s) of Issue'
+                },
+                                { field: 'DOW to be Completed', value: fields['DOW to be Completed'] || '', editable: true },
                 { field: 'Materials Needed', value: fields['Materials Needed'] || '', editable: true },
                 { field: 'Subcontractor', value: fields['Subcontractor'] || '', dropdown: true, options: subOptions },
                 {
@@ -1368,23 +1374,24 @@ select.addEventListener('change', () => {
                     const images = Array.isArray(fields[field]) ? fields[field] : [];
                     const carouselDiv = document.createElement('div');
                     carouselDiv.classList.add('image-carousel');
-    
+                
                     if (images.length > 0) {
                         let currentIndex = 0;
                         const imgElement = document.createElement('img');
                         imgElement.src = images[0].url;
                         imgElement.alt = "Issue Picture";
                         imgElement.style.maxWidth = '100%';
+                        imgElement.style.maxHeight = '150px'; // Set the max-height here
                         imgElement.style.height = 'auto';
                         imgElement.classList.add('carousel-image');
                         imgElement.onclick = () => openImageViewer(images, 0);
                         carouselDiv.appendChild(imgElement);
-    
+                
                         const imageCount = document.createElement('div');
                         imageCount.classList.add('image-count');
                         imageCount.textContent = `1 of ${images.length}`;
                         carouselDiv.appendChild(imageCount);
-    
+                
                         let prevButton, nextButton;
                         if (images.length > 1) {
                             prevButton = document.createElement('button');
@@ -1395,7 +1402,7 @@ select.addEventListener('change', () => {
                                 imgElement.src = images[currentIndex].url;
                                 imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
                             };
-    
+                
                             nextButton = document.createElement('button');
                             nextButton.textContent = '>';
                             nextButton.classList.add('carousel-nav-button', 'next');
@@ -1404,7 +1411,7 @@ select.addEventListener('change', () => {
                                 imgElement.src = images[currentIndex].url;
                                 imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
                             };
-    
+                
                             carouselDiv.appendChild(prevButton);
                             carouselDiv.appendChild(nextButton);
                         }

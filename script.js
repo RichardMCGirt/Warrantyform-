@@ -1224,7 +1224,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     field: 'Subcontractor Payment',
                     value: typeof fields['Subcontractor Payment'] === 'number'
                         ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(fields['Subcontractor Payment'])
-                        : '$0.00', // Default to $0.00 if not a valid number
+                        : '', // Default to $0.00 if not a valid number
                     editable: true
                 },
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true },

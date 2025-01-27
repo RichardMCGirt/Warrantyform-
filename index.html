@@ -96,6 +96,7 @@
                         <th>Subcontractor Payment</th>
 
                         <th>Subcontractor Not Needed</th>
+                        <th>Subcontractor Not Needed</th>
 
                         <th>Billable/ Non Billable</th>
                         <th>Billable Reason</th>
@@ -172,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .map(checkbox => checkbox.value);
 
         tableRows.forEach(row => {
-            const branchColumn = row.querySelector('td:nth-child(3)'); // Assuming the field tech column is the 14th column
+            const branchColumn = row.querySelector('td:nth-child(3)'); 
             if (branchColumn) {
                 const branchValue = branchColumn.textContent.trim();
 

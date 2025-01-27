@@ -334,6 +334,12 @@ button:hover {
 
 }
 
+th:nth-child(14) , td:nth-child(14)
+{
+    display: none;
+}
+
+
 /* Custom Checkbox */
 .custom-checkbox {
     width: 25px;

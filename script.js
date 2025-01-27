@@ -369,9 +369,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
         try {
             const response = await fetch(url, {
-                headers: {
-                    Authorization: `Bearer ${airtableApiKey}`
-                }
+                headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
     
             if (!response.ok) {
@@ -379,12 +377,20 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             }
     
             const data = await response.json();
-            return data.records; // Return the array of records
+            
+            // Log all fields for each record
+            data.records.forEach(record => {
+                console.log(`Record ID: ${record.id}`);
+                console.log(record.fields); // Log all fields for the record
+            });
+    
+            return data.records; // Return the records array
         } catch (error) {
             console.error('Error fetching records from Airtable:', error);
             return [];
         }
     }
+    
     
 
     async function updateDropboxTokenInAirtable(token) {
@@ -554,17 +560,48 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
     async function fetchAirtableFields() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?maxRecords=1`;
+    
+        console.log("Starting to fetch Airtable fields...");
+        console.log("Request URL:", url);
+    
+        // Avoid logging sensitive information in production
+        if (process.env.NODE_ENV === 'development') {
+            console.log("API Key (Development only):", airtableApiKey);
+        }
+    
         try {
             const response = await fetch(url, {
-                headers: { Authorization: `Bearer ${airtableApiKey}` }
+                headers: {
+                    Authorization: `Bearer ${airtableApiKey}`,
+                },
             });
-        
+    
+            console.log("Response received. Status:", response.status);
+    
+            // Check if the response was successful
+            if (!response.ok) {
+                const errorDetails = await response.text();
+                throw new Error(`Failed to fetch fields. Status: ${response.status}, Status Text: ${response.statusText}, Details: ${errorDetails}`);
+            }
+    
             const data = await response.json();
-            console.log('Available fields in the first record:', data.records[0].fields);
+    
+            // Check if records exist and log the fields
+            const fields = data.records?.[0]?.fields;
+            if (fields) {
+                console.log("Fetched Fields Data:", fields);
+            } else {
+                console.warn("No fields found in the returned data.");
+            }
+    
+            return fields || {}; // Return fields or an empty object if none found
         } catch (error) {
-            console.error('Error fetching fields from Airtable:', error);
+            console.error("Error occurred while fetching Airtable fields:", error);
+            return {}; // Return an empty object in case of an error
         }
     }
+    
+    
     
     async function fetchCurrentImagesFromAirtable(recordId, targetField) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
@@ -1234,6 +1271,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     editable: true
                 },
                 { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true },
+
+                { field: 'Subcontractor Not Needed', value: fields['Subcontractor Not Needed'] || false, checkbox: true },
                 { 
                     field: 'Billable/ Non Billable', 
                     value: fields['Billable/ Non Billable'] || '', 
@@ -1248,7 +1287,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true }
             ];
 
-            
+            console.log(record.fields);
+
             fieldConfigs.forEach(config => {
                 const { field, value, checkbox, editable, link, image, dropdown, options, email, directions, imageField } = config;
                 const cell = document.createElement('td');
@@ -1470,17 +1510,10 @@ select.addEventListener('change', () => {
     if (field === 'Subcontractor Not Needed') {
         const subcontractorDropdown = row.querySelector('select[data-field="Subcontractor"]');
         if (subcontractorDropdown) {
-            if (subcontractorDropdown.value !== "" && subcontractorDropdown.value !== "Select a Subcontractor...") {
-                // When a subcontractor is chosen
-                checkboxElement.disabled = true; // Disable the checkbox
-                checkboxElement.checked = false; // Ensure it is unchecked
-            } else {
-                // When no subcontractor is chosen
-                checkboxElement.disabled = false; // Enable the checkbox
-            }
-        }
+            checkboxElement.disabled = false; // Ensure the checkbox is always enabled
+        }  
     }
-    
+     
 
     checkboxElement.addEventListener('change', function () {
         const newValue = checkboxElement.checked;
@@ -1939,16 +1972,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             }
         }
         
-  function adjustButtonPosition() {
-    const submitButton = document.getElementById('dynamic-submit-button');
-    if (window.innerWidth < 576) {
-        submitButton.style.fontSize = '14px';
-        submitButton.style.padding = '10px';
-    } else {
-        submitButton.style.fontSize = '';
-        submitButton.style.padding = '';
-    }
-}
 
 window.addEventListener('resize', () => {
     adjustImageSize();
@@ -2187,9 +2210,6 @@ document.body.appendChild(dynamicButtonsContainer);
         console.error(`Error updating record ${recordId}:`, error);
     }
 }
-    
-    
-    
     
     document.getElementById('search-input').addEventListener('input', function () {
         const searchValue = this.value.toLowerCase();

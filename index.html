@@ -275,6 +275,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     fetchFieldTechs();
 });
 
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        const header = document.querySelector('.header');
+        if (header) {
+            header.style.transition = "opacity 0.5s ease-out"; // Smooth fade-out effect
+            header.style.opacity = "0"; 
+
+            // Optionally remove from DOM after fading out
+            setTimeout(() => {
+                header.style.display = "none";
+            }, 500); // Wait for fade-out animation to complete
+        }
+    }, 15000); // 5 seconds delay
+});
 
 
 </script>

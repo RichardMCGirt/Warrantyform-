@@ -437,14 +437,14 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-    // Create file input dynamically
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.id = 'file-input';
-    fileInput.accept = 'image/*';
-    fileInput.multiple = true;
-    fileInput.style.display = 'none';
-    document.body.appendChild(fileInput);
+   // Create file input dynamically
+const fileInput = document.createElement('input');
+fileInput.type = 'file';
+fileInput.id = 'file-input';
+fileInput.multiple = true;
+fileInput.style.display = 'none';
+document.body.appendChild(fileInput);
+
 
     fileInput.onchange = async (event) => {
         const files = event.target.files;
@@ -467,16 +467,16 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
 
     async function sendImagesToAirtableForRecord(files, recordId, targetField) {
         if (!Array.isArray(files)) files = [files];
-        
+    
         const uploadedUrls = [];
         console.log(`Starting upload process for record ID: ${recordId}, target field: ${targetField}.`);
-        
+    
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, targetField);
         console.log(`Fetched current images from Airtable for record ID ${recordId}:`, currentImages);
-        
+    
         for (const file of files) {
             console.log(`Attempting to upload file "${file.name}" to Dropbox...`);
-            
+    
             try {
                 let dropboxUrl = await uploadFileToDropbox(file);
     
@@ -489,47 +489,34 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                 }
     
                 if (dropboxUrl) {
-                    const formattedLink = dropboxUrl.replace('?dl=0', '?raw=1');
-                    console.log(`Upload successful for "${file.name}". Dropbox URL (formatted): ${formattedLink}`);
+                    const formattedLink = convertToDirectLink(dropboxUrl);
+                    console.log(`Upload successful for "${file.name}". Formatted Dropbox URL: ${formattedLink}`);
                     uploadedUrls.push({ url: formattedLink });
+    
+                    // Detect file type
+                    const fileExtension = file.name.split('.').pop().toLowerCase();
+                    if (fileExtension === 'jpg' || fileExtension === 'jpeg' || fileExtension === 'png' || fileExtension === 'gif') {
+                        // If it's an image, display it in the UI
+                        console.log(`Displaying image preview for: ${formattedLink}`);
+                        document.getElementById('pdfPreview').src = formattedLink;
+                    } else {
+                        // Open other file types in a new tab
+                        console.log(`Opening non-image file (${file.name}) in a new tab: ${formattedLink}`);
+                        window.open(formattedLink, '_blank');
+                    }
                 } else {
                     console.error(`Upload failed for "${file.name}" even after refreshing the Dropbox token.`);
                 }
-    
             } catch (error) {
                 console.error(`Error during file upload to Dropbox for file "${file.name}":`, error);
-    
-                if (error.response) {
-                    // Error received from Dropbox with status and response details
-                    console.error('Dropbox API response error details:');
-                    console.log(`Status Code: ${error.response.status}`);
-                    console.log(`Status Text: ${error.response.statusText}`);
-                    const errorData = await error.response.json();
-                    console.log('Error Data:', JSON.stringify(errorData, null, 2));
-                } else if (error.request) {
-                    // Error related to the network or request, but no response from Dropbox
-                    console.error('No response received from Dropbox. Network or request error:');
-                    console.log('Request Details:', error.request);
-                } else {
-                    // Error occurred in setting up the request or due to unknown issues
-                    console.error('Unknown error during Dropbox file upload:');
-                    console.log('Error Message:', error.message);
-                    console.log('Error Stack:', error.stack);
-                }
-    
-                return null;
             }
         }
     
-        // Log the final list of URLs to be updated in Airtable
         const allImages = currentImages.concat(uploadedUrls);
-        console.log(`Total images (including existing and new) to update in Airtable for record ID ${recordId}:`, allImages);
     
         if (allImages.length > 0) {
             const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
             const body = JSON.stringify({ fields: { [targetField]: allImages } });
-    
-            console.log(`Sending PATCH request to Airtable for record ID ${recordId}, updating field "${targetField}"...`);
     
             try {
                 const response = await fetch(url, {
@@ -541,22 +528,18 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
                     body: body
                 });
     
-                console.log(`Airtable PATCH request response status: ${response.status}`);
-    
                 if (!response.ok) {
-                    const errorResponse = await response.json();
-                    console.error(`Failed to update Airtable record. Status: ${response.status} - ${response.statusText}`, errorResponse);
+                    console.error(`Failed to update Airtable record.`);
                 } else {
-                    const successResponse = await response.json();
-                    console.log('Successfully updated Airtable record:', successResponse);
+                    console.log('Successfully updated Airtable record.');
                 }
             } catch (error) {
-                console.error(`Error during Airtable API PATCH request for record ID ${recordId}:`, error);
+                console.error(`Error updating Airtable record:`, error);
             }
-        } else {
-            console.warn('No files were uploaded to Dropbox, so Airtable update will be skipped.');
         }
     }
+    
+    
 
     async function fetchAirtableFields() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?maxRecords=1`;
@@ -706,7 +689,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     
             if (!response.ok) {
                 if (response.status === 409) {
-                    // A shared link already exists, fetch the existing link
                     console.warn('Shared link already exists, fetching existing link...');
                     return await getExistingDropboxLink(filePath);
                 } else {
@@ -762,9 +744,14 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
 
-    function convertToDirectLink(url) {
-        return url.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '?raw=1');
+    function convertToDirectLink(sharedUrl) {
+        if (sharedUrl.includes("dropbox.com")) {
+            return sharedUrl.replace("www.dropbox.com", "dl.dropboxusercontent.com").replace("?dl=0", "?raw=1");
+        }
+        return sharedUrl;
     }
+    
+    
 
     async function fetchData(offset = null) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?${offset ? `offset=${offset}` : ''}`;
@@ -1410,90 +1397,134 @@ select.addEventListener('change', () => {
 
                 cell.appendChild(select);
             }
-                else if (image) {
-                    const images = Array.isArray(fields[field]) ? fields[field] : [];
-                    const carouselDiv = document.createElement('div');
-                    carouselDiv.classList.add('image-carousel');
-                
-                    if (images.length > 0) {
-                        let currentIndex = 0;
-                        const imgElement = document.createElement('img');
-                        imgElement.src = images[0].url;
-                        imgElement.alt = "Issue Picture";
-                        imgElement.style.maxWidth = '100%';
-                        imgElement.style.maxHeight = '150px'; // Set the max-height here
-                        imgElement.style.height = 'auto';
-                        imgElement.classList.add('carousel-image');
-                        imgElement.onclick = () => openImageViewer(images, 0);
-                        carouselDiv.appendChild(imgElement);
-                
-                        const imageCount = document.createElement('div');
-                        imageCount.classList.add('image-count');
-                        imageCount.textContent = `1 of ${images.length}`;
-                        carouselDiv.appendChild(imageCount);
-                
-                        let prevButton, nextButton;
-                        if (images.length > 1) {
-                            prevButton = document.createElement('button');
-                            prevButton.textContent = '<';
-                            prevButton.classList.add('carousel-nav-button', 'prev');
-                            prevButton.onclick = () => {
-                                currentIndex = (currentIndex > 0) ? currentIndex - 1 : images.length - 1;
-                                imgElement.src = images[currentIndex].url;
-                                imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
-                            };
-                
-                            nextButton = document.createElement('button');
-                            nextButton.textContent = '>';
-                            nextButton.classList.add('carousel-nav-button', 'next');
-                            nextButton.onclick = () => {
-                                currentIndex = (currentIndex < images.length - 1) ? currentIndex + 1 : 0;
-                                imgElement.src = images[currentIndex].url;
-                                imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
-                            };
-                
-                            carouselDiv.appendChild(prevButton);
-                            carouselDiv.appendChild(nextButton);
+            else if (image) {
+                const files = Array.isArray(fields[field]) ? fields[field] : [];
+                const carouselDiv = document.createElement('div');
+                carouselDiv.classList.add('image-carousel');
+            
+                if (files.length > 0) {
+                    let currentIndex = 0;
+                    const imgElement = document.createElement('img');
+                    imgElement.style.maxWidth = '100%';
+                    imgElement.style.maxHeight = '150px';
+                    imgElement.style.height = 'auto';
+                    imgElement.classList.add('carousel-image');
+            
+                    const imageCount = document.createElement('div');
+                    imageCount.classList.add('image-count');
+            
+                    function updateCarousel(index) {
+                        const file = files[index];
+                        const fileName = file.filename || 'File';
+                        const fileUrl = file.url;
+                        const fileExtension = fileName.split('.').pop().toLowerCase();
+                        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension);
+                        const isPdf = fileExtension === 'pdf';
+            
+                        if (isImage) {
+                            imgElement.src = fileUrl;
+                            imgElement.alt = fileName;
+                            imgElement.onclick = () => openImageViewer(files, index);
+                        } else if (isPdf) {
+                            imgElement.style.display = 'none';
+                            const pdfEmbed = document.createElement('embed');
+                            pdfEmbed.src = fileUrl;
+                            pdfEmbed.type = 'application/pdf';
+                            pdfEmbed.width = '100%';
+                            pdfEmbed.height = '150px';
+            
+                            const pdfLink = document.createElement('a');
+                            pdfLink.href = fileUrl;
+                            pdfLink.target = '_blank';
+                            pdfLink.textContent = `📄 View PDF (${fileName})`;
+                            pdfLink.style.display = 'block';
+                            pdfLink.style.color = 'blue';
+                            pdfLink.style.textDecoration = 'underline';
+            
+                            carouselDiv.appendChild(pdfEmbed);
+                            carouselDiv.appendChild(pdfLink);
+                        } else {
+                            imgElement.style.display = 'none';
+                            const fileLink = document.createElement('a');
+                            fileLink.href = fileUrl;
+                            fileLink.target = '_blank';
+                            fileLink.textContent = `📎 Download ${fileName}`;
+                            fileLink.style.display = 'block';
+                            fileLink.style.color = 'blue';
+                            fileLink.style.textDecoration = 'underline';
+            
+                            carouselDiv.appendChild(fileLink);
                         }
-    
-                        const deleteButton = document.createElement('button');
-                        deleteButton.innerHTML = '🗑️';
-                        deleteButton.classList.add('delete-button');
-                        deleteButton.onclick = async () => {
-                            const confirmed = confirm('Are you sure you want to delete this image?');
-                            if (confirmed) {
-                                await deleteImageFromAirtable(record.id, images[currentIndex].id, imageField);
-                                images.splice(currentIndex, 1);
-                                if (images.length > 0) {
-                                    currentIndex = currentIndex % images.length;
-                                    imgElement.src = images[currentIndex].url;
-                                    imageCount.textContent = `${currentIndex + 1} of ${images.length}`;
-                                } else {
-                                    carouselDiv.innerHTML = '';
-                                    const addPhotoButton = document.createElement('button');
-                                    addPhotoButton.textContent = 'Add Photos';
-                                    addPhotoButton.onclick = () => {
-                                        fileInput.setAttribute('data-record-id', record.id);
-                                        fileInput.setAttribute('data-target-field', imageField);
-                                        fileInput.click();
-                                    };
-                                    carouselDiv.appendChild(addPhotoButton);
-                                }
-                            }
-                        };
-                        carouselDiv.appendChild(deleteButton);
+            
+                        imageCount.textContent = `${index + 1} of ${files.length}`;
                     }
-    
-                    const addPhotoButton = document.createElement('button');
-                    addPhotoButton.textContent = 'Add Photos';
-                    addPhotoButton.onclick = () => {
-                        fileInput.setAttribute('data-record-id', record.id);
-                        fileInput.setAttribute('data-target-field', imageField);
-                        fileInput.click();
+            
+                    updateCarousel(0);
+                    carouselDiv.appendChild(imgElement);
+                    carouselDiv.appendChild(imageCount);
+            
+                    if (files.length > 1) {
+                        const prevButton = document.createElement('button');
+                        prevButton.textContent = '<';
+                        prevButton.classList.add('carousel-nav-button', 'prev');
+                        prevButton.onclick = () => {
+                            currentIndex = (currentIndex > 0) ? currentIndex - 1 : files.length - 1;
+                            updateCarousel(currentIndex);
+                        };
+            
+                        const nextButton = document.createElement('button');
+                        nextButton.textContent = '>';
+                        nextButton.classList.add('carousel-nav-button', 'next');
+                        nextButton.onclick = () => {
+                            currentIndex = (currentIndex < files.length - 1) ? currentIndex + 1 : 0;
+                            updateCarousel(currentIndex);
+                        };
+            
+                        carouselDiv.appendChild(prevButton);
+                        carouselDiv.appendChild(nextButton);
+                    }
+            
+                    // 🔴 DELETE BUTTON
+                    const deleteButton = document.createElement('button');
+                    deleteButton.innerHTML = '🗑️';
+                    deleteButton.classList.add('delete-button');
+                    deleteButton.onclick = async () => {
+                        const confirmed = confirm('Are you sure you want to delete this file?');
+                        if (confirmed) {
+                            await deleteImageFromAirtable(record.id, files[currentIndex].id, imageField);
+                            files.splice(currentIndex, 1);
+                            if (files.length > 0) {
+                                currentIndex = currentIndex % files.length;
+                                updateCarousel(currentIndex);
+                            } else {
+                                carouselDiv.innerHTML = '';
+                                const addPhotoButton = document.createElement('button');
+                                addPhotoButton.textContent = 'Add Photos';
+                                addPhotoButton.onclick = () => {
+                                    fileInput.setAttribute('data-record-id', record.id);
+                                    fileInput.setAttribute('data-target-field', imageField);
+                                    fileInput.click();
+                                };
+                                carouselDiv.appendChild(addPhotoButton);
+                            }
+                        }
                     };
-                    carouselDiv.appendChild(addPhotoButton);
-                    cell.appendChild(carouselDiv);
+                    carouselDiv.appendChild(deleteButton);
                 }
+            
+                // 🔵 "ADD PHOTO" BUTTON
+                const addPhotoButton = document.createElement('button');
+                addPhotoButton.textContent = 'Add Photos';
+                addPhotoButton.onclick = () => {
+                    fileInput.setAttribute('data-record-id', record.id);
+                    fileInput.setAttribute('data-target-field', imageField);
+                    fileInput.click();
+                };
+                carouselDiv.appendChild(addPhotoButton);
+                cell.appendChild(carouselDiv);
+            }
+            
+                
     else if (checkbox) {
     const checkboxElement = document.createElement('input');
     checkboxElement.type = 'checkbox';
@@ -1589,6 +1620,36 @@ select.addEventListener('change', () => {
             checkForChanges(recordId);
         });
     });
+
+    
+
+    function createImageElement(url, fileName) {
+        const fileExtension = fileName.split('.').pop().toLowerCase();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension);
+    
+        const imgElement = document.createElement('img');
+        imgElement.src = url;
+        imgElement.alt = fileName;
+        imgElement.style.maxWidth = '100%';
+        imgElement.style.maxHeight = '150px';
+        imgElement.style.height = 'auto';
+        imgElement.classList.add('carousel-image');
+    
+        if (!isImage) {
+            // If the file is NOT an image, make it clickable to open in a new tab
+            const fileLink = document.createElement('a');
+            fileLink.href = url;
+            fileLink.target = '_blank';
+            fileLink.textContent = fileName;
+            fileLink.style.display = 'block';
+    
+            return fileLink; // Return the link element for non-image files
+        }
+    
+        return imgElement; // Return the image element for images
+    }
+    
+    
 
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;

@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const airtableTableName = window.env.AIRTABLE_TABLE_NAME;
     const billableOptions = ['Billable', 'Non Billable'];
     const reasonOptions = ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'];
+    const homeownerbuilderOptions =['Homeowner','Builder', 'Subcontractor ']
 
 
     
@@ -1265,6 +1266,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     value: fields['Billable/ Non Billable'] || '', 
                     dropdown: true, 
                   },
+
+                  { 
+                    field: 'Homeowner Builder pay', 
+                    value: fields['Homeowner Builder pay'] || '', 
+                    dropdown: true, 
+                  },
                   { 
                     field: 'Billable Reason (If Billable)', 
                     value: fields['Billable Reason (If Billable)'] || '', 
@@ -1303,14 +1310,16 @@ document.addEventListener('DOMContentLoaded', () => {
                             placeholderText = 'Select Billable Status ...';
                             filteredOptions = billableOptions; // Static list of billable statuses
                             break;
-                        case 'Billable Reason (If Billable)':
-                            placeholderText = 'Select a Reason ...';
-                            filteredOptions = reasonOptions; // Static list of billable reasons
-                            break;
-                        case 'Material Vendor':
-                            placeholderText = 'Select a Vendor ...';
-                            filteredOptions = vendorOptions; // Dynamic or static vendor options
-                            break;
+                       
+                            case 'Homeowner Builder pay':
+                                placeholderText = 'Select a Reason ...';
+                                filteredOptions = homeownerbuilderOptions; // Static list of billable reasons
+                                break;
+                                case 'Billable Reason (If Billable)':
+                                    placeholderText = 'Select an option ...';
+                                    filteredOptions = reasonOptions; // Static list of billable reasons
+                                    break;
+                       
                         default:
                             placeholderText = 'Select an Option ...';
                             break;
@@ -1320,8 +1329,8 @@ if (field === 'Subcontractor') {
     placeholderText = 'Select a Subcontractor ...';
 } else if (field === 'Billable/ Non Billable') {
     placeholderText = 'Select Billable Status ...';
-} else if (field === 'Billable Reason (If Billable)') {
-    placeholderText = 'Select a Reason ...';
+} else if (field === 'Homeowner Builder pay') {
+    placeholderText = 'Select an option ...';
 } else if (field === 'Material Vendor') {
     placeholderText = 'Select a Vendor ...';
 } else if (field === 'Material Vendor') {

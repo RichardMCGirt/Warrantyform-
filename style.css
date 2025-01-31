@@ -60,8 +60,6 @@ td {
 }
 
 
-
-
 td:nth-child(7) .delete-button,
 td:nth-child(7) .add-photo-button {
     width: 100%;
@@ -159,7 +157,7 @@ th {
     overflow-y: auto;
 }
 .scrollable-div {
-    max-height: calc(100vh - 200px); /* Default fallback */
+    max-height: calc(100vh - 550px); /* Default fallback */
     overflow-y: auto;
 }
 

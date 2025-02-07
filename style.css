@@ -303,32 +303,32 @@ button:hover {
 
 /* Carousel Navigation Buttons */
 .carousel-nav-button {
-    background-color: transparent;
-    width: 25%; /* Set the width to 25% of the parent container */
-
+    width: 10%; /* Adjust width for a better fit */
     border: none;
     color: white;
     font-size: 13px;
     position: absolute;
     top: 50%;
-    transform: translateY(-50%);
     cursor: pointer;
     z-index: 2;
     opacity: 0.7;
-    transition: opacity 0.3s;
+    background: rgba(0, 0, 0, 0.5); /* Optional: adds a semi-transparent background */
+    padding: 8px; /* Increase padding for better clickability */
+    border-radius: 5px;
 }
 
 .carousel-nav-button:hover {
-    opacity: .9;
+    opacity: 1;
 }
 
 .carousel-nav-button.prev {
-    left: 35%;
     width: 15%;
+    left: -3px; /* Moves the button slightly to the left to create space */
+
 }
 
 .carousel-nav-button.next {
-    right: 35%;
+    right: -3px; /* Moves the button slightly to the right to create space */
     width: 15%;
 
 }

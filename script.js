@@ -1281,7 +1281,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true }
             ];
 
-            console.log(record.fields);
 
             fieldConfigs.forEach(config => {
                 const { field, value, checkbox, editable, link, image, dropdown, options, email, directions, imageField } = config;
@@ -1429,19 +1428,34 @@ select.addEventListener('change', () => {
                         const fileExtension = fileName.split('.').pop().toLowerCase();
                         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension);
                         const isPdf = fileExtension === 'pdf';
-            
+                    
+                        // Clear previous content
+                        carouselDiv.innerHTML = '';
+                    
+                        // Create a container to hold the content
+                        const contentContainer = document.createElement('div');
+                        contentContainer.style.textAlign = 'center';
+                    
                         if (isImage) {
+                            // Create image element
+                            const imgElement = document.createElement('img');
                             imgElement.src = fileUrl;
                             imgElement.alt = fileName;
+                            imgElement.style.maxWidth = '100%';
+                            imgElement.style.maxHeight = '150px';
+                            imgElement.style.height = 'auto';
+                            imgElement.classList.add('carousel-image');
                             imgElement.onclick = () => openImageViewer(files, index);
+                    
+                            contentContainer.appendChild(imgElement);
                         } else if (isPdf) {
-                            imgElement.style.display = 'none';
+                            // Create PDF embed
                             const pdfEmbed = document.createElement('embed');
                             pdfEmbed.src = fileUrl;
                             pdfEmbed.type = 'application/pdf';
                             pdfEmbed.width = '100%';
                             pdfEmbed.height = '150px';
-            
+                    
                             const pdfLink = document.createElement('a');
                             pdfLink.href = fileUrl;
                             pdfLink.target = '_blank';
@@ -1449,11 +1463,11 @@ select.addEventListener('change', () => {
                             pdfLink.style.display = 'block';
                             pdfLink.style.color = 'blue';
                             pdfLink.style.textDecoration = 'underline';
-            
-                            carouselDiv.appendChild(pdfEmbed);
-                            carouselDiv.appendChild(pdfLink);
+                    
+                            contentContainer.appendChild(pdfEmbed);
+                            contentContainer.appendChild(pdfLink);
                         } else {
-                            imgElement.style.display = 'none';
+                            // Create generic file download link
                             const fileLink = document.createElement('a');
                             fileLink.href = fileUrl;
                             fileLink.target = '_blank';
@@ -1461,37 +1475,45 @@ select.addEventListener('change', () => {
                             fileLink.style.display = 'block';
                             fileLink.style.color = 'blue';
                             fileLink.style.textDecoration = 'underline';
-            
-                            carouselDiv.appendChild(fileLink);
+                    
+                            contentContainer.appendChild(fileLink);
                         }
-            
+                    
+                        carouselDiv.appendChild(contentContainer);
+                    
+                        // Show file count
+                        const imageCount = document.createElement('div');
+                        imageCount.classList.add('image-count');
                         imageCount.textContent = `${index + 1} of ${files.length}`;
+                        carouselDiv.appendChild(imageCount);
+                    
+                        // Add navigation buttons only if multiple files exist
+                        if (files.length > 1) {
+                            const prevButton = document.createElement('button');
+                            prevButton.textContent = '<';
+                            prevButton.classList.add('carousel-nav-button', 'prev');
+                            prevButton.onclick = () => {
+                                currentIndex = (currentIndex > 0) ? currentIndex - 1 : files.length - 1;
+                                updateCarousel(currentIndex);
+                            };
+                    
+                            const nextButton = document.createElement('button');
+                            nextButton.textContent = '>';
+                            nextButton.classList.add('carousel-nav-button', 'next');
+                            nextButton.onclick = () => {
+                                currentIndex = (currentIndex < files.length - 1) ? currentIndex + 1 : 0;
+                                updateCarousel(currentIndex);
+                            };
+                    
+                            carouselDiv.appendChild(prevButton);
+                            carouselDiv.appendChild(nextButton);
+                        }
                     }
-            
-                    updateCarousel(0);
-                    carouselDiv.appendChild(imgElement);
-                    carouselDiv.appendChild(imageCount);
-            
-                    if (files.length > 1) {
-                        const prevButton = document.createElement('button');
-                        prevButton.textContent = '<';
-                        prevButton.classList.add('carousel-nav-button', 'prev');
-                        prevButton.onclick = () => {
-                            currentIndex = (currentIndex > 0) ? currentIndex - 1 : files.length - 1;
-                            updateCarousel(currentIndex);
-                        };
-            
-                        const nextButton = document.createElement('button');
-                        nextButton.textContent = '>';
-                        nextButton.classList.add('carousel-nav-button', 'next');
-                        nextButton.onclick = () => {
-                            currentIndex = (currentIndex < files.length - 1) ? currentIndex + 1 : 0;
-                            updateCarousel(currentIndex);
-                        };
-            
-                        carouselDiv.appendChild(prevButton);
-                        carouselDiv.appendChild(nextButton);
-                    }
+                    
+                    // Initialize the first file
+                    currentIndex = 0;
+                    updateCarousel(currentIndex);
+                    
             
                     // 🔴 DELETE BUTTON
                     const deleteButton = document.createElement('button');

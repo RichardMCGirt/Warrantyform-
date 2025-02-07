@@ -54,6 +54,7 @@ td {
 
 #airtable-data th:nth-child(2),
 #airtable-data td:nth-child(2),
+
 #feild-data td:nth-child(2),
 #feild-data th:nth-child(2) {
     display: none;

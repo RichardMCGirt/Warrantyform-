@@ -158,7 +158,7 @@ th {
     overflow-y: auto;
 }
 .scrollable-div {
-    max-height: calc(100vh - 680px); /* Default fallback */
+    max-height: calc(100vh - 825px); /* Default fallback */
     overflow-y: auto;
 }
 
@@ -555,7 +555,7 @@ th:nth-child(14) , td:nth-child(14)
     }
 
     th, td {
-        font-size: 14px;
+        font-size: 12px;
         padding: 6px;
     }
 
@@ -617,6 +617,16 @@ th:nth-child(14) , td:nth-child(14)
         width: 100%;
         margin-bottom: 10px;
         text-align: center;
+    }
+
+    .scrollable-div {
+        max-height: 310px; /* Adjust for smaller screens */
+    }
+
+    th, td {
+        font-size: 15px;
+        padding: 6px;
+        max-height: fit-content;
     }
 
     /* Modal */

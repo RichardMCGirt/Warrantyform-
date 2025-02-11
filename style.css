@@ -75,7 +75,7 @@ td:nth-child(7) .add-photo-button {
 
         /* Add styles to make divs scrollable */
         .scrollable-div {
-            max-height: 480px; /* Set a max-height for scrollable area */
+            max-height: 20px; /* Set a max-height for scrollable area */
             overflow-y: auto; /* Enable vertical scrolling */
             overflow-x: auto;
             position: relative; /* Required for sticky to work */
@@ -107,7 +107,7 @@ td:nth-child(7) .add-photo-button {
     justify-content: center;
     margin-top: 10px;
     cursor: pointer;
-    position: relative;
+    position: fixed;
 }
 
 .logo {
@@ -158,7 +158,7 @@ th {
     overflow-y: auto;
 }
 .scrollable-div {
-    max-height: calc(100vh - 550px); /* Default fallback */
+    max-height: calc(100vh - 800px); /* Default fallback */
     overflow-y: auto;
 }
 

@@ -158,7 +158,7 @@ th {
     overflow-y: auto;
 }
 .scrollable-div {
-    max-height: calc(100vh - 800px); /* Default fallback */
+    max-height: calc(100vh - 680px); /* Default fallback */
     overflow-y: auto;
 }
 
@@ -560,7 +560,7 @@ th:nth-child(14) , td:nth-child(14)
     }
 
     .scrollable-div {
-        max-height: 300px; /* Adjust for smaller screens */
+        max-height: 510px; /* Adjust for smaller screens */
     }
 
     /* Search input */
@@ -575,7 +575,7 @@ th:nth-child(14) , td:nth-child(14)
     }
 }
 
-@media screen and (max-width: 768px) {
+@media screen and (max-width: 950px) {
     /* Header and Logo */
     .header {
         flex-direction: column;

@@ -2240,6 +2240,23 @@ document.addEventListener('DOMContentLoaded', async function () {
             checkForChanges(recordId);
         });
     });
+
+    document.getElementById('subcontractorPaymentInput').addEventListener('input', function (event) {
+        let value = event.target.value.trim();
+    
+        // Remove non-numeric characters except for decimals
+        value = value.replace(/[^0-9.]/g, '');
+    
+        // Ensure there's at most one decimal point
+        if ((value.match(/\./g) || []).length > 1) {
+            showToast('Invalid input: Too many decimal points.');
+            event.target.value = '';
+            return;
+        }
+    
+        event.target.value = value;
+    });
+    
     
     
     document.querySelectorAll('td[contenteditable="true"], input[type="text"]').forEach(element => {

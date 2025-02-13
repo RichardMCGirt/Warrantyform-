@@ -75,7 +75,6 @@ td:nth-child(7) .add-photo-button {
 
         /* Add styles to make divs scrollable */
         .scrollable-div {
-            max-height: 20px; /* Set a max-height for scrollable area */
             overflow-y: auto; /* Enable vertical scrolling */
             overflow-x: auto;
             position: relative; /* Required for sticky to work */
@@ -559,9 +558,7 @@ th:nth-child(14) , td:nth-child(14)
         padding: 6px;
     }
 
-    .scrollable-div {
-        max-height: 510px; /* Adjust for smaller screens */
-    }
+  
 
     /* Search input */
     #search-input {
@@ -619,9 +616,7 @@ th:nth-child(14) , td:nth-child(14)
         text-align: center;
     }
 
-    .scrollable-div {
-        max-height: 310px; /* Adjust for smaller screens */
-    }
+   
 
     th, td {
         font-size: 15px;

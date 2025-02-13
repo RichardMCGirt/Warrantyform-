@@ -6,8 +6,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     const reasonOptions = ['Another Trade Damaged Work', 'Homeowner Damage', 'Weather'];
     const homeownerbuilderOptions =['Homeowner','Builder', 'Subcontractor ']
 
-
-    
     let dropboxAccessToken;
     let dropboxAppKey;
     let dropboxAppSecret;
@@ -75,7 +73,6 @@ Promise.all([
     const headerTitle = document.querySelector('h1');
     const modal = document.getElementById("materials-modal");
 
-
     let updatedFields = {};
     let hasChanges = false;
     let activeRecordId = null;
@@ -89,14 +86,6 @@ Promise.all([
     submitButton.style.zIndex = '1000';
     submitButton.style.cursor = 'move';
     document.body.appendChild(submitButton);
-
-    // Variables to track dragging
-    let isDragging = false;
-    let hasMoved = false; // Track if the button has been moved
-    let dragStarted = false; // To track if dragging has started during this click
-    let clickTimeout;
-    let mouseDownTime = 0; // To track the time the mouse was held down
-    
       
     document.querySelectorAll('input[type="checkbox"], select, td[contenteditable="true"]').forEach(element => {
         // For checkboxes and dropdowns
@@ -120,7 +109,6 @@ Promise.all([
         }
     });
     
-    
 // Check if vibration API is supported
 function vibrateDevice() {
     if (navigator.vibrate) {
@@ -130,7 +118,6 @@ function vibrateDevice() {
         console.log("Vibration not supported on this device.");
     }
 }
-
 
 // Event listener for the Enter key press
 document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
@@ -144,10 +131,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     });
 });
-
-  
-
-         
+    
  // Function to show submit button if there are changes
  function showSubmitButton(recordId) {
     if (hasChanges) {
@@ -160,7 +144,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     }
 }
 
-    
     // Event listeners to show the submit button when input is typed or value is changed
     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
         element.addEventListener('input', () => showSubmitButton(activeRecordId));
@@ -290,7 +273,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             showToast('Error refreshing Dropbox token.');
         }
     }
-    
 
     async function fetchRecordsFromAirtable() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
@@ -318,8 +300,6 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
         }
     }
     
-    
-
     async function updateDropboxTokenInAirtable(token) {
         console.log('Updating Dropbox token in Airtable...');
         showToast('Updating Dropbox token in Airtable...');  // Notify the user that the token is being updated
@@ -466,8 +446,6 @@ document.body.appendChild(fileInput);
         }
     }
     
-    
-
     async function fetchAirtableFields() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?maxRecords=1`;
     
@@ -510,8 +488,6 @@ document.body.appendChild(fileInput);
             return {}; // Return an empty object in case of an error
         }
     }
-    
-    
     
     async function fetchCurrentImagesFromAirtable(recordId, targetField) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}/${recordId}`;
@@ -678,8 +654,6 @@ document.body.appendChild(fileInput);
         return sharedUrl;
     }
     
-    
-
     async function fetchData(offset = null) {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}?${offset ? `offset=${offset}` : ''}`;
     
@@ -719,7 +693,6 @@ document.body.appendChild(fileInput);
         }
     }
     
-    
     // Adjust the table height to fill the available space dynamically
     function makeTableScrollable(tableSelector) {
         const table = document.querySelector(tableSelector);
@@ -742,8 +715,6 @@ document.body.appendChild(fileInput);
         table.parentElement.style.maxHeight = `calc(100vh - ${headerHeight}px)`;
         table.parentElement.style.overflowY = 'auto';
     }
-    
-    
     
     // Reset scrollability for tables when both are visible
     function resetTableScroll(tableSelector) {
@@ -779,7 +750,6 @@ document.body.appendChild(fileInput);
         }
     }
     
-    
     let vendorOptions = []; // Declare vendorOptions properly
 
     let subOptions = []; // Declare subOptions globally
@@ -808,7 +778,6 @@ document.body.appendChild(fileInput);
             let allRecords = [];
             let offset = null;
     
-            
             // Fetch sub options
             try {
                 subOptions = await fetchAirtableSubOptionsFromDifferentTable() || [];
@@ -928,7 +897,6 @@ function hideLogoAfterDelay() {
 // Call the function when the page loads
 window.onload = hideLogoAfterDelay;
 
-    
     function handleInputChange(event) {
         const recordId = this.closest('tr').dataset.id;
         const field = this.dataset.field;
@@ -954,8 +922,6 @@ window.onload = hideLogoAfterDelay;
             handleInputChange.call(this);
             checkForChanges(recordId);
         });
-    
-    
     
         element.addEventListener('change', function () {
             const recordId = this.closest('tr').dataset.id;
@@ -1005,7 +971,6 @@ window.onload = hideLogoAfterDelay;
         }
     }
 
-
     async function fetchDataAndInitializeFilter() {
         await fetchAllData(); // Ensure this function populates the tables
         console.log("Data loaded from Airtable.");
@@ -1022,7 +987,6 @@ window.onload = hideLogoAfterDelay;
     // Call this function after DOMContentLoaded
     document.addEventListener('DOMContentLoaded', fetchDataAndInitializeFilter);
     
-
 // Function to filter table rows based on selected branch
 function filterRecords() {
     const dropdown = document.querySelector('#filter-dropdown');
@@ -1061,7 +1025,6 @@ function filterRecords() {
         });
     });
 }
-
 
 // Attach event listener to dropdown
 document.addEventListener('DOMContentLoaded', () => {
@@ -2085,7 +2048,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     });
     
-
     document.addEventListener('DOMContentLoaded', () => {
         // Select all radio buttons for branch filtering
         const radioButtons = document.querySelectorAll('input[name="branch"]');
@@ -2099,7 +2061,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     });
     
-
     document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
         element.addEventListener('input', function () {
             const closestRow = this.closest('tr');
@@ -2133,8 +2094,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     
         event.target.value = value;
     });
-    
-    
     
     document.querySelectorAll('td[contenteditable="true"], input[type="text"]').forEach(element => {
         element.addEventListener('keypress', (event) => {
@@ -2174,7 +2133,6 @@ document.body.appendChild(dynamicButtonsContainer);
         console.log(`Request URL: ${url}`);
         console.log(`Request Body:`, body);
     
-        
     try {
         const response = await fetch(url, {
             method: 'PATCH',

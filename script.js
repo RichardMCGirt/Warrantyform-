@@ -97,61 +97,7 @@ Promise.all([
     let clickTimeout;
     let mouseDownTime = 0; // To track the time the mouse was held down
     
-    // Mouse down event to start dragging or timing the hold duration
-    submitButton.addEventListener('mousedown', function (event) {
-        let shiftX = event.clientX - submitButton.getBoundingClientRect().left;
-        let shiftY = event.clientY - submitButton.getBoundingClientRect().top;
-        isDragging = true;
-        hasMoved = false; // Reset move status when dragging starts
-        dragStarted = true; // Set drag start status
-        mouseDownTime = Date.now(); // Record the time when the mouse is pressed down
-    
-        function moveAt(pageX, pageY) {
-            submitButton.style.left = pageX - shiftX + 'px';
-            submitButton.style.top = pageY - shiftY + 'px';
-            hasMoved = true; // Button has been moved
-        }
-    
-        function onMouseMove(event) {
-            moveAt(event.pageX, event.pageY);
-        }
-    
-        document.addEventListener('mousemove', onMouseMove);
-    
-        document.addEventListener('mouseup', function () {
-            document.removeEventListener('mousemove', onMouseMove);
-            isDragging = false; // Reset dragging state after mouse up
-    
-            const mouseUpTime = Date.now(); // Record the time when the mouse is released
-            const heldDuration = mouseUpTime - mouseDownTime; // Calculate how long the mouse was held down
-    
-            if (heldDuration > 2000) {
-                // If the mouse was held down for more than 2 seconds, prevent submission
-                dragStarted = true;
-                console.log('Submission prevented because the mouse was held down for more than 2 seconds.');
-            }
-    
-            if (hasMoved) {
-                // If the button has been moved, prevent any immediate submission
-                dragStarted = true;
-            }
-    
-            // Store the current position of the button in local storage
-            localStorage.setItem('submitButtonTop', submitButton.style.top);
-            localStorage.setItem('submitButtonLeft', submitButton.style.left);
-    
-            // Reset the drag status after a short delay
-            clickTimeout = setTimeout(() => {
-                dragStarted = false;
-            }, 200); // Small delay to prevent click submission after dragging
-    
-        }, { once: true });
-    });
-
-    let originalValues = {};
-
-
-    
+      
     document.querySelectorAll('input[type="checkbox"], select, td[contenteditable="true"]').forEach(element => {
         // For checkboxes and dropdowns
         element.addEventListener('change', function () {
@@ -185,13 +131,6 @@ function vibrateDevice() {
     }
 }
 
-// Event listener for dynamic submit button
-submitButton.addEventListener('click', function () {
-    submitChanges();
-    
-    // Trigger vibration on submit button click
-    vibrateDevice();
-});
 
 // Event listener for the Enter key press
 document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
@@ -206,20 +145,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     });
 });
 
-    // Event listener for dynamic submit button
-    submitButton.addEventListener('click', function (event) {
-        clearTimeout(clickTimeout); // Clear any pending timeout
-    
-        if (dragStarted || hasMoved) {
-            // Prevent submission if the button was being dragged or held down too long
-            event.preventDefault();
-            hasMoved = false; // Reset movement tracking after preventing submission
-            return;
-        }
-    
-        // Only submit if no dragging occurred and the mouse wasn't held down for too long
-        submitChanges();
-    });
+  
 
          
  // Function to show submit button if there are changes
@@ -1985,32 +1911,7 @@ let originalValues = {};
 let updatedFields = {};  
 let hasChanges = false;  
         
-    // Function to check for changes compared to original values
-    function checkForChanges(recordId) {
-        const currentValues = updatedFields[recordId] || {};
-        
-        const fieldsHaveChanged = Object.keys(currentValues).some(field => {
-            const currentValue = currentValues[field];
-            const originalValue = originalValues[recordId] ? originalValues[recordId][field] : undefined;
-            console.log(`Comparing field "${field}": current value = ${currentValue}, original value = ${originalValue}`);
-            return currentValue !== originalValue;
-        });
-
-        // If there are no changes, clear updatedFields for the record
-        if (!fieldsHaveChanged) {
-            delete updatedFields[recordId];
-        }
-
-        // Update hasChanges based on updatedFields status
-        hasChanges = Object.keys(updatedFields).length > 0;
-
-        if (hasChanges) {
-            showSubmitButton(recordId);
-        } else {
-            hideSubmitButton();
-        }
-    }
-
+   
  // Attach event listeners to track changes
  document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(element => {
     element.addEventListener('input', function () {
@@ -2025,17 +1926,6 @@ let hasChanges = false;
         handleInputChange.call(this);
     });
 
-    element.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            const recordId = element.closest('tr').dataset.id;
-            console.log(`Enter key pressed for record ID: ${recordId}`);
-            handleInputChange.call(element, event);
-            if (hasChanges) {
-                submitChanges();
-            }
-        }
-    });
 });
         
  // Function to handle input change and update values
@@ -2097,19 +1987,6 @@ document.querySelectorAll('table input, table select, table td[contenteditable="
         handleInputChange.call(this);
     });
 
-
-
-    element.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            const recordId = element.closest('tr').dataset.id;
-            console.log(`Enter key pressed for record ID: ${recordId}`);
-            handleInputChange.call(element, event);
-            if (hasChanges) {
-                submitChanges();
-            }
-        }
-    });
 });
 
 document.addEventListener('DOMContentLoaded', () => {

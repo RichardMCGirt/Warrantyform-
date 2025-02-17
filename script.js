@@ -1112,6 +1112,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
             const fieldConfigs = isSecondary ? [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
+                { field: 'field tech', value: fields['field tech'] || '', editable: false },
+
                 { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
@@ -1143,7 +1145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 {
                     field: 'Subcontractor Payment',
                     value: typeof fields['Subcontractor Payment'] === 'number'
-                        ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(fields['Subcontractor Payment'])
+                        ? `$${new Intl.NumberFormat('en-US', { style: 'decimal', minimumFractionDigits: 2 }).format(fields['Subcontractor Payment'])}`
                         : '', // Default to $0.00 if not a valid number
                     editable: true
                 },
@@ -1540,37 +1542,7 @@ select.addEventListener('change', () => {
             checkForChanges(recordId);
         });
     });
-
-    
-
-    function createImageElement(url, fileName) {
-        const fileExtension = fileName.split('.').pop().toLowerCase();
-        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension);
-    
-        const imgElement = document.createElement('img');
-        imgElement.src = url;
-        imgElement.alt = fileName;
-        imgElement.style.maxWidth = '100%';
-        imgElement.style.maxHeight = '150px';
-        imgElement.style.height = 'auto';
-        imgElement.classList.add('carousel-image');
-    
-        if (!isImage) {
-            // If the file is NOT an image, make it clickable to open in a new tab
-            const fileLink = document.createElement('a');
-            fileLink.href = url;
-            fileLink.target = '_blank';
-            fileLink.textContent = fileName;
-            fileLink.style.display = 'block';
-    
-            return fileLink; // Return the link element for non-image files
-        }
-    
-        return imgElement; // Return the image element for images
-    }
-    
-    
-
+   
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;
         const currentImages = await fetchCurrentImagesFromAirtable(recordId, imageField);

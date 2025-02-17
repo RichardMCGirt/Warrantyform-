@@ -14,7 +14,7 @@
         <a href="https://airtable.com/appO21PVRA4Qa087I/shrIB8uJAdVkCfipw" class="nav-link active" target="_blank">Enter Record</a>
     </nav>
    <div class="header">
-        <img src="VANIR-transparent (1).png" alt="Vanir Installed Sales Logo" class="logo loading-logo">
+        <img src="VANIR-transparent (1).png" alt="Vanir Installed Sales Logo" class="logo loading-logo"> 
         <h1 class="hidden"></h1>
     </div> 
 
@@ -46,27 +46,21 @@
                         <th></th>
                         <th>Field Tech Assigned</th>
                         <th>Lot Number and Community</th>
-
                         <th>Address</th>
                         <th>Homeowner Name</th>
                         <th>Contact Email</th>
                         <th>Description of Issue</th>
                         <th>Pictures</th>
                         <th>DOW to be Completed</th>
-
                         <th>Materials Needed</th>
                         <th>Subcontractor</th>
                         <th>Subcontractor Payment</th>
-
                         <th>Subcontractor Not Needed</th>
                         <th>Subcontractor Not Needed</th>
-
                         <th>Billable/ Non Billable</th>
                         <th>Homeowner or Builder responsible</th>
                         <th>Billable Reason</th>
                         <th>Field Reviewed</th>
-
-
                     </tr>
                 </thead>
                 <tbody>
@@ -78,7 +72,6 @@
     <br>
     <div class="trash-can" id="trash-can"></div>
 
-
     <div id="secoundary-content" style="display: none;">
         <h2>Scheduled Awaiting Field Technician</h2>
         <div class="scrollable-div">
@@ -87,6 +80,8 @@
                     <tr>
                         <th>Branch</th>
                         <th></th>
+                        <th>Field Tech Assigned</th>
+
                         <th>Lot Number and Community</th>
                         <th>Homeowner Name</th>
                         <th>Address</th>
@@ -114,7 +109,6 @@
     AIRTABLE_TABLE_NAME2: 'tbl9SgC5wUi2TQuF7',
 };
 
-
     </script>
     <!-- JavaScript for interactivity -->
     <script src="populatevendoremail.js"></script>
@@ -127,6 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const AIRTABLE_TABLE_NAME = window.env.AIRTABLE_TABLE_NAME;
     const filterBranchDiv = document.getElementById('filter-branch');
     const airtableDataTable = document.querySelector('#airtable-data tbody');
+    const fieldDataTable = document.querySelector('#feild-data tbody');
 
     async function fetchFieldTechs() {
         const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`;
@@ -141,29 +136,26 @@ document.addEventListener('DOMContentLoaded', async () => {
             const data = await response.json();
             console.log("Fetched data:", data.records);
 
-            // Extract unique field tech values from Airtable
-            const fieldTechs = new Set();
+            const fieldTechsFromAirtable = new Set();
+
+            // Ensure correct field name from Airtable
             data.records.forEach(record => {
-                const fieldTech = record.fields['field tech'];
+                console.log("Record Fields:", record.fields); // Debugging log
+
+                const fieldTech = record.fields['field tech']; // Ensure correct field name
+
                 if (fieldTech) {
                     if (Array.isArray(fieldTech)) {
-                        fieldTech.forEach(name => {
-                            name.split(',').forEach(individualName => {
-                                fieldTechs.add(individualName.trim());
-                            });
-                        });
+                        fieldTech.forEach(name => fieldTechsFromAirtable.add(name.trim()));
                     } else {
-                        fieldTech.split(',').forEach(individualName => {
-                            fieldTechs.add(individualName.trim());
-                        });
+                        fieldTech.split(',').forEach(name => fieldTechsFromAirtable.add(name.trim()));
                     }
                 }
             });
 
-            console.log("Processed Field Tech Names:", [...fieldTechs]);
+            console.log("Airtable Field Techs:", [...fieldTechsFromAirtable]);
 
-            // Wait until the table is populated before showing checkboxes
-            observeTableChanges(fieldTechs);
+            observeTableChanges(fieldTechsFromAirtable);
 
         } catch (error) {
             console.error('Error fetching field techs:', error);
@@ -171,23 +163,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function getFieldTechsFromTable() {
-        const tableRows = document.querySelectorAll('#airtable-data tbody tr');
+        const tableRows1 = document.querySelectorAll('#airtable-data tbody tr');
+        const tableRows2 = document.querySelectorAll('#feild-data tbody tr');
         const fieldTechsInTable = new Set();
 
-        tableRows.forEach(row => {
-            const fieldTechColumn = row.querySelector('td:nth-child(3)'); // Adjust based on actual column index
-            if (fieldTechColumn) {
-                fieldTechColumn.textContent.split(',').forEach(name => {
-                    fieldTechsInTable.add(name.trim());
-                });
-            }
-        });
+        function extractFieldTechs(rows) {
+            rows.forEach(row => {
+                const fieldTechColumn = row.querySelector('td:nth-child(3)'); // Adjust based on actual column index
+                if (fieldTechColumn) {
+                    fieldTechColumn.textContent.split(',').forEach(name => {
+                        fieldTechsInTable.add(name.trim());
+                    });
+                }
+            });
+        }
+
+        extractFieldTechs(tableRows1);
+        extractFieldTechs(tableRows2);
 
         return fieldTechsInTable;
     }
 
     function generateCheckboxes(fieldTechs) {
-
         // Clear existing checkboxes
         filterBranchDiv.innerHTML = '';
 
@@ -196,7 +193,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         allCheckbox.innerHTML = `<input type="checkbox" name="branch" value="All" checked> <span>All</span>`;
         filterBranchDiv.appendChild(allCheckbox);
 
-        // Create a checkbox for each Field Tech
+        // Create checkboxes for each field tech
         fieldTechs.forEach(name => {
             const label = document.createElement('label');
             label.innerHTML = `<input type="checkbox" name="branch" value="${name}"> <span>${name}</span>`;
@@ -227,49 +224,102 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function filterRows() {
-        const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
-        const tableRows = document.querySelectorAll('#airtable-data tbody tr');
-        const selectedBranches = Array.from(checkboxes)
-            .filter(checkbox => checkbox.checked && checkbox.value !== 'All')
-            .map(checkbox => checkbox.value);
+    const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
+    const table1 = document.querySelector('#airtable-data');
+    const table2 = document.querySelector('#feild-data');
+    const tableRows1 = table1.querySelectorAll('tbody tr');
+    const tableRows2 = table2.querySelectorAll('tbody tr');
+    const tableHeader1 = table1.querySelector('thead');
+    const tableHeader2 = table2.querySelector('thead');
 
+    const selectedBranches = Array.from(checkboxes)
+        .filter(checkbox => checkbox.checked && checkbox.value !== 'All')
+        .map(checkbox => checkbox.value);
+
+    let visibleRowCount1 = 0;
+    let visibleRowCount2 = 0;
+
+    function applyFilter(tableRows) {
         tableRows.forEach(row => {
-            const branchColumn = row.querySelector('td:nth-child(3)'); 
-            if (branchColumn) {
-                const branchValue = branchColumn.textContent.trim();
-                const matches = selectedBranches.some(branch => branchValue.includes(branch));
-                row.style.display = selectedBranches.length === 0 || matches ? '' : 'none';
+            const fieldTechColumn = row.querySelector('td:nth-child(3)'); // Adjust based on actual column index
+            if (fieldTechColumn) {
+                const fieldTechValue = fieldTechColumn.textContent.trim();
+                const matches = selectedBranches.some(branch => fieldTechValue.includes(branch));
+                if (selectedBranches.length === 0 || matches) {
+                    row.style.display = '';
+                    if (tableRows === tableRows1) visibleRowCount1++;
+                    if (tableRows === tableRows2) visibleRowCount2++;
+                } else {
+                    row.style.display = 'none';
+                }
             }
         });
     }
 
-    function attachCheckboxListeners() {
-        const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', filterRows);
-        });
-        filterRows();
-    }
+    applyFilter(tableRows1);
+    applyFilter(tableRows2);
 
-    function observeTableChanges(fieldTechs) {
+    // Hide table headers if no visible rows exist
+    tableHeader1.style.display = visibleRowCount1 > 0 ? '' : 'none';
+    tableHeader2.style.display = visibleRowCount2 > 0 ? '' : 'none';
+
+    // Hide th and td in index 3 when any checkbox other than "All" is selected
+    const hideColumn = selectedBranches.length > 0;
+    hideTableColumn(3, hideColumn);
+}
+
+function hideTableColumn(index, hide) {
+    // Hide headers for both tables
+    document.querySelectorAll(`#airtable-data thead th:nth-child(${index})`).forEach(th => {
+        th.style.display = hide ? 'none' : '';
+    });
+    document.querySelectorAll(`#feild-data thead th:nth-child(${index})`).forEach(th => {
+        th.style.display = hide ? 'none' : '';
+    });
+
+    // Hide data cells for both tables
+    document.querySelectorAll(`#airtable-data tbody tr td:nth-child(${index})`).forEach(td => {
+        td.style.display = hide ? 'none' : '';
+    });
+    document.querySelectorAll(`#feild-data tbody tr td:nth-child(${index})`).forEach(td => {
+        td.style.display = hide ? 'none' : '';
+    });
+}
+
+function attachCheckboxListeners() {
+    const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', filterRows);
+    });
+    filterRows();
+}
+
+
+    function observeTableChanges(fieldTechsFromAirtable) {
         const observer = new MutationObserver(() => {
             console.log("Table content updated. Checking for Field Tech names...");
-            const visibleFieldTechs = getFieldTechsFromTable();
-            const matchingFieldTechs = [...fieldTechs].filter(name => visibleFieldTechs.has(name));
+            const fieldTechsFromTable = getFieldTechsFromTable();
+            console.log("Field Techs from Table:", [...fieldTechsFromTable]);
+
+            // Only show checkboxes for field techs that exist in both Airtable and the table
+            const matchingFieldTechs = [...fieldTechsFromAirtable].filter(name => fieldTechsFromTable.has(name));
 
             if (matchingFieldTechs.length > 0) {
-                generateCheckboxes(matchingFieldTechs);
+                generateCheckboxes(new Set(matchingFieldTechs));
                 filterBranchDiv.style.display = "block";
             } else {
+                console.warn("No matching Field Techs found.");
                 filterBranchDiv.style.display = "none";
             }
         });
 
         observer.observe(airtableDataTable, { childList: true, subtree: true });
+        observer.observe(fieldDataTable, { childList: true, subtree: true });
     }
 
     fetchFieldTechs();
 });
+
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
@@ -283,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 header.style.display = "none";
             }, 500); // Wait for fade-out animation to complete
         }
-    }, 15000); // 5 seconds delay
+    }, 10000); // 5 seconds delay
 });
 
 

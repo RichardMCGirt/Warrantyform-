@@ -231,6 +231,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tableRows2 = table2.querySelectorAll('tbody tr');
     const tableHeader1 = table1.querySelector('thead');
     const tableHeader2 = table2.querySelector('thead');
+    const tableTitle1 = document.querySelector('#main-content h2');
+    const tableTitle2 = document.querySelector('#secoundary-content h2');
 
     const selectedBranches = Array.from(checkboxes)
         .filter(checkbox => checkbox.checked && checkbox.value !== 'All')
@@ -239,7 +241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     let visibleRowCount1 = 0;
     let visibleRowCount2 = 0;
 
-    function applyFilter(tableRows) {
+    function applyFilter(tableRows, countVar) {
         tableRows.forEach(row => {
             const fieldTechColumn = row.querySelector('td:nth-child(3)'); // Adjust based on actual column index
             if (fieldTechColumn) {
@@ -256,17 +258,22 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    applyFilter(tableRows1);
-    applyFilter(tableRows2);
+    applyFilter(tableRows1, visibleRowCount1);
+    applyFilter(tableRows2, visibleRowCount2);
 
     // Hide table headers if no visible rows exist
     tableHeader1.style.display = visibleRowCount1 > 0 ? '' : 'none';
     tableHeader2.style.display = visibleRowCount2 > 0 ? '' : 'none';
 
+    // Hide h2 titles if no visible rows exist
+    tableTitle1.style.display = visibleRowCount1 > 0 ? '' : 'none';
+    tableTitle2.style.display = visibleRowCount2 > 0 ? '' : 'none';
+
     // Hide th and td in index 3 when any checkbox other than "All" is selected
     const hideColumn = selectedBranches.length > 0;
     hideTableColumn(3, hideColumn);
 }
+
 
 function hideTableColumn(index, hide) {
     // Hide headers for both tables

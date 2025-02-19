@@ -22,10 +22,15 @@
     <br>
    
         <form>
-            <label for="filter-branch" class="filter-label">Filter by Field Technician:</label>
-            <div id="filter-branch" class="checkbox-container">
-                
-            </div>
+         <!-- Hamburger Menu -->
+<div id="checkbox-menu">
+    <button id="menu-toggle" type="button">☰ Filter</button>
+    <div id="checkbox-container" class="hidden">
+        <label for="filter-branch" class="filter-label">Filter by Field Technician:</label>
+        <div id="filter-branch" class="checkbox-container"></div>
+    </div>
+</div>
+
             
         </form>
         <br>
@@ -113,193 +118,99 @@
     <script>
 
 document.addEventListener('DOMContentLoaded', async () => {
+    console.log("🚀 Page Loaded: DOMContentLoaded event fired");
+
+    const menuToggle = document.getElementById('menu-toggle');
+    const checkboxContainer = document.getElementById('checkbox-container');
+    const filterBranchDiv = document.getElementById('filter-branch');
+
+    console.log("🔎 Fetching Field Technicians from Airtable...");
+    
+    await fetchFieldTechs();
+    
+    console.log("✅ Field Technicians Loaded.");
+    loadCheckboxState();
+    attachCheckboxListeners();
+
+    // Toggle menu visibility
+    menuToggle.addEventListener('click', () => {
+        console.log("📂 Menu Toggle Clicked");
+        
+        // Ensure checkboxes exist before showing the menu
+        if (filterBranchDiv.innerHTML.trim() === '') {
+            console.warn("⚠️ No checkboxes found inside filterBranchDiv. Check if fetchFieldTechs is working.");
+        } else {
+            console.log("✅ Checkboxes Found.");
+        }
+
+        checkboxContainer.classList.toggle('show');
+        console.log(`📂 Menu Status: ${checkboxContainer.classList.contains('show') ? "Opened" : "Closed"}`);
+    });
+
+    // Close menu if clicking outside
+    document.addEventListener('click', (event) => {
+        if (!checkboxContainer.contains(event.target) && !menuToggle.contains(event.target)) {
+            checkboxContainer.classList.remove('show');
+            console.log("❌ Menu Closed due to outside click");
+        }
+    });
+});
+
+// Function to fetch field technicians from Airtable
+async function fetchFieldTechs() {
+    console.log("🔄 Fetching Field Techs...");
     const AIRTABLE_API_KEY = window.env.AIRTABLE_API_KEY;
     const AIRTABLE_BASE_ID = window.env.AIRTABLE_BASE_ID;
     const AIRTABLE_TABLE_NAME = window.env.AIRTABLE_TABLE_NAME;
-    const filterBranchDiv = document.getElementById('filter-branch');
-    const airtableDataTable = document.querySelector('#airtable-data tbody');
-    const fieldDataTable = document.querySelector('#feild-data tbody');
+    const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`;
 
-    async function fetchFieldTechs() {
-        const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${AIRTABLE_TABLE_NAME}`;
-
-        try {
-            const response = await fetch(url, {
-                headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
-            });
-
-            if (!response.ok) throw new Error(`Error fetching data: ${response.statusText}`);
-
-            const data = await response.json();
-
-            const fieldTechsFromAirtable = new Set();
-
-            // Ensure correct field name from Airtable
-            data.records.forEach(record => {
-
-                const fieldTech = record.fields['field tech']; // Ensure correct field name
-
-                if (fieldTech) {
-                    if (Array.isArray(fieldTech)) {
-                        fieldTech.forEach(name => fieldTechsFromAirtable.add(name.trim()));
-                    } else {
-                        fieldTech.split(',').forEach(name => fieldTechsFromAirtable.add(name.trim()));
-                    }
-                }
-            });
-
-
-            observeTableChanges(fieldTechsFromAirtable);
-
-        } catch (error) {
-            console.error('Error fetching field techs:', error);
-        }
-    }
-
-    function getFieldTechsFromTable() {
-        const tableRows1 = document.querySelectorAll('#airtable-data tbody tr');
-        const tableRows2 = document.querySelectorAll('#feild-data tbody tr');
-        const fieldTechsInTable = new Set();
-
-        function extractFieldTechs(rows) {
-            rows.forEach(row => {
-                const fieldTechColumn = row.querySelector('td:nth-child(3)'); // Adjust based on actual column index
-                if (fieldTechColumn) {
-                    fieldTechColumn.textContent.split(',').forEach(name => {
-                        fieldTechsInTable.add(name.trim());
-                    });
-                }
-            });
-        }
-
-        extractFieldTechs(tableRows1);
-        extractFieldTechs(tableRows2);
-
-        return fieldTechsInTable;
-    }
-
-    function generateCheckboxes(fieldTechs) {
-    // Clear existing checkboxes
-    filterBranchDiv.innerHTML = '';
-
-    // Create a container for flex display
-    const checkboxContainer = document.createElement('div');
-    checkboxContainer.classList.add('checkbox-row');
-
-    // Add 'All' checkbox at the beginning
-    const allCheckbox = document.createElement('label');
-    allCheckbox.innerHTML = `
-        <input type="checkbox" name="branch" value="All" checked>
-        <span>All</span>
-    `;
-
-    checkboxContainer.appendChild(allCheckbox);
-
-    // Create checkboxes for each field tech
-    fieldTechs.forEach(name => {
-        const label = document.createElement('label');
-        label.innerHTML = `
-            <input type="checkbox" name="branch" value="${name}">
-            <span>${name}</span>
-        `;
-
-        checkboxContainer.appendChild(label);
-    });
-
-    // Append the row container to the main div
-    filterBranchDiv.appendChild(checkboxContainer);
-
-    // Sort checkboxes alphabetically and attach event listeners
-    sortCheckboxesAlphabetically();
-    attachCheckboxListeners();
-}
-
-function adjustScrollableDivHeight() {
-    const mainContent = document.getElementById("main-content");
-    const secondaryContent = document.getElementById("secoundary-content");
-    const mainScrollableDiv = document.querySelector("#main-content .scrollable-div");
-    const secondaryScrollableDiv = document.querySelector("#secoundary-content .scrollable-div");
-
-    const viewportHeight = window.innerHeight;
-    const headerHeight = document.querySelector("nav") ? document.querySelector("nav").offsetHeight : 0;
-    const filterHeight = document.querySelector("form") ? document.querySelector("form").offsetHeight : 0;
-    const spacingOffset = 20; // Small spacing to prevent overflow
-    const availableHeight = viewportHeight - (headerHeight + filterHeight + spacingOffset);
-
-    console.log("Viewport Height:", viewportHeight);
-    console.log("Available Height:", availableHeight);
-    console.log("Main Content Display:", mainContent.style.display);
-    console.log("Secondary Content Display:", secondaryContent.style.display);
-
-    // *** If only Main Content is visible, increase height by extra space ***
-    if (mainContent.style.display !== "none" && secondaryContent.style.display === "none") {
-        console.log("Only Main Content is visible, increasing height...");
-        if (mainScrollableDiv) {
-            mainScrollableDiv.style.height = "110vh"; // Make it 90% of the screen height
-        }
-    } 
-    // *** If only Secondary Content is visible, increase height ***
-    else if (secondaryContent.style.display !== "none" && mainContent.style.display === "none") {
-        console.log("Only Secondary Content is visible, increasing height...");
-        if (secondaryScrollableDiv) {
-            secondaryScrollableDiv.style.height = "90vh"; // Added 100px buffer
-
-        }
-    } 
-    // *** If both tables are visible, split available height evenly ***
-    else {
-        console.log("Both tables are visible, splitting available height...");
-        const halfHeight = availableHeight / 2;
-
-        if (mainScrollableDiv) {
-            mainScrollableDiv.style.height = `${halfHeight}px`;
-            mainScrollableDiv.style.maxHeight = `${halfHeight}px`;
-        }
-        if (secondaryScrollableDiv) {
-            secondaryScrollableDiv.style.height = `${halfHeight}px`;
-            secondaryScrollableDiv.style.maxHeight = `${halfHeight}px`;
-        }
-    }
-}
-
-// Apply changes on load and resize
-window.addEventListener("resize", adjustScrollableDivHeight);
-document.addEventListener("DOMContentLoaded", adjustScrollableDivHeight);
-
-
-
-
-
-    function sortCheckboxesAlphabetically() {
-        const labels = Array.from(filterBranchDiv.querySelectorAll('label'));
-        const allCheckbox = labels.find(label => label.querySelector('input').value === "All");
-        
-        if (!allCheckbox) return;
-
-        const otherCheckboxes = labels.filter(label => label !== allCheckbox);
-
-        otherCheckboxes.sort((a, b) => {
-            const textA = a.textContent.trim().toUpperCase();
-            const textB = b.textContent.trim().toUpperCase();
-            return textA.localeCompare(textB);
+    try {
+        const response = await fetch(url, {
+            headers: { Authorization: `Bearer ${AIRTABLE_API_KEY}` }
         });
 
-        filterBranchDiv.innerHTML = '';
-        filterBranchDiv.appendChild(allCheckbox);
-        otherCheckboxes.forEach(label => filterBranchDiv.appendChild(label));
-    }
+        if (!response.ok) throw new Error(`❌ Error fetching data: ${response.statusText}`);
 
-    function filterRows() {
+        const data = await response.json();
+        console.log("✅ Data Received from Airtable:", data);
+
+        const fieldTechsFromAirtable = new Set();
+
+        data.records.forEach(record => {
+            const fieldTech = record.fields['field tech']; // Ensure correct field name
+            if (fieldTech) {
+                if (Array.isArray(fieldTech)) {
+                    fieldTech.forEach(name => fieldTechsFromAirtable.add(name.trim()));
+                } else {
+                    fieldTech.split(',').forEach(name => fieldTechsFromAirtable.add(name.trim()));
+                }
+            }
+        });
+
+        console.log("✅ Extracted Field Techs:", fieldTechsFromAirtable);
+        generateCheckboxes(fieldTechsFromAirtable);
+
+    } catch (error) {
+        console.error('❌ Error fetching field techs:', error);
+    }
+}
+
+// Function to filter rows based on selected checkboxes
+function filterRows() {
+    console.log("🔄 Filtering Table Rows...");
+
     const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
     const table1 = document.querySelector('#airtable-data');
     const table2 = document.querySelector('#feild-data');
+
+    if (!table1 || !table2) {
+        console.warn("⚠️ Tables not found in DOM.");
+        return;
+    }
+
     const tableRows1 = table1.querySelectorAll('tbody tr');
     const tableRows2 = table2.querySelectorAll('tbody tr');
-    const tableHeader1 = table1.querySelector('thead');
-    const tableHeader2 = table2.querySelector('thead');
-    const tableTitle1 = document.querySelector('#main-content h2');
-    const tableTitle2 = document.querySelector('#secoundary-content h2');
-
+    
     const selectedBranches = Array.from(checkboxes)
         .filter(checkbox => checkbox.checked && checkbox.value !== 'All')
         .map(checkbox => checkbox.value);
@@ -307,7 +218,7 @@ document.addEventListener("DOMContentLoaded", adjustScrollableDivHeight);
     let visibleRowCount1 = 0;
     let visibleRowCount2 = 0;
 
-    function applyFilter(tableRows, countVar) {
+    function applyFilter(tableRows) {
         tableRows.forEach(row => {
             const fieldTechColumn = row.querySelector('td:nth-child(3)'); // Adjust based on actual column index
             if (fieldTechColumn) {
@@ -324,56 +235,73 @@ document.addEventListener("DOMContentLoaded", adjustScrollableDivHeight);
         });
     }
 
-    applyFilter(tableRows1, visibleRowCount1);
-    applyFilter(tableRows2, visibleRowCount2);
+    applyFilter(tableRows1);
+    applyFilter(tableRows2);
 
-    // Hide table headers if no visible rows exist
-    tableHeader1.style.display = visibleRowCount1 > 0 ? '' : 'none';
-    tableHeader2.style.display = visibleRowCount2 > 0 ? '' : 'none';
-
-    // Hide h2 titles if no visible rows exist
-    tableTitle1.style.display = visibleRowCount1 > 0 ? '' : 'none';
-    tableTitle2.style.display = visibleRowCount2 > 0 ? '' : 'none';
-
-    // Hide th and td in index 3 when any checkbox other than "All" is selected
-    const hideColumn = selectedBranches.length > 0;
-    hideTableColumn(3, hideColumn);
+    console.log(`✅ Filter applied. Visible Rows: Table1 - ${visibleRowCount1}, Table2 - ${visibleRowCount2}`);
 }
 
 
-function hideTableColumn(index, hide) {
-    // Hide headers for both tables
-    document.querySelectorAll(`#airtable-data thead th:nth-child(${index})`).forEach(th => {
-        th.style.display = hide ? 'none' : '';
-    });
-    document.querySelectorAll(`#feild-data thead th:nth-child(${index})`).forEach(th => {
-        th.style.display = hide ? 'none' : '';
+// Function to sort checkboxes alphabetically
+function sortCheckboxesAlphabetically() {
+    const filterBranchDiv = document.getElementById('filter-branch');
+    if (!filterBranchDiv) {
+        console.warn("⚠️ filterBranchDiv not found in DOM.");
+        return;
+    }
+
+    const labels = Array.from(filterBranchDiv.querySelectorAll('label'));
+    const allCheckbox = labels.find(label => label.querySelector('input').value === "All");
+
+    if (!allCheckbox) return;
+
+    const otherCheckboxes = labels.filter(label => label !== allCheckbox);
+
+    // Sort checkboxes alphabetically
+    otherCheckboxes.sort((a, b) => {
+        const textA = a.textContent.trim().toUpperCase();
+        const textB = b.textContent.trim().toUpperCase();
+        return textA.localeCompare(textB);
     });
 
-    // Hide data cells for both tables
-    document.querySelectorAll(`#airtable-data tbody tr td:nth-child(${index})`).forEach(td => {
-        td.style.display = hide ? 'none' : '';
-    });
-    document.querySelectorAll(`#feild-data tbody tr td:nth-child(${index})`).forEach(td => {
-        td.style.display = hide ? 'none' : '';
-    });
+    filterBranchDiv.innerHTML = ''; // Clear existing checkboxes
+    filterBranchDiv.appendChild(allCheckbox);
+    otherCheckboxes.forEach(label => filterBranchDiv.appendChild(label));
 }
 
-function attachCheckboxListeners() {
-    const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
-    
-    // Load saved state from localStorage
-    loadCheckboxState();
 
-    checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', () => {
-            saveCheckboxState();
-            filterRows();
-        });
+// Function to generate checkboxes for Field Techs
+function generateCheckboxes(fieldTechs) {
+    console.log("🔧 Generating Checkboxes...");
+
+    const filterBranchDiv = document.getElementById('filter-branch');
+    filterBranchDiv.innerHTML = ''; // Clear existing checkboxes
+
+    const checkboxContainer = document.createElement('div');
+    checkboxContainer.classList.add('checkbox-row');
+
+    // Add 'All' checkbox
+    const allCheckbox = document.createElement('label');
+    allCheckbox.innerHTML = `
+        <input type="checkbox" name="branch" value="All" checked>
+        <span>All</span>
+    `;
+    checkboxContainer.appendChild(allCheckbox);
+
+    fieldTechs.forEach(name => {
+        const label = document.createElement('label');
+        label.innerHTML = `
+            <input type="checkbox" name="branch" value="${name}">
+            <span>${name}</span>
+        `;
+        checkboxContainer.appendChild(label);
     });
 
-    filterRows();
-    adjustScrollableDivHeight();
+    filterBranchDiv.appendChild(checkboxContainer);
+    console.log("✅ Checkboxes Added to DOM.");
+
+    sortCheckboxesAlphabetically();
+    attachCheckboxListeners();
 }
 
 // Function to save checkbox state to localStorage
@@ -386,6 +314,7 @@ function saveCheckboxState() {
     });
 
     localStorage.setItem('selectedCheckboxes', JSON.stringify(checkboxStates));
+    console.log("💾 Checkbox State Saved:", checkboxStates);
 }
 
 // Function to load checkbox state from localStorage
@@ -394,48 +323,36 @@ function loadCheckboxState() {
 
     if (savedCheckboxes) {
         const checkboxStates = JSON.parse(savedCheckboxes);
-        const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
+        console.log("📂 Loaded Checkbox State:", checkboxStates);
 
+        const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
         checkboxes.forEach(checkbox => {
             if (checkboxStates.hasOwnProperty(checkbox.value)) {
                 checkbox.checked = checkboxStates[checkbox.value];
             }
         });
+    } else {
+        console.warn("⚠️ No saved checkbox state found in localStorage.");
     }
 }
 
-// Ensure checkboxes are checked when page reloads
-document.addEventListener('DOMContentLoaded', () => {
-    loadCheckboxState();
-    filterRows(); // Apply filtering on page load
-});
+// Attach event listeners to checkboxes
+function attachCheckboxListeners() {
+    const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
 
-
-
-    function observeTableChanges(fieldTechsFromAirtable) {
-        const observer = new MutationObserver(() => {
-            const fieldTechsFromTable = getFieldTechsFromTable();
-
-            // Only show checkboxes for field techs that exist in both Airtable and the table
-            const matchingFieldTechs = [...fieldTechsFromAirtable].filter(name => fieldTechsFromTable.has(name));
-
-            if (matchingFieldTechs.length > 0) {
-                generateCheckboxes(new Set(matchingFieldTechs));
-                filterBranchDiv.style.display = "block";
-            } else {
-                console.warn("No matching Field Techs found.");
-                filterBranchDiv.style.display = "none";
-            }
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => {
+            console.log(`📌 Checkbox Changed: ${checkbox.value} - ${checkbox.checked ? "Checked" : "Unchecked"}`);
+            saveCheckboxState();
+            filterRows(); // Ensure filterRows is called
         });
+    });
 
-        observer.observe(airtableDataTable, { childList: true, subtree: true });
-        observer.observe(fieldDataTable, { childList: true, subtree: true });
-    }
+    console.log("✅ Checkbox Event Listeners Attached.");
+    filterRows(); // Apply filtering when attaching listeners
+}
 
-    fetchFieldTechs();
-    adjustScrollableDivHeight();
 
-});
 
 </script>
 

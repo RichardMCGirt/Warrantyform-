@@ -1647,6 +1647,8 @@ select.addEventListener('change', () => {
     
 const modalImage = document.getElementById('modalImage');
 
+
+
 function closeModal() {
     imageViewerModal.style.display = 'none';
     enablePageScrolling();

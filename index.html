@@ -361,13 +361,55 @@ function hideTableColumn(index, hide) {
 
 function attachCheckboxListeners() {
     const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
+    
+    // Load saved state from localStorage
+    loadCheckboxState();
+
     checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', filterRows);
+        checkbox.addEventListener('change', () => {
+            saveCheckboxState();
+            filterRows();
+        });
     });
+
     filterRows();
     adjustScrollableDivHeight();
-
 }
+
+// Function to save checkbox state to localStorage
+function saveCheckboxState() {
+    const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
+    const checkboxStates = {};
+
+    checkboxes.forEach(checkbox => {
+        checkboxStates[checkbox.value] = checkbox.checked;
+    });
+
+    localStorage.setItem('selectedCheckboxes', JSON.stringify(checkboxStates));
+}
+
+// Function to load checkbox state from localStorage
+function loadCheckboxState() {
+    const savedCheckboxes = localStorage.getItem('selectedCheckboxes');
+
+    if (savedCheckboxes) {
+        const checkboxStates = JSON.parse(savedCheckboxes);
+        const checkboxes = document.querySelectorAll('#filter-branch input[name="branch"]');
+
+        checkboxes.forEach(checkbox => {
+            if (checkboxStates.hasOwnProperty(checkbox.value)) {
+                checkbox.checked = checkboxStates[checkbox.value];
+            }
+        });
+    }
+}
+
+// Ensure checkboxes are checked when page reloads
+document.addEventListener('DOMContentLoaded', () => {
+    loadCheckboxState();
+    filterRows(); // Apply filtering on page load
+});
+
 
 
     function observeTableChanges(fieldTechsFromAirtable) {

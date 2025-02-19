@@ -884,18 +884,6 @@ document.body.appendChild(fileInput);
         }
     }
 
-    // Function to hide the logo after 2 minutes
-function hideLogoAfterDelay() {
-    const logo = document.querySelector('.logo.loading-logo');
-    if (logo) {
-        setTimeout(() => {
-            logo.style.display = 'none';
-        }, 120000); // 120,000 milliseconds = 2 minutes
-    }
-}
-
-// Call the function when the page loads
-window.onload = hideLogoAfterDelay;
 
     function handleInputChange(event) {
         const recordId = this.closest('tr').dataset.id;
@@ -1169,7 +1157,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     dropdown: true 
                   },
 
-                               { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true }
+                  { field: 'Field Tech Reviewed', value: fields['Field Tech Reviewed'] || false, checkbox: true }
             ];
 
 
@@ -1878,16 +1866,7 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     element.addEventListener('change', handleInputChange); 
 });
      
-                function showSubmitButton(recordId) {
-            if (hasChanges) {
-                const lastTop = localStorage.getItem('submitButtonTop') || '50%';
-                const lastLeft = localStorage.getItem('submitButtonLeft') || '50%';
-                submitButton.style.top = lastTop;
-                submitButton.style.left = lastLeft;
-                submitButton.style.display = 'block';
-                activeRecordId = recordId;
-            }
-        }
+           
         
 
 window.addEventListener('resize', () => {

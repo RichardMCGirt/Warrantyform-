@@ -134,13 +134,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!response.ok) throw new Error(`Error fetching data: ${response.statusText}`);
 
             const data = await response.json();
-            console.log("Fetched data:", data.records);
 
             const fieldTechsFromAirtable = new Set();
 
             // Ensure correct field name from Airtable
             data.records.forEach(record => {
-                console.log("Record Fields:", record.fields); // Debugging log
 
                 const fieldTech = record.fields['field tech']; // Ensure correct field name
 
@@ -153,7 +151,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
 
-            console.log("Airtable Field Techs:", [...fieldTechsFromAirtable]);
 
             observeTableChanges(fieldTechsFromAirtable);
 
@@ -185,24 +182,96 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function generateCheckboxes(fieldTechs) {
-        // Clear existing checkboxes
-        filterBranchDiv.innerHTML = '';
+    // Clear existing checkboxes
+    filterBranchDiv.innerHTML = '';
 
-        // Add 'All' checkbox at the top
-        const allCheckbox = document.createElement('label');
-        allCheckbox.innerHTML = `<input type="checkbox" name="branch" value="All" checked> <span>All</span>`;
-        filterBranchDiv.appendChild(allCheckbox);
+    // Create a container for flex display
+    const checkboxContainer = document.createElement('div');
+    checkboxContainer.classList.add('checkbox-row');
 
-        // Create checkboxes for each field tech
-        fieldTechs.forEach(name => {
-            const label = document.createElement('label');
-            label.innerHTML = `<input type="checkbox" name="branch" value="${name}"> <span>${name}</span>`;
-            filterBranchDiv.appendChild(label);
-        });
+    // Add 'All' checkbox at the beginning
+    const allCheckbox = document.createElement('label');
+    allCheckbox.innerHTML = `
+        <input type="checkbox" name="branch" value="All" checked>
+        <span>All</span>
+    `;
 
-        sortCheckboxesAlphabetically();
-        attachCheckboxListeners();
+    checkboxContainer.appendChild(allCheckbox);
+
+    // Create checkboxes for each field tech
+    fieldTechs.forEach(name => {
+        const label = document.createElement('label');
+        label.innerHTML = `
+            <input type="checkbox" name="branch" value="${name}">
+            <span>${name}</span>
+        `;
+
+        checkboxContainer.appendChild(label);
+    });
+
+    // Append the row container to the main div
+    filterBranchDiv.appendChild(checkboxContainer);
+
+    // Sort checkboxes alphabetically and attach event listeners
+    sortCheckboxesAlphabetically();
+    attachCheckboxListeners();
+}
+
+function adjustScrollableDivHeight() {
+    const mainContent = document.getElementById("main-content");
+    const secondaryContent = document.getElementById("secoundary-content");
+    const mainScrollableDiv = document.querySelector("#main-content .scrollable-div");
+    const secondaryScrollableDiv = document.querySelector("#secoundary-content .scrollable-div");
+
+    const viewportHeight = window.innerHeight;
+    const headerHeight = document.querySelector("nav") ? document.querySelector("nav").offsetHeight : 0;
+    const filterHeight = document.querySelector("form") ? document.querySelector("form").offsetHeight : 0;
+    const spacingOffset = 20; // Small spacing to prevent overflow
+    const availableHeight = viewportHeight - (headerHeight + filterHeight + spacingOffset);
+
+    console.log("Viewport Height:", viewportHeight);
+    console.log("Available Height:", availableHeight);
+    console.log("Main Content Display:", mainContent.style.display);
+    console.log("Secondary Content Display:", secondaryContent.style.display);
+
+    // *** If only Main Content is visible, increase height by extra space ***
+    if (mainContent.style.display !== "none" && secondaryContent.style.display === "none") {
+        console.log("Only Main Content is visible, increasing height...");
+        if (mainScrollableDiv) {
+            mainScrollableDiv.style.height = "110vh"; // Make it 90% of the screen height
+        }
+    } 
+    // *** If only Secondary Content is visible, increase height ***
+    else if (secondaryContent.style.display !== "none" && mainContent.style.display === "none") {
+        console.log("Only Secondary Content is visible, increasing height...");
+        if (secondaryScrollableDiv) {
+            secondaryScrollableDiv.style.height = "90vh"; // Added 100px buffer
+
+        }
+    } 
+    // *** If both tables are visible, split available height evenly ***
+    else {
+        console.log("Both tables are visible, splitting available height...");
+        const halfHeight = availableHeight / 2;
+
+        if (mainScrollableDiv) {
+            mainScrollableDiv.style.height = `${halfHeight}px`;
+            mainScrollableDiv.style.maxHeight = `${halfHeight}px`;
+        }
+        if (secondaryScrollableDiv) {
+            secondaryScrollableDiv.style.height = `${halfHeight}px`;
+            secondaryScrollableDiv.style.maxHeight = `${halfHeight}px`;
+        }
     }
+}
+
+// Apply changes on load and resize
+window.addEventListener("resize", adjustScrollableDivHeight);
+document.addEventListener("DOMContentLoaded", adjustScrollableDivHeight);
+
+
+
+
 
     function sortCheckboxesAlphabetically() {
         const labels = Array.from(filterBranchDiv.querySelectorAll('label'));
@@ -299,14 +368,14 @@ function attachCheckboxListeners() {
         checkbox.addEventListener('change', filterRows);
     });
     filterRows();
+    adjustScrollableDivHeight();
+
 }
 
 
     function observeTableChanges(fieldTechsFromAirtable) {
         const observer = new MutationObserver(() => {
-            console.log("Table content updated. Checking for Field Tech names...");
             const fieldTechsFromTable = getFieldTechsFromTable();
-            console.log("Field Techs from Table:", [...fieldTechsFromTable]);
 
             // Only show checkboxes for field techs that exist in both Airtable and the table
             const matchingFieldTechs = [...fieldTechsFromAirtable].filter(name => fieldTechsFromTable.has(name));
@@ -325,6 +394,8 @@ function attachCheckboxListeners() {
     }
 
     fetchFieldTechs();
+    adjustScrollableDivHeight();
+
 });
 
 

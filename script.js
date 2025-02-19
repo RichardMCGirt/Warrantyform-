@@ -761,18 +761,7 @@ document.body.appendChild(fileInput);
         originalValues = { /* Populate this with fetched data */ };
     
         let loadProgress = 0;
-        const loadInterval = setInterval(() => {
-            loadProgress += (100 - loadProgress) * 0.1;
-            const roundedProgress = Math.round(loadProgress);
-    
-            loadingLogo.style.maskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
-            loadingLogo.style.webkitMaskImage = `linear-gradient(to right, black ${roundedProgress}%, transparent ${roundedProgress}%)`;
-    
-            if (roundedProgress >= 99) {
-                clearInterval(loadInterval);
-                loadingLogo.classList.add('full-color');
-            }
-        }, 50);
+     
     
         try {
             let allRecords = [];
@@ -832,7 +821,6 @@ document.body.appendChild(fileInput);
             // Reveal content after loading
             mainContent.style.display = 'block';
             secondaryContent.style.display = 'block';
-            headerTitle.classList.add('visible');
             setTimeout(() => {
                 mainContent.style.opacity = '1';
                 secondaryContent.style.opacity = '1';

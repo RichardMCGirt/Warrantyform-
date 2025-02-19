@@ -101,7 +101,7 @@ td {
     margin: 0 auto;
     max-width: calc(100% - 40px); /* Set 20px margin on each side */
     overflow-x: auto;
-    min-height: 65vh !important;
+    min-height: calc(100% - 95%) !important;
 }
 
 .single-table-view .scrollable-div {

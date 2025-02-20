@@ -10,9 +10,7 @@
 
 </head>
 <body>
-    <nav>
-        <a href="https://airtable.com/appO21PVRA4Qa087I/shrIB8uJAdVkCfipw" class="nav-link active" target="_blank">Enter Record</a>
-    </nav>
+   
  
 
     <!-- Toast Notification -->
@@ -21,20 +19,25 @@
     </div>
     <br>
    
-        <form>
-         <!-- Hamburger Menu -->
-<div id="checkbox-menu">
-    <button id="menu-toggle" type="button">☰ Filter</button>
-    <div id="checkbox-container" class="hidden">
-        <label for="filter-branch" class="filter-label">Filter by Field Technician:</label>
-        <div id="filter-branch" class="checkbox-container"></div>
+<!-- Container for filter menu and search input -->
+<div id="filter-search-container">
+    <!-- Hamburger Menu -->
+    <div id="checkbox-menu">
+        <button id="menu-toggle" type="button">☰ Filter</button>
+        <div id="checkbox-container" class="hidden">
+            <label for="filter-branch" class="filter-label">Filter by Field Technician:</label>
+            <div id="filter-branch" class="checkbox-container"></div>
+        </div>
     </div>
+
+    <!-- Search Input -->
+    <input type="text" id="search-input" placeholder="Search..." />
+
+    <nav>
+        <a href="https://airtable.com/appO21PVRA4Qa087I/shrIB8uJAdVkCfipw" class="nav-link active" target="_blank">Enter Record</a>
+    </nav>
 </div>
 
-            
-        </form>
-        <br>
-        <input type="text" id="search-input" placeholder="Search..." />
     
     <div class="table-wrapper">
 

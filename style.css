@@ -69,6 +69,33 @@ body {
     transition: background-color 0.3s ease, transform 0.3s ease;
 }
 
+/* Container to align the filter button and search bar */
+#filter-search-container {
+    display: flex;
+    align-items: center; /* Align items vertically */
+    gap: 10px; /* Space between elements */
+}
+
+/* Ensure the button and input have proper spacing */
+#checkbox-menu {
+    display: flex;
+    align-items: center;
+}
+
+#menu-toggle {
+    padding: 8px 12px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+#search-input {
+    flex: 1; /* Makes the search input take available space */
+    padding: 8px;
+    font-size: 16px;
+    min-width: 200px;
+}
+
+
 .nav-link:hover {
     background-color: #002244; /* Darker shade for hover effect */
     transform: translateY(-2px); /* Slight lift effect */

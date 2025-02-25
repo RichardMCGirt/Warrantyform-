@@ -168,7 +168,7 @@ function filterRows() {
             if (!fieldTechColumn) return;
 
             const fieldTech = fieldTechColumn.textContent.toLowerCase().trim();
-            const isVisible = selectedBranches.includes(fieldTech);
+            const isVisible = selectedBranches.some(branch => fieldTech.includes(branch)); // Use 'includes' for partial match
 
             row.style.display = isVisible ? "" : "none";
 
@@ -185,6 +185,7 @@ function filterRows() {
         }
     });
 }
+
 
 
 // ✅ Function to extract Field Techs from the table dynamically

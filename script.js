@@ -27,46 +27,55 @@ Promise.all([
     console.error("An error occurred during one of the fetch operations:", error);
 });
 
-        // Function to check if Dropbox token is still valid
-        async function checkDropboxTokenValidity() {      
-            if (!dropboxAccessToken) {
-                return;
+       // Function to check if Dropbox token is still valid
+async function checkDropboxTokenValidity() {      
+    console.log("🔍 Checking Dropbox token validity...");
+
+    if (!dropboxAccessToken) {
+        console.warn("⚠️ Dropbox access token is missing or undefined.");
+        return;
+    }
+
+    console.log(`🔑 Using Dropbox access token: "${dropboxAccessToken.trim()}"`);
+
+    const accountInfoUrl = 'https://api.dropboxapi.com/2/users/get_current_account';
+
+    try {
+        const response = await fetch(accountInfoUrl, {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${dropboxAccessToken.trim()}`,  // Ensure token is trimmed
             }
-        
-            const accountInfoUrl = 'https://api.dropboxapi.com/2/users/get_current_account';
-        
-            try {
-                const response = await fetch(accountInfoUrl, {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${dropboxAccessToken.trim()}`,  // Ensure token is trimmed
-                    }
-                });
-        
-                let responseData;
-                const contentType = response.headers.get('content-type');
-        
-                if (contentType && contentType.includes('application/json')) {
-                    responseData = await response.json();  
-                } else {
-                    responseData = await response.text(); 
-                }
-        
-                if (response.ok) {
-                    console.log('Dropbox token is still valid.');
-                } else if (response.status === 401) {
-                    console.error('Dropbox token is expired or invalid.');
-                    await refreshDropboxToken();  
-                } else {
-                    console.error(`Error while checking Dropbox token: ${response.status} ${response.statusText}`);
-                    console.log('Response data:', responseData);  
-                }
-            } catch (error) {
-                console.error('Error occurred while checking Dropbox token validity:', error);
-            }
+        });
+
+        console.log(`📡 Dropbox API response status: ${response.status} ${response.statusText}`);
+
+        let responseData;
+        const contentType = response.headers.get('content-type');
+
+        if (contentType && contentType.includes('application/json')) {
+            responseData = await response.json();  
+        } else {
+            responseData = await response.text(); 
         }
+
+        console.log("📥 Response data from Dropbox:", responseData);
+
+        if (response.ok) {
+            console.log('✅ Dropbox token is still valid.');
+        } else if (response.status === 401) {
+            console.error('❌ Dropbox token is expired or invalid. Attempting to refresh...');
+            await refreshDropboxToken();  
+        } else {
+            console.error(`⚠️ Error while checking Dropbox token: ${response.status} ${response.statusText}`);
+            console.log('❗ Response data:', responseData);  
+        }
+    } catch (error) {
+        console.error('🚨 Error occurred while checking Dropbox token validity:', error);
+    }
+}
+
                     
-    const loadingLogo = document.querySelector('.loading-logo');
     const mainContent = document.getElementById('main-content');
     const secondaryContent = document.getElementById('secoundary-content');
     const toast = document.getElementById('toast');
@@ -154,54 +163,54 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
     // Fetch Dropbox credentials from Airtable
     async function fetchDropboxCredentials() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
-
+    
         try {
             const response = await fetch(url, {
                 headers: { Authorization: `Bearer ${airtableApiKey}` }
             });
-
-
+    
             if (!response.ok) {
                 throw new Error(`Error fetching Dropbox credentials: ${response.status} ${response.statusText}`);
             }
-
+    
             const data = await response.json();
-
-            // Reset Dropbox credentials before setting them
+    
+            // Ensure credentials are properly fetched
             dropboxAccessToken = undefined;
             dropboxAppKey = undefined;
             dropboxAppSecret = undefined;
             dropboxRefreshToken = undefined;
-
+    
             for (const record of data.records) {
-            
                 if (record.fields) {
                     if (record.fields['Dropbox Token']) {
-                        dropboxAccessToken = record.fields['Dropbox Token'];
+                        dropboxAccessToken = record.fields['Dropbox Token'].trim();
                     }
                     if (record.fields['Dropbox App Key']) {
-                        dropboxAppKey = record.fields['Dropbox App Key'];
+                        dropboxAppKey = record.fields['Dropbox App Key'].trim();
                     }
                     if (record.fields['Dropbox App Secret']) {
-                        dropboxAppSecret = record.fields['Dropbox App Secret'];
+                        dropboxAppSecret = record.fields['Dropbox App Secret'].trim();
                     }
-                    // Corrected lines below
-                    if (record.fields['Dropbox Refresh Token']) {  // Correct this to match your field name
-                        dropboxRefreshToken = record.fields['Dropbox Refresh Token'];  // Use the correct field name
+                    if (record.fields['Dropbox Refresh Token']) {
+                        dropboxRefreshToken = record.fields['Dropbox Refresh Token'].trim();
                     }
                 } else {
                     console.log('No fields found in this record:', record);
                 }
-            }      
-
+            }
+    
             if (!dropboxAccessToken || !dropboxAppKey || !dropboxAppSecret || !dropboxRefreshToken) {
                 console.error('One or more Dropbox credentials are missing after fetching.');
             } else {
+                console.log("Dropbox credentials loaded successfully.");
             }
         } catch (error) {
             console.error('Error occurred during fetchDropboxCredentials:', error);
         }
     }
+    
+    
 
     async function fetchCalendarLinks() {
         const url = `https://api.airtable.com/v0/${airtableBaseId}/${airtableTableName}`;
@@ -299,6 +308,41 @@ document.querySelectorAll('input, select, td[contenteditable="true"]').forEach(e
             return [];
         }
     }
+    
+document.addEventListener("DOMContentLoaded", function () {
+    function hideColumnsExcept(tableId, columnIndex) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+
+        const headers = table.querySelectorAll("th");
+        const rows = table.querySelectorAll("tr");
+
+        headers.forEach((th, index) => {
+            if (index !== columnIndex) {
+                th.style.display = "none";
+            } else {
+                th.style.display = "table-cell";
+            }
+        });
+
+        rows.forEach(row => {
+            row.querySelectorAll("td").forEach((td, index) => {
+                if (index !== columnIndex) {
+                    td.style.display = "none";
+                } else {
+                    td.style.display = "table-cell";
+                }
+            });
+        });
+    }
+
+    // Wait for data to be populated before applying column hiding
+    setTimeout(() => {
+        hideColumnsExcept("airtable-data", 3); // 4th column (0-based index)
+        hideColumnsExcept("feild-data", 3);
+    }, 1000); // Adjust timeout based on data load speed
+});
+
     
     async function updateDropboxTokenInAirtable(token) {
         console.log('Updating Dropbox token in Airtable...');
@@ -758,10 +802,8 @@ document.body.appendChild(fileInput);
         mainContent.style.display = 'none';
         secondaryContent.style.display = 'none';
     
-        originalValues = { /* Populate this with fetched data */ };
-    
+        originalValues = {};
         let loadProgress = 0;
-     
     
         try {
             let allRecords = [];
@@ -772,14 +814,13 @@ document.body.appendChild(fileInput);
                 subOptions = await fetchAirtableSubOptionsFromDifferentTable() || [];
             } catch (error) {
                 console.error('Error fetching sub options:', error);
-                subOptions = []; // Continue with an empty subOptions array
+                subOptions = [];
             }
     
             // Fetch all records and store original values
             do {
                 const data = await fetchData(offset);
     
-                // Ensure data.records exists and is an array
                 if (data && Array.isArray(data.records)) {
                     allRecords = allRecords.concat(data.records);
     
@@ -789,32 +830,48 @@ document.body.appendChild(fileInput);
                     });
                 } else {
                     console.error('Error: Invalid data structure or no records found.');
-                    break; // Exit loop if no valid data is fetched
+                    break;
                 }
                 offset = data.offset;
             } while (offset);
     
-            // Filter and sort records for primary and secondary views
+            // Fetch all field managers and map their IDs to names
+            const fieldManagerMap = await fetchFieldManagerNames();
+            
+            // Assign readable names instead of record IDs
+            allRecords.forEach(record => {
+                const managerId = record.fields['Field Manager Assigned']?.[0] || null;
+                record.displayFieldManager = managerId && fieldManagerMap[managerId] ? fieldManagerMap[managerId] : 'Unknown';
+            });
+    
+            // Separate into primary and secondary records
             const primaryRecords = allRecords.filter(record =>
                 record.fields['Status'] === 'Field Tech Review Needed' &&
-                !record.fields['Field Tech Reviewed'] // Checks if the checkbox is not checked
+                !record.fields['Field Tech Reviewed']
             );
     
             const secondaryRecords = allRecords.filter(record =>
-                record.fields['Status'] === 'Scheduled- Awaiting Field'  // Ensures 'Job Completed' is unchecked
+                record.fields['Status'] === 'Scheduled- Awaiting Field'
             );
     
-            // Sort primary records by StartDate and Vanir Branch
+            // 🔥 SORT PRIMARY RECORDS ALPHABETICALLY BY FIELD MANAGER NAME
             primaryRecords.sort((a, b) => {
-                const dateA = new Date(a.fields['StartDate']);
-                const dateB = new Date(b.fields['StartDate']);
-    
-                if (dateA < dateB) return -1;
-                if (dateA > dateB) return 1;
-                return (a.fields['b'] || '').localeCompare(b.fields['b'] || '');
+                const nameA = a.displayFieldManager.toLowerCase();
+                const nameB = b.displayFieldManager.toLowerCase();
+                return nameA.localeCompare(nameB);
             });
     
-            // Display the primary and secondary records in your tables with vendor options
+            // 🔥 SORT SECONDARY RECORDS ALPHABETICALLY BY FIELD MANAGER NAME
+            secondaryRecords.sort((a, b) => {
+                const nameA = a.displayFieldManager.toLowerCase();
+                const nameB = b.displayFieldManager.toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+    
+            console.log("✅ Sorted Primary Records:", primaryRecords.map(r => r.displayFieldManager));
+            console.log("✅ Sorted Secondary Records:", secondaryRecords.map(r => r.displayFieldManager));
+    
+            // Display the primary and secondary records in your tables
             await displayData(primaryRecords, '#airtable-data', false, vendorOptions);
             await displayData(secondaryRecords, '#feild-data', true, subOptions);
     
@@ -847,6 +904,156 @@ document.body.appendChild(fileInput);
             syncTableWidths();
         }
     }
+
+    async function fetchDataFromAirtable() {
+        const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}`;
+        console.log(`📡 Fetching data from Airtable: ${url}`);
+    
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}`,
+                },
+            });
+    
+            if (!response.ok) {
+                console.error(`❌ Error fetching Airtable data: ${response.status} ${response.statusText}`);
+                return { records: [] }; // Return empty array to prevent undefined errors
+            }
+    
+            const data = await response.json();
+            console.log("✅ Data successfully fetched:", data);
+    
+            return data;
+        } catch (error) {
+            console.error("🚨 Error fetching data from Airtable:", error);
+            return { records: [] }; // Return empty array on error
+        }
+    }
+    
+
+    async function populateFilterOptions() {
+        try {
+            console.log("🔄 Fetching data for filter options...");
+    
+            const data = await fetchDataFromAirtable(); // Ensure this function returns data correctly
+            console.log("📥 Data received:", data);
+    
+            if (!data || !Array.isArray(data.records)) {
+                console.error("❌ Error: Expected 'data.records' to be an array but got:", data);
+                return;
+            }
+    
+            // Extract unique filter options
+            const uniqueValues = [...new Set(data.records.map(record => record.fields['Field Tech']))];
+    
+            console.log("📌 Unique Filter Options:", uniqueValues);
+    
+            const filterContainer = document.getElementById("filter-branch");
+            if (!filterContainer) {
+                console.error("❌ 'filter-branch' container not found in DOM.");
+                return;
+            }
+    
+            // Clear existing options
+            filterContainer.innerHTML = "";
+    
+            uniqueValues.forEach(value => {
+                if (!value) return; // Skip empty values
+    
+                const checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.value = value;
+                checkbox.id = `filter-${value.replace(/\s+/g, "-").toLowerCase()}`;
+                checkbox.classList.add("filter-checkbox");
+    
+                const label = document.createElement("label");
+                label.htmlFor = checkbox.id;
+                label.textContent = value;
+    
+                filterContainer.appendChild(checkbox);
+                filterContainer.appendChild(label);
+                filterContainer.appendChild(document.createElement("br"));
+            });
+    
+            console.log("✅ Filter options populated successfully.");
+        } catch (error) {
+            console.error("🚨 Error in populateFilterOptions:", error);
+        }
+    }
+    
+    
+    // Call this function when data is ready
+    populateFilterOptions();
+    
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("filter-branch").addEventListener("change", function () {
+            applyFilters();
+        });
+    });
+    
+    function applyFilters() {
+        const selectedTechs = Array.from(document.querySelectorAll(".filter-checkbox:checked"))
+            .map(checkbox => checkbox.value);
+    
+        document.querySelectorAll("#airtable-data tbody tr, #feild-data tbody tr").forEach(row => {
+            const techCell = row.cells[1]; // Assuming the "Field Tech" column is index 1
+            if (techCell) {
+                const tech = techCell.textContent.trim();
+                row.style.display = selectedTechs.length === 0 || selectedTechs.includes(tech) ? "" : "none";
+            }
+        });
+    }
+    
+    
+    /**
+     * Fetch and map "Field Manager Assigned" from linked records
+     */
+    async function populateFieldManagerNames(records) {
+        // Fetch all field managers once
+        const managerIdMap = await fetchFieldManagerNames();
+    
+        // Assign display names to records
+        records.forEach(record => {
+            const managerId = record.fields['Field Manager Assigned']?.[0] || null;
+            record.displayFieldManager = managerIdMap[managerId] || 'Unknown'; // Default if not found
+        });
+    
+        console.log("✅ Assigned Field Manager Display Names:", records.map(r => r.displayFieldManager));
+    }
+    
+    
+    /**
+     * Fetch Field Manager names from Airtable based on record IDs
+     */
+    async function fetchFieldManagerNames() {
+        const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/tblHdf9KskO1auw3l`; // Use the correct Table ID
+    
+        try {
+            const response = await fetch(url, {
+                headers: { Authorization: `Bearer ${window.env.AIRTABLE_API_KEY}` }
+            });
+    
+            if (!response.ok) throw new Error(`Error fetching field manager names: ${response.statusText}`);
+    
+            const data = await response.json();
+            const idMap = {};
+    
+            data.records.forEach(manager => {
+                idMap[manager.id] = manager.fields['Full Name']; // Assuming the name field is "Name"
+            });
+    
+            console.log("📋 Field Manager ID to Name Map:", idMap);
+            return idMap;
+        } catch (error) {
+            console.error("❌ Error fetching field manager names:", error);
+            return {};
+        }
+    }
+    
+    
+
+    
     
     function checkForChanges(recordId) {
         console.log(`Checking for changes in record ID: ${recordId}`);
@@ -947,6 +1154,53 @@ document.body.appendChild(fileInput);
         }
     }
 
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("🔄 DOM fully loaded and parsed.");
+    
+        // Select elements
+        const menuToggle = document.getElementById("menu-toggle");
+        const checkboxContainer = document.getElementById("checkbox-container");
+    
+        // Check if elements exist
+        if (!menuToggle) {
+            console.error("❌ 'menu-toggle' button not found. Check if the ID is correct or if the element exists.");
+        } else {
+            console.log("✅ 'menu-toggle' button found.");
+        }
+    
+        if (!checkboxContainer) {
+            console.error("❌ 'checkbox-container' not found. Check if the ID is correct.");
+        } else {
+            console.log("✅ 'checkbox-container' found.");
+        }
+    
+        // Ensure both elements exist before adding the event listener
+        if (menuToggle && checkboxContainer) {
+            console.log("📌 Adding click event listener to 'menu-toggle'");
+    
+            menuToggle.addEventListener("click", function (event) {
+                console.log("🟢 'menu-toggle' clicked! Event triggered.");
+                console.log("📌 Event details:", event);
+    
+                // Toggle visibility
+                checkboxContainer.classList.toggle("hidden");
+    
+                if (checkboxContainer.classList.contains("hidden")) {
+                    console.log("🔴 'checkbox-container' is now hidden.");
+                } else {
+                    console.log("🟢 'checkbox-container' is now visible.");
+                }
+            });
+    
+            console.log("✅ Click event listener added successfully to 'menu-toggle'.");
+        } else {
+            console.error("🚨 Unable to attach event listener: 'menu-toggle' or 'checkbox-container' missing.");
+        }
+    });
+    
+    
+    
+
     async function fetchDataAndInitializeFilter() {
         await fetchAllData(); // Ensure this function populates the tables
         console.log("Data loaded from Airtable.");
@@ -1044,6 +1298,88 @@ document.addEventListener('DOMContentLoaded', () => {
         return subOptions;  
     }
 
+    function mergeTableCells(tableSelector, columnIndex) {
+        const table = document.querySelector(tableSelector);
+        if (!table) {
+            console.warn(`⚠️ Table not found: ${tableSelector}`);
+            return;
+        }
+    
+        const rows = table.querySelectorAll("tbody tr");
+        if (rows.length === 0) {
+            console.warn(`⚠️ No rows found in table: ${tableSelector}`);
+            return;
+        }
+    
+        let lastCell = null;
+        let rowspanCount = 1;
+    
+        console.log(`🔍 Merging column ${columnIndex} in table: ${tableSelector}`);
+    
+        rows.forEach((row, index) => {
+            const currentCell = row.cells[columnIndex];
+    
+            if (!currentCell) {
+                console.warn(`⚠️ No cell found at column ${columnIndex} in row ${index + 1}`);
+                return;
+            }
+    
+            console.log(`🟢 Processing row ${index + 1}: "${currentCell.textContent.trim()}"`);
+    
+            if (lastCell && lastCell.textContent.trim() === currentCell.textContent.trim()) {
+                rowspanCount++;
+                lastCell.rowSpan = rowspanCount;
+                currentCell.style.display = "none"; // Hide duplicate cell
+                console.log(`✅ Merging cell in row ${index + 1} with previous cell. New rowspan: ${rowspanCount}`);
+            } else {
+                lastCell = currentCell;
+                rowspanCount = 1; // Reset rowspan count
+                console.log(`🔄 New value detected, resetting rowspan count.`);
+            }
+        });
+    
+        console.log(`✅ Column ${columnIndex} merging complete in ${tableSelector}.`);
+    }
+    
+    // ✅ Ensure data is fully loaded before running merge
+    async function waitForTableData(tableSelector, columnIndex) {
+        console.log(`⏳ Waiting for table data to load: ${tableSelector}`);
+        
+        let retries = 10; // Adjust based on load time
+        let tableReady = false;
+    
+        while (retries > 0) {
+            const table = document.querySelector(tableSelector);
+            const rows = table ? table.querySelectorAll("tbody tr") : [];
+    
+            if (rows.length > 0) {
+                console.log(`✅ Table data loaded with ${rows.length} rows in ${tableSelector}.`);
+                tableReady = true;
+                break;
+            }
+    
+            console.log(`⏳ Waiting for ${tableSelector}... (${retries} retries left)`);
+            await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms
+            retries--;
+        }
+    
+        if (tableReady) {
+            mergeTableCells(tableSelector, columnIndex);
+        } else {
+            console.error(`❌ Table data failed to load for ${tableSelector}.`);
+        }
+    }
+    
+    // ✅ Call after fetching all data
+    setTimeout(() => {
+        waitForTableData("#airtable-data", 2); // Merge "Field Tech" column in airtable-data
+        waitForTableData("#feild-data", 2);   // Merge "Field Tech" column in feild-data
+    }, 1500);
+    
+    
+    
+    
+
     async function displayData(records, tableSelector, isSecondary = false) {
         const tableElement = document.querySelector(tableSelector); // Select the entire table
         const tableContainer = tableElement.closest('.scrollable-div'); // Find the table's container
@@ -1068,11 +1404,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
          // Sort records alphabetically by field 'b'
-    records.sort((a, b) => {
-        const valueA = a.fields['b'] ? a.fields['b'].toLowerCase() : '';
-        const valueB = b.fields['b'] ? b.fields['b'].toLowerCase() : '';
-        return valueA.localeCompare(valueB);
-    });
+   // Sort records alphabetically by 'Field Tech'
+records.sort((a, b) => {
+    const valueA = a.fields['Field Tech'] ? a.fields['Field Tech'].toLowerCase() : '';
+    const valueB = b.fields['Field Tech'] ? b.fields['Field Tech'].toLowerCase() : '';
+    return valueA.localeCompare(valueB);
+});
+
         
         // Populate rows based on the provided configuration
         records.forEach(record => {
@@ -1090,8 +1428,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 { field: 'b', value: fields['b'] || 'N/A', link: true },
                 { field: 'field tech', value: fields['field tech'] || '', editable: false },
 
-                { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
-                { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
+                { 
+                    field: 'Lot Number and Community/Neighborhood', 
+                    value: fields['Lot Number and Community/Neighborhood'] || 'N/A', 
+                    jobDetailsLink: true  // ✅ Define jobDetailsLink here
+                },
+                                { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
                 { field: 'Description of Issue', value: fields['Description of Issue'] ? fields['Description of Issue'].replace(/<\/?[^>]+(>|$)/g, "") : '' },       
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
@@ -1102,8 +1444,12 @@ document.addEventListener('DOMContentLoaded', () => {
             ] : [
                 { field: 'b', value: fields['b'] || 'N/A', link: true },  // Keep only this "Branch" entry
                 { field: 'field tech', value: fields['field tech'] || '', editable: false },
-                { field: 'Lot Number and Community/Neighborhood', value: fields['Lot Number and Community/Neighborhood'] || 'N/A' },
-                { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
+                { 
+                    field: 'Lot Number and Community/Neighborhood', 
+                    value: fields['Lot Number and Community/Neighborhood'] || 'N/A', 
+                    jobDetailsLink: true  // ✅ Define jobDetailsLink here
+                },
+                                { field: 'Address', value: fields['Address'] || 'N/A', directions: true },
                 { field: 'Homeowner Name', value: fields['Homeowner Name'] || 'N/A' },
                 { field: 'Contact Email', value: fields['Contact Email'] || 'N/A', email: true },
                 { field: 'Description of Issue', value: fields['Description of Issue'] ? fields['Description of Issue'].replace(/<\/?[^>]+(>|$)/g, "") : '' },
@@ -1453,6 +1799,48 @@ select.addEventListener('change', () => {
     });
 
     cell.appendChild(checkboxElement);
+
+    records.forEach(record => {
+       
+    
+        fieldConfigs.forEach(config => {
+    
+            // 🔥 Instead of checking jobDetailsLink, always log and apply the redirect
+            if (config.field.includes("Lot Number")) {  
+                const jobId = record.id;  
+            
+                // Ensure cell is mutable
+                let cell = row.querySelector(`td[data-field="${config.field}"]`); 
+            
+                cell.style.cursor = 'pointer';
+                cell.style.color = 'blue';
+                cell.style.textDecoration = 'underline';
+            
+                // 🔥 Remove any existing event listeners (prevents duplicates)
+                cell.replaceWith(cell.cloneNode(true));
+                cell = row.querySelector(`td[data-field="${config.field}"]`);
+            
+                // 🔴 Force Redirect with `location.href`
+                cell.addEventListener('click', () => {
+                    console.log(`🔀 Redirecting NOW to job-details.html?id=${jobId}`);
+                    window.location.href = `job-details.html?id=${jobId}`;
+                });
+            
+            }
+            
+            
+        });
+    });
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
 }
                 else if (link) {
                     const matchingCalendar = calendarLinks.find(calendar => calendar.name === value);
@@ -1518,6 +1906,12 @@ select.addEventListener('change', () => {
             checkForChanges(recordId);
         });
     });
+
+    document.querySelectorAll('td[data-field="Lot Number and Community/Neighborhood"]').forEach(cell => {
+        console.log("🛠 Checking Cell:", cell);
+        console.log("Click Event Listeners:", getEventListeners(cell));
+    });
+    
    
     async function deleteImageFromAirtable(recordId, imageId, imageField) {
         const url = `https://api.airtable.com/v0/${window.env.AIRTABLE_BASE_ID}/${window.env.AIRTABLE_TABLE_NAME}/${recordId}`;

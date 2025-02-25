@@ -8,9 +8,26 @@ body {
 }
 
 
+
+
 #checkbox-menu {
     position: relative;
     display: inline-block;
+}
+
+
+/* Target the "Lot Number" cells */
+td[data-field="Lot Number and Community/Neighborhood"]:hover {
+    transform: scale(1.1);  /* Slightly enlarge the cell */
+    transition: transform 0.2s ease-in-out;  /* Smooth transition */
+}
+
+/* Keep only the "Lot Number and Community" column visible in both tables */
+#airtable-data th:nth-child(4), 
+#airtable-data td:nth-child(4),
+#feild-data th:nth-child(4), 
+#feild-data td:nth-child(4) {
+    display: table-cell;
 }
 
 #menu-toggle {
@@ -140,9 +157,19 @@ td {
 #airtable-data th:nth-child(2),
 #airtable-data td:nth-child(2),
 #feild-data td:nth-child(2),
-#feild-data th:nth-child(2) {
+#feild-data th:nth-child(2),
+#airtable-data th:nth-child(1),
+#airtable-data td:nth-child(1),
+#feild-data td:nth-child(1),
+#feild-data th:nth-child(1)
+
+ {
     display: none;
 }
+
+
+
+
 
 
 td:nth-child(7) .delete-button,
